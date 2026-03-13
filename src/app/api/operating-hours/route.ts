@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
-import { withAuth, AuthRequest } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { withAuth } from '@/lib/api/middleware';
 
 // Validation schema for operating hours
 const operatingHoursSchema = z.object({
@@ -16,7 +16,7 @@ const operatingHoursSchema = z.object({
 });
 
 // GET /api/operating-hours - Get barber's operating hours
-async function getOperatingHoursHandler(req: AuthRequest) {
+async function getOperatingHoursHandler(req: any) {
   try {
     const userId = req.userId!;
 
@@ -71,7 +71,7 @@ async function getOperatingHoursHandler(req: AuthRequest) {
 }
 
 // PUT /api/operating-hours - Update barber's operating hours
-async function updateOperatingHoursHandler(req: AuthRequest) {
+async function updateOperatingHoursHandler(req: any) {
   try {
     const userId = req.userId!;
     const body = await req.json();
