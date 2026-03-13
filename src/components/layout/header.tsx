@@ -1,0 +1,100 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { ROUTES, APP_CONFIG } from '@/config';
+
+export function Header() {
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if user is logged in by checking localStorage
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      setIsLoggedIn(true);
+      // Decode token to get user role (simple approach)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+      } catch (e) {
+        console.error('Failed to decode token:', e);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    setIsLoggedIn(false);
+    setUserRole(null);
+    router.push(ROUTES.HOME);
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
+        {/* Logo */}
+        <Link href={ROUTES.HOME} className="flex items-center space-x-2">
+          <span className="text-2xl font-bold text-primary">
+            {APP_CONFIG.name}
+          </span>
+        </Link>
+
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
+          <Link
+            href={ROUTES.SEARCH}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Find Barbers
+          </Link>
+          <Link
+            href={ROUTES.SPECIALTIES}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Specialties
+          </Link>
+          <Link
+            href={ROUTES.ABOUT}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            About
+          </Link>
+        </nav>
+
+        {/* Auth Buttons */}
+        <div className="flex items-center space-x-4">
+          {isLoggedIn ? (
+            <>
+              {userRole === 'barber' && (
+                <Link href={ROUTES.DASHBOARD}>
+                  <Button variant="ghost">Dashboard</Button>
+                </Link>
+              )}
+              {userRole === 'admin' && (
+                <Link href={ROUTES.ADMIN}>
+                  <Button variant="ghost">Admin</Button>
+                </Link>
+              )}
+              <Button variant="outline" onClick={handleLogout}>
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href={ROUTES.LOGIN}>
+                <Button variant="ghost">Sign In</Button>
+              </Link>
+              <Link href={ROUTES.REGISTER}>
+                <Button>Get Started</Button>
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}

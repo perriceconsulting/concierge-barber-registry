@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/* Barbershop Premium Theme - Tailwind v4 */
+
+@theme {
+  /* Custom barbershop colors */
+  --color-barbershop-red: #b42e2e;
+  --color-barbershop-blue: #1e4d7b;
+  --color-barbershop-cream: #f5ede4;
+  --color-barbershop-gold: #d4af37;
+  --color-barbershop-burgundy: #4a1818;
+  --color-barbershop-leather: #3d2817;
+
+  /* Background colors - warm cream */
+  --color-background: #faf8f6;
+  --color-foreground: #1a1a1a;
+
+  /* Card colors */
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1a1a;
+
+  /* Primary - rich burgundy */
+  --color-primary: #4a1818;
+  --color-primary-foreground: #faf8f6;
+
+  /* Secondary - luxury gold */
+  --color-secondary: #d4af37;
+  --color-secondary-foreground: #1a1a1a;
+
+  /* Accent - deep teal */
+  --color-accent: #2d6a5f;
+  --color-accent-foreground: #faf8f6;
+
+  /* Muted */
+  --color-muted: #ebe6e0;
+  --color-muted-foreground: #666666;
+
+  /* Border & Input */
+  --color-border: #ddd5cc;
+  --color-input: #ddd5cc;
+
+  /* Destructive */
+  --color-destructive: #dc3545;
+  --color-destructive-foreground: #ffffff;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Premium elevation shadows */
+  .shadow-md {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.12), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  }
+
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.12), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  }
+
+  .shadow-xl {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+  }
+
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  /* Card hover effect with subtle lift */
+  .card-hover {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -8px rgb(0 0 0 / 0.2),
+                0 4px 8px -4px rgb(0 0 0 / 0.1);
+  }
+
+  /* Barbershop gradient backgrounds */
+  .barbershop-gradient {
+    background: linear-gradient(135deg,
+      var(--color-barbershop-red) 0%,
+      var(--color-barbershop-burgundy) 50%,
+      var(--color-barbershop-blue) 100%);
+  }
+
+  .barbershop-gradient-subtle {
+    background: linear-gradient(to bottom right,
+      var(--color-background) 0%,
+      var(--color-barbershop-cream) 100%);
+  }
+
+  /* Premium button with gold accent */
+  .btn-premium {
+    background: linear-gradient(135deg,
+      var(--color-barbershop-gold) 0%,
+      #c5a028 100%);
+    box-shadow: 0 4px 12px -2px rgba(212, 175, 55, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(212, 175, 55, 0.4);
+  }
+
+  /* Vintage barbershop pole stripes */
+  .barber-pole {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-barbershop-red),
+      var(--color-barbershop-red) 10px,
+      var(--color-barbershop-blue) 10px,
+      var(--color-barbershop-blue) 20px,
+      white 20px,
+      white 30px
+    );
+  }
+
+  /* Textured background for premium feel */
+  .textured-bg {
+    background-color: var(--color-background);
+    background-image:
+      radial-gradient(at 40% 20%, rgba(74, 24, 24, 0.03) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(45, 106, 95, 0.03) 0px, transparent 50%);
+  }
+
+  /* Leather texture effect */
+  .leather-texture {
+    background-color: var(--color-barbershop-leather);
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(0, 0, 0, 0.2) 0%, transparent 50%),
+      radial-gradient(circle at 80% 50%, rgba(0, 0, 0, 0.15) 0%, transparent 50%);
+  }
+
+  /* Gold shimmer effect */
+  .gold-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gold-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    animation: shimmer 3s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { left: -100%; }
+    50%, 100% { left: 100%; }
+  }
+
+  /* Premium card with border accent */
+  .premium-card {
+    border-top: 3px solid var(--color-secondary);
+    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.1);
+  }
+
+  /* Status badge with barbershop colors */
+  .badge-verified {
+    background: linear-gradient(135deg,
+      var(--color-barbershop-gold) 0%,
+      var(--color-secondary) 100%);
+    color: var(--color-secondary-foreground);
+  }
+}

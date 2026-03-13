@@ -1,0 +1,51 @@
+import { Container } from '@/components/layout/container';
+
+export default function AboutPage() {
+  return (
+    <div className="min-h-[calc(100vh-16rem)] py-16">
+      <Container>
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold text-primary mb-6">About Us</h1>
+
+          <div className="prose prose-lg max-w-none space-y-6">
+            <p className="text-lg text-muted-foreground">
+              Welcome to Concierge Barber Registry, the premier platform connecting clients
+              with verified, top-rated barbers across the country.
+            </p>
+
+            <h2 className="text-2xl font-bold text-primary mt-8 mb-4">Our Mission</h2>
+            <p className="text-muted-foreground">
+              We believe everyone deserves access to quality grooming services. Our mission
+              is to make it easy for clients to discover talented barbers while providing
+              barbers with a platform to showcase their skills and grow their business.
+            </p>
+
+            <h2 className="text-2xl font-bold text-primary mt-8 mb-4">What We Offer</h2>
+            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+              <li>Verified professional barber profiles</li>
+              <li>Authentic client reviews and ratings</li>
+              <li>Portfolio galleries showcasing barber work</li>
+              <li>Location-based search and filtering</li>
+              <li>Direct contact with barbers</li>
+              <li>Specialty-based discovery</li>
+            </ul>
+
+            <h2 className="text-2xl font-bold text-primary mt-8 mb-4">For Barbers</h2>
+            <p className="text-muted-foreground">
+              Join our community of professional barbers and expand your reach. Create a
+              free profile, showcase your work, and connect with clients actively looking
+              for your services.
+            </p>
+
+            <h2 className="text-2xl font-bold text-primary mt-8 mb-4">For Clients</h2>
+            <p className="text-muted-foreground">
+              Find your perfect barber by browsing portfolios, reading authentic reviews,
+              and searching by location and specialty. Your next great haircut is just a
+              search away.
+            </p>
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}

@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String           @unique @db.VarChar(255)
+  passwordHash    String?          @map("password_hash") @db.VarChar(255)
+  role            UserRole         @default(client)
+  firstName       String           @map("first_name") @db.VarChar(100)
+  lastName        String           @map("last_name") @db.VarChar(100)
+  phone           String?          @db.VarChar(20)
+  avatarUrl       String?          @map("avatar_url")
+  emailVerified   Boolean          @default(false) @map("email_verified")
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  auditLogs       AuditLog[]
+  barberProfile   BarberProfile?
+  contactRequests ContactRequest[]
+  favorites       Favorite[]
+  reviews         Review[]
+  sessions        Session[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  refreshTokenHash String   @map("refresh_token_hash") @db.VarChar(255)
+  userAgent        String?  @map("user_agent")
+  ipAddress        String?  @map("ip_address") @db.VarChar(45)
+  expiresAt        DateTime @map("expires_at")
+  isRevoked        Boolean  @default(false) @map("is_revoked")
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model BarberProfile {
+  id                       String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String             @unique @map("user_id") @db.Uuid
+  displayName              String             @map("display_name") @db.VarChar(150)
+  slug                     String             @unique @db.VarChar(150)
+  bio                      String?
+  tagline                  String?            @db.VarChar(255)
+  yearsExperience          Int?               @map("years_experience")
+  licenseNumber            String?            @map("license_number") @db.VarChar(100)
+  licenseState             String?            @map("license_state") @db.VarChar(2)
+  licenseVerified          Boolean            @default(false) @map("license_verified")
+  verificationStatus       VerificationStatus @default(pending) @map("verification_status")
+  shopName                 String?            @map("shop_name") @db.VarChar(200)
+  shopAddressLine1         String?            @map("shop_address_line1") @db.VarChar(255)
+  shopAddressLine2         String?            @map("shop_address_line2") @db.VarChar(255)
+  city                     String             @db.VarChar(100)
+  state                    String             @db.VarChar(2)
+  zipCode                  String             @map("zip_code") @db.VarChar(10)
+  latitude                 Decimal?           @db.Decimal(10, 8)
+  longitude                Decimal?           @db.Decimal(11, 8)
+  offersMobileService      Boolean            @default(false) @map("offers_mobile_service")
+  mobileServiceRadiusMiles Int?               @map("mobile_service_radius_miles")
+  websiteUrl               String?            @map("website_url")
+  instagramHandle          String?            @map("instagram_handle") @db.VarChar(100)
+  tiktokHandle             String?            @map("tiktok_handle") @db.VarChar(100)
+  acceptsWalkins           Boolean            @default(true) @map("accepts_walkins")
+  acceptsAppointments      Boolean            @default(true) @map("accepts_appointments")
+  isFeatured               Boolean            @default(false) @map("is_featured")
+  averageRating            Decimal            @default(0.0) @map("average_rating") @db.Decimal(2, 1)
+  totalReviews             Int                @default(0) @map("total_reviews")
+  profileViews             Int                @default(0) @map("profile_views")
+  createdAt                DateTime           @default(now()) @map("created_at")
+  updatedAt                DateTime           @updatedAt @map("updated_at")
+  user                     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialties              BarberSpecialty[]
+  contactRequests          ContactRequest[]
+  favorites                Favorite[]
+  operatingHours           OperatingHours[]
+  portfolioImages          PortfolioImage[]
+  reviews                  Review[]
+  services                 Service[]
+
+  @@index([userId])
+  @@index([slug])
+  @@index([city])
+  @@index([state])
+  @@index([zipCode])
+  @@index([verificationStatus])
+  @@index([isFeatured])
+  @@index([averageRating])
+  @@map("barber_profiles")
+}
+
+model Specialty {
+  id      Int               @id @default(autoincrement())
+  name    String            @unique @db.VarChar(100)
+  slug    String            @unique @db.VarChar(100)
+  icon    String?           @db.VarChar(50)
+  barbers BarberSpecialty[]
+
+  @@map("specialties")
+}
+
+model BarberSpecialty {
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  specialtyId     Int           @map("specialty_id")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+  specialty       Specialty     @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([barberProfileId, specialtyId])
+  @@map("barber_specialties")
+}
+
+model Service {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  name            String        @db.VarChar(150)
+  description     String?
+  priceCents      Int           @map("price_cents")
+  durationMinutes Int           @map("duration_minutes")
+  isActive        Boolean       @default(true) @map("is_active")
+  sortOrder       Int           @default(0) @map("sort_order")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+
+  @@index([barberProfileId])
+  @@map("services")
+}
+
+model PortfolioImage {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  imageUrl        String        @map("image_url")
+  thumbnailUrl    String?       @map("thumbnail_url")
+  caption         String?       @db.VarChar(255)
+  sortOrder       Int           @default(0) @map("sort_order")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+
+  @@index([barberProfileId])
+  @@map("portfolio_images")
+}
+
+model Review {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  clientUserId    String?       @map("client_user_id") @db.Uuid
+  rating          Int
+  title           String?       @db.VarChar(200)
+  comment         String?
+  isVerified      Boolean       @default(false) @map("is_verified")
+  isVisible       Boolean       @default(true) @map("is_visible")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+  client          User?         @relation(fields: [clientUserId], references: [id])
+
+  @@unique([barberProfileId, clientUserId])
+  @@index([barberProfileId])
+  @@index([clientUserId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model OperatingHours {
+  id              Int           @id @default(autoincrement())
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  dayOfWeek       Int           @map("day_of_week")
+  openTime        String?       @map("open_time")
+  closeTime       String?       @map("close_time")
+  isClosed        Boolean       @default(false) @map("is_closed")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([barberProfileId, dayOfWeek])
+  @@map("operating_hours")
+}
+
+model Favorite {
+  clientUserId    String        @map("client_user_id") @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+  client          User          @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+
+  @@id([clientUserId, barberProfileId])
+  @@map("favorites")
+}
+
+model ContactRequest {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId   String               @map("barber_profile_id") @db.Uuid
+  clientUserId      String?              @map("client_user_id") @db.Uuid
+  clientName        String               @map("client_name") @db.VarChar(200)
+  clientEmail       String               @map("client_email") @db.VarChar(255)
+  clientPhone       String?              @map("client_phone") @db.VarChar(20)
+  message           String
+  serviceInterested String?              @map("service_interested") @db.VarChar(200)
+  preferredDate     DateTime?            @map("preferred_date") @db.Date
+  preferredTime     String?              @map("preferred_time")
+  status            ContactRequestStatus @default(new)
+  createdAt         DateTime             @default(now()) @map("created_at")
+  barberProfile     BarberProfile        @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+  client            User?                @relation(fields: [clientUserId], references: [id])
+
+  @@index([barberProfileId])
+  @@index([status])
+  @@map("contact_requests")
+}
+
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  entityType  String   @map("entity_type") @db.VarChar(50)
+  entityId    String?  @map("entity_id") @db.Uuid
+  details     Json?
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime @default(now()) @map("created_at")
+  actor       User?    @relation(fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+enum UserRole {
+  barber
+  client
+  admin
+}
+
+enum VerificationStatus {
+  pending
+  approved
+  rejected
+  suspended
+}
+
+enum ContactRequestStatus {
+  new
+  read
+  responded
+  archived
+}

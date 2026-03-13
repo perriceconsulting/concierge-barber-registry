@@ -1,0 +1,263 @@
+'use client';
+
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+interface Specialty {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  barberCount?: number;
+}
+
+export default function AdminSpecialtiesPage() {
+  const [showForm, setShowForm] = useState(false);
+  const [editingSpecialty, setEditingSpecialty] = useState<Specialty | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    icon: '',
+  });
+
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+
+  const handleAdd = () => {
+    setEditingSpecialty(null);
+    setFormData({ name: '', slug: '', icon: '' });
+    setShowForm(true);
+  };
+
+  const handleEdit = (specialty: Specialty) => {
+    setEditingSpecialty(specialty);
+    setFormData({
+      name: specialty.name,
+      slug: specialty.slug,
+      icon: specialty.icon,
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingSpecialty) {
+      setSpecialties(specialties.map(s =>
+        s.id === editingSpecialty.id
+          ? { ...s, name: formData.name, slug: formData.slug, icon: formData.icon }
+          : s
+      ));
+      alert('Specialty updated successfully');
+    } else {
+      const newSpecialty: Specialty = {
+        id: Math.max(...specialties.map(s => s.id)) + 1,
+        name: formData.name,
+        slug: formData.slug,
+        icon: formData.icon,
+        barberCount: 0,
+      };
+      setSpecialties([...specialties, newSpecialty]);
+      alert('Specialty created successfully');
+    }
+
+    setShowForm(false);
+    setFormData({ name: '', slug: '', icon: '' });
+  };
+
+  const handleDelete = (id: number, barberCount: number = 0) => {
+    if (barberCount > 0) {
+      alert(`Cannot delete specialty with ${barberCount} active barbers. Remove barbers first.`);
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this specialty?')) {
+      setSpecialties(specialties.filter(s => s.id !== id));
+      alert('Specialty deleted successfully');
+    }
+  };
+
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-destructive">Manage Specialties</h1>
+          <p className="text-muted-foreground mt-2">
+            Add, edit, or remove barber specialty categories
+          </p>
+        </div>
+        {!showForm && (
+          <Button onClick={handleAdd}>Add Specialty</Button>
+        )}
+      </div>
+
+      {/* Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Specialties</p>
+              <p className="text-2xl font-bold">{specialties.length}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Most Popular</p>
+              <p className="text-2xl font-bold">
+                {specialties.length > 0 ? specialties.reduce((max, s) =>
+                  (s.barberCount || 0) > (max.barberCount || 0) ? s : max
+                ).name : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Barbers</p>
+              <p className="text-2xl font-bold">
+                {specialties.reduce((sum, s) => sum + (s.barberCount || 0), 0)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Form */}
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingSpecialty ? 'Edit Specialty' : 'Add New Specialty'}</CardTitle>
+            <CardDescription>
+              {editingSpecialty ? 'Update specialty details' : 'Create a new specialty category'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      name: e.target.value,
+                      slug: generateSlug(e.target.value),
+                    });
+                  }}
+                  placeholder="e.g., Fades"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug *</Label>
+                <Input
+                  id="slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="e.g., fades"
+                  required
+                  pattern="[a-z0-9-]+"
+                />
+                <p className="text-xs text-muted-foreground">
+                  URL-friendly identifier (lowercase letters, numbers, and hyphens only)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="icon">Icon (Optional)</Label>
+                <Input
+                  id="icon"
+                  value={formData.icon}
+                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  placeholder="e.g., ✂️"
+                  maxLength={2}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Single emoji character
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit">
+                  {editingSpecialty ? 'Update Specialty' : 'Create Specialty'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingSpecialty(null);
+                    setFormData({ name: '', slug: '', icon: '' });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Specialties List */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">All Specialties</h2>
+        {specialties.map((specialty) => (
+          <Card key={specialty.id}>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  {specialty.icon && (
+                    <span className="text-2xl">{specialty.icon}</span>
+                  )}
+                  <div>
+                    <CardTitle>{specialty.name}</CardTitle>
+                    <CardDescription>
+                      Slug: {specialty.slug}
+                      {specialty.barberCount !== undefined && (
+                        <> • {specialty.barberCount} barber{specialty.barberCount !== 1 ? 's' : ''}</>
+                      )}
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(specialty)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(specialty.id, specialty.barberCount)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        ))}
+
+        {specialties.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-4">No specialties created yet</p>
+              <Button onClick={handleAdd}>Add Your First Specialty</Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
