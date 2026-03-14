@@ -121,36 +121,135 @@ export default function SettingsPage() {
     e.preventDefault();
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match');
+      showToast({
+        title: 'Error',
+        description: 'New passwords do not match',
+        variant: 'error',
+      });
       return;
     }
 
     setIsChangingPassword(true);
 
-    // TODO: Implement password change API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/user/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
 
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    alert('Password changed successfully!');
-  };
+      const data = await response.json();
 
-  const handleDeactivateAccount = () => {
-    if (confirm('Are you sure you want to deactivate your account? This action can be reversed by contacting support.')) {
-      // TODO: Implement account deactivation
-      alert('Account deactivation feature coming soon');
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Success',
+          description: data.message,
+          variant: 'success',
+        });
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        throw new Error(data.message || 'Failed to change password');
+      }
+    } catch (error: any) {
+      showToast({
+        title: 'Error',
+        description: error.message || 'Failed to change password',
+        variant: 'error',
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeactivateAccount = async () => {
+    if (!confirm('Are you sure you want to deactivate your account? This action can be reversed by contacting support.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/user/deactivate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Account Deactivated',
+          description: data.message,
+          variant: 'success',
+        });
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          window.location.href = '/login';
+        }, 2000);
+      } else {
+        throw new Error(data.message || 'Failed to deactivate account');
+      }
+    } catch (error: any) {
+      showToast({
+        title: 'Error',
+        description: error.message || 'Failed to deactivate account',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
     const confirmation = prompt('This action is permanent and cannot be undone. Type "DELETE" to confirm:');
-    if (confirmation === 'DELETE') {
-      // TODO: Implement account deletion
-      alert('Account deletion feature coming soon');
+    if (confirmation !== 'DELETE') {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/user/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ confirmation: 'DELETE' }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Account Deleted',
+          description: 'Your account has been permanently deleted',
+          variant: 'success',
+        });
+        // Redirect to home after 2 seconds
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        throw new Error(data.message || 'Failed to delete account');
+      }
+    } catch (error: any) {
+      showToast({
+        title: 'Error',
+        description: error.message || 'Failed to delete account',
+        variant: 'error',
+      });
     }
   };
 
