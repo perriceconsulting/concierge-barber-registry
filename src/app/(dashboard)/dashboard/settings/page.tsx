@@ -1,26 +1,121 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/toast';
 
 export default function SettingsPage() {
+  const { showToast } = useToast();
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
-  const [accountData] = useState({
-    email: 'mike@example.com',
-    firstName: 'Mike',
-    lastName: 'Johnson',
-    phone: '555-0123',
+  const [accountData, setAccountData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+  });
+
+  const [preferences, setPreferences] = useState({
+    notifyEmailEnabled: true,
+    notifyContactRequests: true,
+    notifyNewReviews: true,
+    notifyMarketingEmails: false,
   });
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
+
+  useEffect(() => {
+    fetchUserData();
+    fetchPreferences();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const user = data.data.user;
+        setAccountData({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone || '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+    }
+  };
+
+  const fetchPreferences = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/user/preferences', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setPreferences(data.data.preferences);
+      }
+    } catch (error) {
+      console.error('Failed to fetch preferences:', error);
+    } finally {
+      setIsLoadingPreferences(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setIsSavingPreferences(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/user/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(preferences),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Success',
+          description: 'Notification preferences saved successfully',
+          variant: 'success',
+        });
+      } else {
+        throw new Error(data.message || 'Failed to save preferences');
+      }
+    } catch (error: any) {
+      showToast({
+        title: 'Error',
+        description: error.message || 'Failed to save preferences',
+        variant: 'error',
+      });
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,47 +256,83 @@ export default function SettingsPage() {
           <CardDescription>Manage how you receive updates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Receive email updates about new reviews and contact requests
-              </p>
-            </div>
-            <input type="checkbox" defaultChecked className="rounded" />
-          </div>
+          {isLoadingPreferences ? (
+            <p className="text-muted-foreground">Loading preferences...</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email updates about new reviews and contact requests
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={preferences.notifyEmailEnabled}
+                  onChange={(e) => setPreferences({ ...preferences, notifyEmailEnabled: e.target.checked })}
+                  className="rounded"
+                  disabled={isSavingPreferences}
+                />
+              </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>New Contact Requests</Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when clients send contact requests
-              </p>
-            </div>
-            <input type="checkbox" defaultChecked className="rounded" />
-          </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>New Contact Requests</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when clients send contact requests
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={preferences.notifyContactRequests}
+                  onChange={(e) => setPreferences({ ...preferences, notifyContactRequests: e.target.checked })}
+                  className="rounded"
+                  disabled={isSavingPreferences}
+                />
+              </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>New Reviews</Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when you receive new reviews
-              </p>
-            </div>
-            <input type="checkbox" defaultChecked className="rounded" />
-          </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>New Reviews</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when you receive new reviews
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={preferences.notifyNewReviews}
+                  onChange={(e) => setPreferences({ ...preferences, notifyNewReviews: e.target.checked })}
+                  className="rounded"
+                  disabled={isSavingPreferences}
+                />
+              </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Marketing Emails</Label>
-              <p className="text-sm text-muted-foreground">
-                Receive tips, updates, and promotional content
-              </p>
-            </div>
-            <input type="checkbox" className="rounded" />
-          </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Marketing Emails</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive tips, updates, and promotional content
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={preferences.notifyMarketingEmails}
+                  onChange={(e) => setPreferences({ ...preferences, notifyMarketingEmails: e.target.checked })}
+                  className="rounded"
+                  disabled={isSavingPreferences}
+                />
+              </div>
 
-          <Button variant="outline">Save Preferences</Button>
+              <Button
+                variant="outline"
+                onClick={handleSavePreferences}
+                disabled={isSavingPreferences}
+              >
+                {isSavingPreferences ? 'Saving...' : 'Save Preferences'}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
