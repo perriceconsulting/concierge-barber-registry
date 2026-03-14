@@ -37,6 +37,8 @@ export default function SettingsPage() {
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -54,13 +56,14 @@ export default function SettingsPage() {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        const user = data.data.user;
+        const user = data.data;
         setAccountData({
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           phone: user.phone || '',
         });
+        setEmailVerified(user.emailVerified);
       }
     } catch (error) {
       console.error('Failed to fetch user data:', error);
@@ -248,6 +251,39 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Verification Email Sent',
+          description: data.data.message,
+          variant: 'success',
+        });
+      } else {
+        throw new Error(data.message || 'Failed to send verification email');
+      }
+    } catch (error: any) {
+      showToast({
+        title: 'Error',
+        description: error.message || 'Failed to send verification email',
+        variant: 'error',
+      });
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
@@ -267,7 +303,14 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-muted-foreground">Email</Label>
-              <p className="font-medium">{accountData.email}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{accountData.email}</p>
+                {emailVerified ? (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>
+                ) : (
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Unverified</span>
+                )}
+              </div>
             </div>
             <div>
               <Label className="text-muted-foreground">Phone</Label>
@@ -282,6 +325,28 @@ export default function SettingsPage() {
               <p className="font-medium">{accountData.lastName}</p>
             </div>
           </div>
+
+          {!emailVerified && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-yellow-800">Email Not Verified</p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Please verify your email address to access all features. Check your inbox for the verification email.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendVerification}
+                  disabled={isResendingVerification}
+                >
+                  {isResendingVerification ? 'Sending...' : 'Resend Email'}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <p className="text-sm text-muted-foreground">
             To update your account information, please contact support.
           </p>

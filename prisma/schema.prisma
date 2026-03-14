@@ -24,12 +24,13 @@ model User {
   notifyMarketingEmails      Boolean          @default(false) @map("notify_marketing_emails")
   createdAt                  DateTime         @default(now()) @map("created_at")
   updatedAt                  DateTime         @updatedAt @map("updated_at")
-  auditLogs       AuditLog[]
-  barberProfile   BarberProfile?
-  contactRequests ContactRequest[]
-  favorites       Favorite[]
-  reviews         Review[]
-  sessions        Session[]
+  auditLogs          AuditLog[]
+  barberProfile      BarberProfile?
+  contactRequests    ContactRequest[]
+  favorites          Favorite[]
+  reviews            Review[]
+  sessions           Session[]
+  verificationTokens VerificationToken[]
 
   @@index([email])
   @@index([role])
@@ -51,6 +52,21 @@ model Session {
   @@index([refreshTokenHash])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+model VerificationToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token     String   @unique @db.VarChar(255)
+  userId    String   @map("user_id") @db.Uuid
+  type      String   @db.VarChar(50)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("verification_tokens")
 }
 
 model BarberProfile {

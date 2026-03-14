@@ -152,3 +152,56 @@ export async function sendWelcomeEmail(email: string, firstName: string, role: '
 
   return sendEmail({ to: email, subject, html });
 }
+
+export function getVerificationEmailHtml(firstName: string, verificationUrl: string) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Your Email Address</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #7c2d12; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 28px;">Verify Your Email Address</h1>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+          <p style="font-size: 18px; margin-bottom: 20px;">Hi ${firstName},</p>
+
+          <p>Thank you for signing up for Concierge Barber Registry! To complete your registration, please verify your email address by clicking the button below.</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="display: inline-block; background-color: #7c2d12; color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Verify Email Address</a>
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px;">This verification link will expire in 24 hours.</p>
+
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
+            If you didn't create an account with Concierge Barber Registry, you can safely ignore this email.
+          </p>
+
+          <p style="margin-top: 20px; color: #6b7280; font-size: 13px;">
+            If the button above doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}" style="color: #7c2d12; word-break: break-all;">${verificationUrl}</a>
+          </p>
+        </div>
+
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">
+          <p>© ${new Date().getFullYear()} Concierge Barber Registry. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendVerificationEmail(email: string, firstName: string, token: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const verificationUrl = `${appUrl}/verify-email?token=${token}`;
+
+  const subject = 'Verify Your Email Address - Concierge Barber Registry';
+  const html = getVerificationEmailHtml(firstName, verificationUrl);
+
+  return sendEmail({ to: email, subject, html });
+}
