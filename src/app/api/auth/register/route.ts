@@ -82,32 +82,31 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send welcome email, then verification email (fire and forget - don't block registration if emails fail)
-    sendWelcomeEmail(user.email, user.firstName, user.role as 'client' | 'barber')
-      .then((result) => {
-        if (result.success) {
-          console.log(`Welcome email sent to ${user.email}`);
+    // Send emails sequentially with delay (fire and forget - don't block registration if emails fail)
+    (async () => {
+      try {
+        // Send welcome email
+        const welcomeResult = await sendWelcomeEmail(user.email, user.firstName, user.role as 'client' | 'barber');
+        if (welcomeResult.success) {
+          console.log(`✅ Welcome email sent to ${user.email}`);
         } else {
-          console.error(`Failed to send welcome email to ${user.email}:`, result.message || result.error);
+          console.error(`❌ Failed to send welcome email to ${user.email}:`, welcomeResult.message || welcomeResult.error);
         }
 
-        // Wait 2 seconds before sending verification email to avoid rate limiting
-        return new Promise(resolve => setTimeout(resolve, 2000));
-      })
-      .then(() => {
-        // Send verification email after delay
-        return sendVerificationEmail(user.email, user.firstName, verificationToken);
-      })
-      .then((result) => {
-        if (result.success) {
-          console.log(`Verification email sent to ${user.email}`);
+        // Wait 2 seconds to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Send verification email
+        const verificationResult = await sendVerificationEmail(user.email, user.firstName, verificationToken);
+        if (verificationResult.success) {
+          console.log(`✅ Verification email sent to ${user.email}`);
         } else {
-          console.error(`Failed to send verification email to ${user.email}:`, result.message || result.error);
+          console.error(`❌ Failed to send verification email to ${user.email}:`, verificationResult.message || verificationResult.error);
         }
-      })
-      .catch((error) => {
-        console.error(`Error sending emails to ${user.email}:`, error);
-      });
+      } catch (error) {
+        console.error(`❌ Error in email sending sequence for ${user.email}:`, error);
+      }
+    })();
 
     // Set cookies
     const response = successResponse(
