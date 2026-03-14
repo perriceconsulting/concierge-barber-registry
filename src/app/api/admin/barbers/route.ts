@@ -9,8 +9,14 @@ const listBarbersHandler = async (request: NextRequest, context: any) => {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q') || '';
     const status = searchParams.get('status') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+
+    // Validate and sanitize pagination parameters
+    const pageParam = parseInt(searchParams.get('page') || '1');
+    const page = isNaN(pageParam) || pageParam < 1 ? 1 : Math.min(pageParam, 10000);
+
+    const limitParam = parseInt(searchParams.get('limit') || '20');
+    const limit = isNaN(limitParam) || limitParam < 1 ? 20 : Math.min(limitParam, 100);
+
     const offset = (page - 1) * limit;
 
     // Build where clause

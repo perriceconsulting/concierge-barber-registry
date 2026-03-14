@@ -12,9 +12,17 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get('city') || '';
     const state = searchParams.get('state') || '';
     const specialty = searchParams.get('specialty') || '';
-    const minRating = parseFloat(searchParams.get('min_rating') || '0');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+
+    // Validate and sanitize pagination parameters
+    const minRatingParam = parseFloat(searchParams.get('min_rating') || '0');
+    const minRating = isNaN(minRatingParam) || minRatingParam < 0 ? 0 : Math.min(minRatingParam, 5);
+
+    const pageParam = parseInt(searchParams.get('page') || '1');
+    const page = isNaN(pageParam) || pageParam < 1 ? 1 : Math.min(pageParam, 10000);
+
+    const limitParam = parseInt(searchParams.get('limit') || '20');
+    const limit = isNaN(limitParam) || limitParam < 1 ? 20 : Math.min(limitParam, 100);
+
     const offset = (page - 1) * limit;
 
     // Build where clause
