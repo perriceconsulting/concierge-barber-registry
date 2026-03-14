@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
+import { uploadFile, validateFile } from '@/lib/upload';
 
 // GET /api/barbers/portfolio - Get authenticated barber's portfolio images
 const getPortfolioHandler = async (request: any) => {
@@ -34,8 +35,8 @@ const getPortfolioHandler = async (request: any) => {
   }
 };
 
-// POST /api/barbers/portfolio - Add portfolio image
-const addPortfolioImageHandler = async (request: any) => {
+// POST /api/barbers/portfolio - Upload and add portfolio image
+const addPortfolioImageHandler = async (request: { userId?: string; formData: () => Promise<FormData> }) => {
   try {
     const userId = request.userId;
 
@@ -51,8 +52,32 @@ const addPortfolioImageHandler = async (request: any) => {
       );
     }
 
-    const body = await request.json();
-    const { imageUrl, caption } = body;
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const caption = formData.get('caption') as string || '';
+
+    if (!file) {
+      return NextResponse.json(
+        { success: false, message: 'No file provided' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file (images only for portfolio)
+    const validation = validateFile(file, {
+      maxSizeMB: 10,
+      allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    });
+
+    if (!validation.valid) {
+      return NextResponse.json(
+        { success: false, message: validation.error },
+        { status: 400 }
+      );
+    }
+
+    // Upload to Vercel Blob storage
+    const imageUrl = await uploadFile(file, 'portfolio');
 
     // Get current max sort order
     const maxSortOrder = await prisma.portfolioImage.aggregate({
@@ -64,7 +89,7 @@ const addPortfolioImageHandler = async (request: any) => {
       data: {
         barberProfileId: barberProfile.id,
         imageUrl,
-        caption: caption || '',
+        caption,
         sortOrder: (maxSortOrder._max.sortOrder || -1) + 1,
       },
     });
@@ -72,7 +97,7 @@ const addPortfolioImageHandler = async (request: any) => {
     return NextResponse.json({
       success: true,
       data: { image: newImage },
-      message: 'Image added successfully',
+      message: 'Image uploaded successfully',
     });
   } catch (error) {
     return handleApiError(error);
