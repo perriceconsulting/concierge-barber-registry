@@ -35,7 +35,7 @@ const verifyBarberHandler = async (
     });
 
     if (!barberProfile) {
-      throw new ApiError('Barber profile not found', 404);
+      throw new ApiError(404, 'NOT_FOUND', 'Barber profile not found');
     }
 
     const body = await request.json();
