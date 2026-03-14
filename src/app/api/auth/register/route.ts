@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send welcome email (fire and forget - don't block registration if email fails)
+    // Send welcome email, then verification email (fire and forget - don't block registration if emails fail)
     sendWelcomeEmail(user.email, user.firstName, user.role as 'client' | 'barber')
       .then((result) => {
         if (result.success) {
@@ -90,13 +90,14 @@ export async function POST(request: NextRequest) {
         } else {
           console.error(`Failed to send welcome email to ${user.email}:`, result.message || result.error);
         }
-      })
-      .catch((error) => {
-        console.error(`Error sending welcome email to ${user.email}:`, error);
-      });
 
-    // Send verification email (fire and forget)
-    sendVerificationEmail(user.email, user.firstName, verificationToken)
+        // Wait 2 seconds before sending verification email to avoid rate limiting
+        return new Promise(resolve => setTimeout(resolve, 2000));
+      })
+      .then(() => {
+        // Send verification email after delay
+        return sendVerificationEmail(user.email, user.firstName, verificationToken);
+      })
       .then((result) => {
         if (result.success) {
           console.log(`Verification email sent to ${user.email}`);
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
         }
       })
       .catch((error) => {
-        console.error(`Error sending verification email to ${user.email}:`, error);
+        console.error(`Error sending emails to ${user.email}:`, error);
       });
 
     // Set cookies
