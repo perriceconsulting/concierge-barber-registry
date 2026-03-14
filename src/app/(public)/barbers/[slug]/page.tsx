@@ -39,17 +39,8 @@ export default function BarberProfilePage() {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setIsAuthenticated(false);
-        return;
-      }
-
       const response = await fetch('/api/auth/me', {
         credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       const data = await response.json();

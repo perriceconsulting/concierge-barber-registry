@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ROUTES, APP_CONFIG } from '@/config';
+import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
 
 export function Header() {
   const router = useRouter();
@@ -12,25 +13,43 @@ export function Header() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in by checking localStorage
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      setIsLoggedIn(true);
-      // Decode token to get user role (simple approach)
+    // Check if user is logged in by calling /api/auth/me
+    async function checkAuth() {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserRole(payload.role);
-      } catch (e) {
-        console.error('Failed to decode token:', e);
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsLoggedIn(true);
+          setUserRole(data.data?.user?.role || null);
+        } else {
+          setIsLoggedIn(false);
+          setUserRole(null);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+        setUserRole(null);
       }
     }
+
+    checkAuth();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    setIsLoggedIn(false);
-    setUserRole(null);
-    router.push(ROUTES.HOME);
+  const handleLogout = async () => {
+    try {
+      await secureFetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      clearCsrfToken();
+      setIsLoggedIn(false);
+      setUserRole(null);
+      router.push(ROUTES.HOME);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { sendLicenseApprovedEmail, sendLicenseRejectedEmail } from '@/lib/email';
 import { z } from 'zod';
 
 const verifyBarberSchema = z.object({
@@ -46,6 +47,10 @@ const verifyBarberHandler = async (
       where: { id: barberId },
       data: {
         verificationStatus: status,
+        licenseVerified: status === 'approved',
+        verifiedAt: status === 'approved' ? new Date() : null,
+        verifiedByUserId: status === 'approved' ? adminUserId : null,
+        verificationNotes: notes,
       },
       include: {
         user: {
@@ -73,6 +78,20 @@ const verifyBarberHandler = async (
         },
       },
     });
+
+    // Send email notification to barber
+    if (status === 'approved') {
+      await sendLicenseApprovedEmail(
+        barberProfile.user.email,
+        barberProfile.user.firstName
+      );
+    } else if (status === 'rejected') {
+      await sendLicenseRejectedEmail(
+        barberProfile.user.email,
+        barberProfile.user.firstName,
+        notes || 'License information could not be verified'
+      );
+    }
 
     return NextResponse.json({
       success: true,

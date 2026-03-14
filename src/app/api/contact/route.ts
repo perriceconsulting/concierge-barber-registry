@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createContactRequestSchema } from '@/lib/validations/review';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { rateLimiters } from '@/lib/api/rate-limit';
 
 // POST /api/contact - Submit a contact request (public endpoint)
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting (5 requests per hour)
+    await rateLimiters.contact(request);
+
     const body = await request.json();
     const validatedData = createContactRequestSchema.parse(body);
 

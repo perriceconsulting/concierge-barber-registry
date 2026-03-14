@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROUTES } from '@/config';
+import { secureFetch } from '@/lib/csrf-client';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,11 +36,8 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(ROUTES.API_AUTH_REGISTER, {
+      const response = await secureFetch(ROUTES.API_AUTH_REGISTER, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -58,11 +56,6 @@ export default function RegisterPage() {
           throw new Error(errorMessages);
         }
         throw new Error(data.error?.message || data.message || 'Registration failed');
-      }
-
-      // Store access token
-      if (data.data?.accessToken) {
-        localStorage.setItem('accessToken', data.data.accessToken);
       }
 
       // Redirect based on role

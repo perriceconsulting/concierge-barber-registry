@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
+import { secureFetch } from '@/lib/csrf-client';
+import { LicenseUploader } from '@/components/barber/license-uploader';
 
 export default function ProfilePage() {
   const { showToast } = useToast();
@@ -16,6 +18,9 @@ export default function ProfilePage() {
     bio: '',
     tagline: '',
     yearsExperience: 0,
+    licenseNumber: '',
+    licenseState: '',
+    licenseExpirationDate: '',
     shopName: '',
     shopAddressLine1: '',
     shopAddressLine2: '',
@@ -30,6 +35,9 @@ export default function ProfilePage() {
     acceptsAppointments: true,
   });
 
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'approved' | 'rejected' | 'suspended'>('pending');
+  const [licenseDocumentUrl, setLicenseDocumentUrl] = useState<string>('');
+
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +50,9 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       setIsFetching(true);
-      const token = localStorage.getItem('accessToken');
 
       const response = await fetch('/api/barbers/profile', {
         credentials: 'include',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
       });
 
       if (response.ok) {
@@ -60,6 +64,9 @@ export default function ProfilePage() {
             bio: profile.bio || '',
             tagline: profile.tagline || '',
             yearsExperience: profile.yearsExperience || 0,
+            licenseNumber: profile.licenseNumber || '',
+            licenseState: profile.licenseState || '',
+            licenseExpirationDate: profile.licenseExpirationDate ? new Date(profile.licenseExpirationDate).toISOString().split('T')[0] : '',
             shopName: profile.shopName || '',
             shopAddressLine1: profile.shopAddressLine1 || '',
             shopAddressLine2: profile.shopAddressLine2 || '',
@@ -73,6 +80,8 @@ export default function ProfilePage() {
             acceptsWalkins: profile.acceptsWalkins ?? true,
             acceptsAppointments: profile.acceptsAppointments ?? true,
           });
+          setVerificationStatus(profile.verificationStatus || 'pending');
+          setLicenseDocumentUrl(profile.licenseDocumentUrl || '');
         }
       } else if (response.status === 404) {
         // Profile doesn't exist yet - this is normal for new barbers
@@ -95,15 +104,8 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('accessToken');
-
-      const response = await fetch('/api/barbers/profile', {
+      const response = await secureFetch('/api/barbers/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
@@ -230,6 +232,83 @@ export default function ProfilePage() {
                 onChange={(e) => setFormData({ ...formData, yearsExperience: Number(e.target.value) })}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Professional License */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Professional License Information</CardTitle>
+            <CardDescription>
+              Required for verification as a licensed professional
+              {verificationStatus && (
+                <Badge className="ml-2" variant={
+                  verificationStatus === 'approved' ? 'default' :
+                  verificationStatus === 'rejected' ? 'destructive' :
+                  verificationStatus === 'suspended' ? 'destructive' :
+                  'secondary'
+                }>
+                  {verificationStatus === 'approved' && '✓ Verified'}
+                  {verificationStatus === 'pending' && '⏳ Pending Review'}
+                  {verificationStatus === 'rejected' && '✗ Rejected'}
+                  {verificationStatus === 'suspended' && '⚠ Suspended'}
+                </Badge>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="licenseNumber">License Number *</Label>
+              <Input
+                id="licenseNumber"
+                value={formData.licenseNumber}
+                onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+                placeholder="Enter your professional license number"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="licenseState">License State *</Label>
+              <Input
+                id="licenseState"
+                maxLength={2}
+                placeholder="NY"
+                value={formData.licenseState}
+                onChange={(e) => setFormData({ ...formData, licenseState: e.target.value.toUpperCase() })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="licenseExpirationDate">License Expiration Date *</Label>
+              <Input
+                id="licenseExpirationDate"
+                type="date"
+                value={formData.licenseExpirationDate}
+                onChange={(e) => setFormData({ ...formData, licenseExpirationDate: e.target.value })}
+                required
+              />
+            </div>
+
+            <LicenseUploader
+              currentDocumentUrl={licenseDocumentUrl}
+              onUploadSuccess={(url) => {
+                setLicenseDocumentUrl(url);
+                showToast({
+                  title: 'Success!',
+                  description: 'License document uploaded successfully',
+                  variant: 'success',
+                });
+              }}
+              onUploadError={(errorMsg) => {
+                showToast({
+                  title: 'Upload Failed',
+                  description: errorMsg,
+                  variant: 'destructive',
+                });
+              }}
+            />
           </CardContent>
         </Card>
 

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
+import { secureFetch } from '@/lib/csrf-client';
 
 interface Barber {
   id: string;
@@ -14,6 +15,10 @@ interface Barber {
   city: string;
   state: string;
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
+  licenseNumber?: string;
+  licenseState?: string;
+  licenseExpirationDate?: string;
+  licenseDocumentUrl?: string;
   submittedAt: string;
   user?: {
     email: string;
@@ -43,13 +48,8 @@ export default function AdminBarbersPage() {
       if (searchQuery) params.append('q', searchQuery);
       if (filter !== 'all') params.append('status', filter);
 
-      const token = localStorage.getItem('accessToken');
-
       const response = await fetch(`/api/admin/barbers?${params.toString()}`, {
         credentials: 'include',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
       });
 
       const data = await response.json();
@@ -62,6 +62,10 @@ export default function AdminBarbersPage() {
           city: b.city,
           state: b.state,
           verificationStatus: b.verificationStatus,
+          licenseNumber: b.licenseNumber,
+          licenseState: b.licenseState,
+          licenseExpirationDate: b.licenseExpirationDate,
+          licenseDocumentUrl: b.licenseDocumentUrl,
           submittedAt: new Date(b.createdAt).toLocaleDateString(),
           user: b.user,
         })));
@@ -96,15 +100,8 @@ export default function AdminBarbersPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
-
-      const response = await fetch(`/api/admin/barbers/${id}/verify`, {
+      const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        credentials: 'include',
         body: JSON.stringify({ status: 'approved' }),
       });
 
@@ -138,15 +135,8 @@ export default function AdminBarbersPage() {
     const reason = prompt('Enter rejection reason:');
     if (reason) {
       try {
-        const token = localStorage.getItem('accessToken');
-
-        const response = await fetch(`/api/admin/barbers/${id}/verify`, {
+        const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          credentials: 'include',
           body: JSON.stringify({ status: 'rejected', notes: reason }),
         });
 
@@ -180,15 +170,8 @@ export default function AdminBarbersPage() {
   const handleSuspend = async (id: string) => {
     if (confirm('Are you sure you want to suspend this barber?')) {
       try {
-        const token = localStorage.getItem('accessToken');
-
-        const response = await fetch(`/api/admin/barbers/${id}/verify`, {
+        const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          credentials: 'include',
           body: JSON.stringify({ status: 'suspended' }),
         });
 
@@ -314,7 +297,7 @@ export default function AdminBarbersPage() {
             <Card key={barber.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="flex-1">
                     <CardTitle>{barber.displayName}</CardTitle>
                     <CardDescription>
                       {barber.email} • {barber.city}, {barber.state}
@@ -322,6 +305,28 @@ export default function AdminBarbersPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Submitted: {barber.submittedAt}
                     </p>
+
+                    {/* License Information */}
+                    {(barber.licenseNumber || barber.licenseState) && (
+                      <div className="mt-3 space-y-1 text-sm">
+                        <p className="font-medium">License Information:</p>
+                        {barber.licenseNumber && (
+                          <p className="text-muted-foreground">
+                            License #: {barber.licenseNumber}
+                          </p>
+                        )}
+                        {barber.licenseState && (
+                          <p className="text-muted-foreground">
+                            State: {barber.licenseState}
+                          </p>
+                        )}
+                        {barber.licenseExpirationDate && (
+                          <p className="text-muted-foreground">
+                            Expires: {new Date(barber.licenseExpirationDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Badge variant={getStatusBadgeVariant(barber.verificationStatus)}>
                     {barber.verificationStatus}
@@ -329,7 +334,41 @@ export default function AdminBarbersPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
+                <div className="space-y-4">
+                  {/* License Document Viewer */}
+                  {barber.licenseDocumentUrl && (
+                    <div className="border rounded-lg p-4">
+                      <p className="text-sm font-medium mb-2">License Document:</p>
+                      {barber.licenseDocumentUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                        <img
+                          src={barber.licenseDocumentUrl}
+                          alt="License document"
+                          className="max-w-full h-auto rounded border"
+                          style={{ maxHeight: '300px' }}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <div>
+                            <p className="font-medium">PDF Document</p>
+                            <a
+                              href={barber.licenseDocumentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              View Document
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
                   {barber.verificationStatus === 'pending' && (
                     <>
                       <Button size="sm" onClick={() => handleApprove(barber.id)}>
@@ -356,6 +395,7 @@ export default function AdminBarbersPage() {
                   <Button size="sm" variant="outline">
                     View Profile
                   </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

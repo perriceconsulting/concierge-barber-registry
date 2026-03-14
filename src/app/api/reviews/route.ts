@@ -3,10 +3,15 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { createReviewSchema } from '@/lib/validations/review';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { sanitizeText } from '@/lib/sanitize';
+import { rateLimiters } from '@/lib/api/rate-limit';
 
 // POST /api/reviews - Submit a review (authenticated client only)
 const createReviewHandler = async (request: NextRequest, context: any) => {
   try {
+    // Apply rate limiting (5 reviews per day)
+    await rateLimiters.reviews(request);
+
     const userId = context.user.id;
     const userRole = context.user.role;
 
@@ -17,6 +22,13 @@ const createReviewHandler = async (request: NextRequest, context: any) => {
 
     const body = await request.json();
     const validatedData = createReviewSchema.parse(body);
+
+    // Sanitize review content
+    const sanitizedData = {
+      ...validatedData,
+      title: validatedData.title ? sanitizeText(validatedData.title) : undefined,
+      comment: validatedData.comment ? sanitizeText(validatedData.comment) : undefined,
+    };
 
     // Check if barber profile exists and is approved
     const barberProfile = await prisma.barberProfile.findUnique({
@@ -48,11 +60,11 @@ const createReviewHandler = async (request: NextRequest, context: any) => {
     // Create the review
     const review = await prisma.review.create({
       data: {
-        barberProfileId: validatedData.barberProfileId,
+        barberProfileId: sanitizedData.barberProfileId,
         clientUserId: userId,
-        rating: validatedData.rating,
-        title: validatedData.title,
-        comment: validatedData.comment,
+        rating: sanitizedData.rating,
+        title: sanitizedData.title,
+        comment: sanitizedData.comment,
         isVisible: true,
       },
       include: {

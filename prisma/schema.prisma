@@ -25,7 +25,8 @@ model User {
   createdAt                  DateTime         @default(now()) @map("created_at")
   updatedAt                  DateTime         @updatedAt @map("updated_at")
   auditLogs          AuditLog[]
-  barberProfile      BarberProfile?
+  barberProfile      BarberProfile?     @relation("BarberToUser")
+  verifiedProfiles   BarberProfile[]    @relation("VerifiedBy")
   contactRequests    ContactRequest[]
   favorites          Favorite[]
   reviews            Review[]
@@ -79,8 +80,14 @@ model BarberProfile {
   yearsExperience          Int?               @map("years_experience")
   licenseNumber            String?            @map("license_number") @db.VarChar(100)
   licenseState             String?            @map("license_state") @db.VarChar(2)
+  licenseExpirationDate    DateTime?          @map("license_expiration_date") @db.Date
+  licenseDocumentUrl       String?            @map("license_document_url")
   licenseVerified          Boolean            @default(false) @map("license_verified")
   verificationStatus       VerificationStatus @default(pending) @map("verification_status")
+  verificationNotes        String?            @map("verification_notes")
+  verifiedAt               DateTime?          @map("verified_at")
+  verifiedByUserId         String?            @map("verified_by_user_id") @db.Uuid
+  submittedForVerificationAt DateTime?        @map("submitted_for_verification_at")
   shopName                 String?            @map("shop_name") @db.VarChar(200)
   shopAddressLine1         String?            @map("shop_address_line1") @db.VarChar(255)
   shopAddressLine2         String?            @map("shop_address_line2") @db.VarChar(255)
@@ -102,7 +109,8 @@ model BarberProfile {
   profileViews             Int                @default(0) @map("profile_views")
   createdAt                DateTime           @default(now()) @map("created_at")
   updatedAt                DateTime           @updatedAt @map("updated_at")
-  user                     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                     User               @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)
+  verifiedBy               User?              @relation("VerifiedBy", fields: [verifiedByUserId], references: [id])
   specialties              BarberSpecialty[]
   contactRequests          ContactRequest[]
   favorites                Favorite[]

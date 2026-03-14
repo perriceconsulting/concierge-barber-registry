@@ -19,10 +19,17 @@ export interface AuthenticatedRequest extends NextRequest {
 
 /**
  * Extract and verify JWT token from request
+ * Supports both cookie-based (preferred) and Authorization header (for API clients)
  */
 export async function getAuthUser(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  // Try to get token from cookie first (more secure)
+  let token = request.cookies.get('accessToken')?.value;
+
+  // Fallback to Authorization header for API clients
+  if (!token) {
+    const authHeader = request.headers.get('authorization');
+    token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  }
 
   if (!token) {
     throw AuthErrors.UNAUTHORIZED;
@@ -99,7 +106,11 @@ export async function optionalAuth(request: NextRequest) {
  * Higher-order function to wrap API route handlers with authentication
  */
 
-type ApiHandler = (req: AuthRequest, context?: any) => Promise<NextResponse> | NextResponse;
+interface RouteContext {
+  params: Record<string, string | string[]>;
+}
+
+type ApiHandler = (req: AuthRequest, context?: RouteContext) => Promise<NextResponse> | NextResponse;
 
 interface WithAuthOptions {
   requiredRole?: UserRole | UserRole[];
@@ -108,8 +119,8 @@ interface WithAuthOptions {
 export function withAuth(
   handler: ApiHandler,
   options: WithAuthOptions = {}
-): (req: NextRequest, context?: any) => Promise<NextResponse> {
-  return async (req: NextRequest, context?: any) => {
+): (req: NextRequest, context?: RouteContext) => Promise<NextResponse> {
+  return async (req: NextRequest, context?: RouteContext) => {
     try {
       // Extract and verify auth
       const user = await getAuthUser(req);

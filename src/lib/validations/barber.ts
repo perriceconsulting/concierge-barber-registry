@@ -8,6 +8,7 @@ export const createBarberProfileSchema = z.object({
   yearsExperience: z.number().int().min(0).max(100).optional(),
   licenseNumber: z.string().max(100, 'License number is too long').optional(),
   licenseState: z.string().length(2, 'State must be a 2-letter code').optional(),
+  licenseExpirationDate: z.string().optional(),
   shopName: z.string().max(200, 'Shop name is too long').optional(),
   shopAddressLine1: z.string().max(255, 'Address is too long').optional(),
   shopAddressLine2: z.string().max(255, 'Address is too long').optional(),

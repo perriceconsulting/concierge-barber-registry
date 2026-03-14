@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/toast';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { PromptModal } from '@/components/ui/prompt-modal';
+import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
 
 export default function SettingsPage() {
   const { showToast } = useToast();
@@ -47,16 +48,13 @@ export default function SettingsPage() {
 
   const fetchUserData = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       const data = await response.json();
       if (response.ok && data.success) {
-        const user = data.data;
+        const user = data.data.user;
         setAccountData({
           email: user.email,
           firstName: user.firstName,
@@ -72,11 +70,8 @@ export default function SettingsPage() {
 
   const fetchPreferences = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch('/api/user/preferences', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -93,13 +88,8 @@ export default function SettingsPage() {
   const handleSavePreferences = async () => {
     setIsSavingPreferences(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/user/preferences', {
+      const response = await secureFetch('/api/user/preferences', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify(preferences),
       });
 
@@ -139,13 +129,8 @@ export default function SettingsPage() {
     setIsChangingPassword(true);
 
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/user/password', {
+      const response = await secureFetch('/api/user/password', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,
@@ -181,12 +166,8 @@ export default function SettingsPage() {
 
   const handleDeactivateAccount = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/user/deactivate', {
+      const response = await secureFetch('/api/user/deactivate', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       const data = await response.json();
@@ -199,7 +180,7 @@ export default function SettingsPage() {
         });
         // Redirect to login after 2 seconds
         setTimeout(() => {
-          localStorage.removeItem('accessToken');
+          clearCsrfToken();
           window.location.href = '/login';
         }, 2000);
       } else {
@@ -216,13 +197,8 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async (confirmation: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/user/delete', {
+      const response = await secureFetch('/api/user/delete', {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({ confirmation: 'DELETE' }),
       });
 
@@ -236,7 +212,7 @@ export default function SettingsPage() {
         });
         // Redirect to home after 2 seconds
         setTimeout(() => {
-          localStorage.removeItem('accessToken');
+          clearCsrfToken();
           window.location.href = '/';
         }, 2000);
       } else {
@@ -254,12 +230,8 @@ export default function SettingsPage() {
   const handleResendVerification = async () => {
     setIsResendingVerification(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/auth/resend-verification', {
+      const response = await secureFetch('/api/auth/resend-verification', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       const data = await response.json();

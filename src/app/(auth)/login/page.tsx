@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROUTES } from '@/config';
+import { secureFetch } from '@/lib/csrf-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,11 +25,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(ROUTES.API_AUTH_LOGIN, {
+      const response = await secureFetch(ROUTES.API_AUTH_LOGIN, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 
@@ -36,11 +34,6 @@ export default function LoginPage() {
 
       if (!response.ok) {
         throw new Error(data.error?.message || 'Login failed');
-      }
-
-      // Store access token (in production, use more secure storage)
-      if (data.data?.accessToken) {
-        localStorage.setItem('accessToken', data.data.accessToken);
       }
 
       // Redirect based on user role with full page reload to update header

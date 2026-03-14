@@ -15,6 +15,7 @@ export default function SearchPage() {
     state: '',
     specialty: '',
     minRating: 0,
+    verifiedOnly: false,
   });
   const [barbers, setBarbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +52,7 @@ export default function SearchPage() {
     }
   };
 
-  // Filter barbers client-side for specialty only (other filters are server-side)
+  // Filter barbers client-side for specialty and verification
   const filteredBarbers = barbers.filter((barber) => {
     // Specialty filter (client-side since we use specialty name, not slug)
     const matchesSpecialty = !filters.specialty ||
@@ -59,7 +60,11 @@ export default function SearchPage() {
         item.specialty?.name?.toLowerCase().includes(filters.specialty.toLowerCase())
       );
 
-    return matchesSpecialty;
+    // Verified filter
+    const matchesVerified = !filters.verifiedOnly ||
+      (barber.licenseVerified === true && barber.verificationStatus === 'approved');
+
+    return matchesSpecialty && matchesVerified;
   });
 
   return (
@@ -131,10 +136,23 @@ export default function SearchPage() {
                   </select>
                 </div>
 
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="verifiedOnly"
+                    checked={filters.verifiedOnly}
+                    onChange={(e) => setFilters({ ...filters, verifiedOnly: e.target.checked })}
+                    className="rounded border-input"
+                  />
+                  <label htmlFor="verifiedOnly" className="text-sm font-medium cursor-pointer">
+                    Verified barbers only
+                  </label>
+                </div>
+
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => setFilters({ city: '', state: '', specialty: '', minRating: 0 })}
+                  onClick={() => setFilters({ city: '', state: '', specialty: '', minRating: 0, verifiedOnly: false })}
                 >
                   Clear Filters
                 </Button>
@@ -167,7 +185,14 @@ export default function SearchPage() {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-xl">{barber.displayName}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-xl">{barber.displayName}</CardTitle>
+                            {barber.licenseVerified && barber.verificationStatus === 'approved' && (
+                              <Badge variant="default" className="text-xs">
+                                ✓ Verified
+                              </Badge>
+                            )}
+                          </div>
                           <CardDescription>
                             {barber.city}, {barber.state}
                           </CardDescription>
@@ -216,7 +241,7 @@ export default function SearchPage() {
                   className="mt-4"
                   onClick={() => {
                     setSearchQuery('');
-                    setFilters({ city: '', state: '', specialty: '', minRating: 0 });
+                    setFilters({ city: '', state: '', specialty: '', minRating: 0, verifiedOnly: false });
                   }}
                 >
                   Clear Filters

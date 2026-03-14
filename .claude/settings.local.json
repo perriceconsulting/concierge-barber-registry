@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m \"Refactor email sending to use async/await for better error handling and logging\")"
+      "Bash(git commit -m \"Refactor email sending to use async/await for better error handling and logging\")",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(npm install --save-dev jest @types/jest ts-jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom supertest @types/supertest husky lint-staged)",
+      "Bash(npx husky install)",
+      "Bash(npx husky init)",
+      "Bash(npm test -- --passWithNoTests)",
+      "Bash(npm test -- src/__tests__/unit/auth/password.test.ts)",
+      "Bash(npm test -- src/__tests__/unit/api/csrf.test.ts)",
+      "Bash(npm test -- src/__tests__/unit/sanitize.test.ts)",
+      "Bash(npm test -- src/__tests__/unit/auth/password.test.ts --verbose)",
+      "Bash(npx prisma migrate dev --name add-license-verification-fields)",
+      "Read(//c/Users/percy/**)",
+      "Bash(npm test -- --listTests)"
     ],
     "deny": [],
     "ask": []

@@ -1,12 +1,20 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyPassword } from '@/lib/auth/password';
+import { verifyPassword, hashToken } from '@/lib/auth/password';
 import { generateTokenPair } from '@/lib/auth/jwt';
 import { loginSchema } from '@/lib/validations/auth';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
+import { rateLimiters } from '@/lib/api/rate-limit';
+import { verifyCsrfToken } from '@/lib/api/csrf';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify CSRF token
+    verifyCsrfToken(request);
+
+    // Apply rate limiting (5 requests per 15 minutes)
+    await rateLimiters.auth(request);
+
     const body = await request.json();
 
     // Validate input
@@ -33,6 +41,11 @@ export async function POST(request: NextRequest) {
       throw AuthErrors.ACCOUNT_DEACTIVATED;
     }
 
+    // Check if email is verified (optional: can be disabled for development)
+    if (!user.emailVerified && process.env.REQUIRE_EMAIL_VERIFICATION !== 'false') {
+      throw AuthErrors.EMAIL_NOT_VERIFIED;
+    }
+
     // Generate tokens
     const { accessToken, refreshToken } = await generateTokenPair({
       userId: user.id,
@@ -40,11 +53,14 @@ export async function POST(request: NextRequest) {
       role: user.role,
     });
 
-    // Store refresh token in database
+    // Hash the refresh token before storing
+    const refreshTokenHash = await hashToken(refreshToken);
+
+    // Store hashed refresh token in database
     await prisma.session.create({
       data: {
         userId: user.id,
-        refreshTokenHash: refreshToken,
+        refreshTokenHash,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         userAgent: request.headers.get('user-agent'),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -62,12 +78,22 @@ export async function POST(request: NextRequest) {
       avatarUrl: user.avatarUrl,
     };
 
-    // Set cookies
+    // Set cookies for both tokens (httpOnly for security)
     const response = successResponse({
       user: userResponse,
-      accessToken,
+      message: 'Logged in successfully',
     });
 
+    // Set access token cookie (httpOnly, short-lived)
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60, // 15 minutes
+      path: '/',
+    });
+
+    // Set refresh token cookie (httpOnly, long-lived)
     response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

@@ -52,3 +52,17 @@ export function generateUniqueSlug(text: string): string {
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   return `${baseSlug}-${randomSuffix}`;
 }
+
+/**
+ * Hash a refresh token using bcrypt (for secure storage)
+ */
+export async function hashToken(token: string): Promise<string> {
+  return bcrypt.hash(token, SALT_ROUNDS);
+}
+
+/**
+ * Verify a token against a hash
+ */
+export async function verifyToken(token: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(token, hash);
+}

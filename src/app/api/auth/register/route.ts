@@ -1,20 +1,26 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { hashPassword } from '@/lib/auth/password';
+import { hashPassword, hashToken } from '@/lib/auth/password';
 import { generateTokenPair } from '@/lib/auth/jwt';
 import { registerSchema } from '@/lib/validations/auth';
 import { handleApiError, successResponse, ValidationErrors } from '@/lib/api/errors';
 import { sendWelcomeEmail, sendVerificationEmail } from '@/lib/email';
+import { rateLimiters } from '@/lib/api/rate-limit';
+import { verifyCsrfToken } from '@/lib/api/csrf';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify CSRF token
+    verifyCsrfToken(request);
+
+    // Apply strict rate limiting (3 requests per hour)
+    await rateLimiters.authStrict(request);
+
     const body = await request.json();
-    console.log('Registration request body:', body);
 
     // Validate input
     const validatedData = registerSchema.parse(body);
-    console.log('Validated data:', validatedData);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -57,11 +63,14 @@ export async function POST(request: NextRequest) {
       role: user.role,
     });
 
-    // Store refresh token in database
+    // Hash the refresh token before storing
+    const refreshTokenHash = await hashToken(refreshToken);
+
+    // Store hashed refresh token in database
     await prisma.session.create({
       data: {
         userId: user.id,
-        refreshTokenHash: refreshToken,
+        refreshTokenHash,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         userAgent: request.headers.get('user-agent'),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -82,8 +91,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send both emails in parallel (don't block registration)
-    Promise.all([
+    // Send both emails in parallel
+    await Promise.all([
       sendWelcomeEmail(user.email, user.firstName, user.role as 'client' | 'barber')
         .then((result) => {
           if (result.success) {
@@ -105,15 +114,25 @@ export async function POST(request: NextRequest) {
         .catch((error) => console.error(`❌ Error sending verification email:`, error)),
     ]).catch((error) => console.error(`❌ Error in email sending:`, error));
 
-    // Set cookies
+    // Set cookies for both tokens (httpOnly for security)
     const response = successResponse(
       {
         user,
-        accessToken,
+        message: 'Account created successfully',
       },
       201
     );
 
+    // Set access token cookie (httpOnly, short-lived)
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60, // 15 minutes
+      path: '/',
+    });
+
+    // Set refresh token cookie (httpOnly, long-lived)
     response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -124,7 +143,6 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Registration error:', error);
     return handleApiError(error);
   }
 }

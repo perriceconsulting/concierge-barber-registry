@@ -112,6 +112,7 @@ A modern barber-focused concierge registry platform where barbers register their
 - **Authentication:** Custom JWT (jose library)
 - **Validation:** Zod
 - **Password Hashing:** bcryptjs
+- **Testing:** Jest (unit) + Playwright (E2E)
 - **Deployment:** Vercel (ready)
 
 ## 📦 Installation
@@ -243,6 +244,16 @@ npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
 
+# Testing
+npm test                      # Run unit tests
+npm run test:watch            # Run unit tests in watch mode
+npm run test:coverage         # Run unit tests with coverage
+npm run test:unit             # Run only unit tests
+npm run test:e2e              # Run E2E tests with Playwright
+npm run test:e2e:ui           # Run E2E tests with Playwright UI
+npm run test:e2e:headed       # Run E2E tests in headed mode
+npm run test:ci               # Run all tests (CI pipeline)
+
 # Prisma commands
 npx prisma studio    # Open Prisma Studio (GUI)
 npx prisma generate  # Generate Prisma Client
@@ -316,9 +327,69 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
 
+## 🧪 Testing Strategy
+
+This project uses a comprehensive testing approach following industry best practices:
+
+### Test Architecture
+
+#### **Unit Tests (Jest)**
+- **Purpose**: Test business logic in isolation
+- **Location**: `src/__tests__/unit/**/*.test.ts`
+- **Coverage**: Password hashing, CSRF protection, input sanitization, utility functions
+- **Run Command**: `npm test` or `npm run test:unit`
+
+#### **E2E Tests (Playwright)**
+- **Purpose**: Test complete user journeys and route protection
+- **Location**: `e2e/**/*.spec.ts`
+- **Coverage**: Authentication flows, route protection, license verification workflow
+- **Run Command**: `npm run test:e2e`
+
+### Current Test Coverage
+
+✅ **Unit Tests**: 20/20 passing (100%)
+- Password hashing and validation
+- CSRF token generation and verification
+- Input sanitization (XSS protection)
+
+✅ **E2E Tests**: 10/11 passing (91%)
+- Authentication & route protection (8 tests)
+- License verification workflow (3 tests)
+
+### Running Tests
+
+```bash
+# Unit tests only
+npm test
+
+# E2E tests (requires dev server)
+npm run test:e2e
+
+# E2E tests with UI
+npm run test:e2e:ui
+
+# All tests (CI mode)
+npm run test:ci
+```
+
+### Writing New Tests
+
+**When to use Jest (Unit Tests)**:
+- Testing utility functions (password hashing, token generation)
+- Testing validation schemas
+- Testing API response formatters
+- Testing business logic without Next.js server environment
+
+**When to use Playwright (E2E Tests)**:
+- Testing route protection and authentication flows
+- Testing complete user journeys
+- Testing form submissions and redirects
+- Testing role-based access control
+
 ## 📖 Documentation
 
 - [Development Progress](./DEVELOPMENT_PROGRESS.md) - Detailed progress tracking
+- [License Verification Implementation](./LICENSE_VERIFICATION_IMPLEMENTATION.md) - License verification system
 - [Database Schema](./prisma/schema.prisma) - Full Prisma schema
 - [API Documentation](./src/app/api/) - API route implementations
 

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { ImageUploader } from '@/components/portfolio/image-uploader';
 import { useToast } from '@/components/ui/toast';
+import { secureFetch } from '@/lib/csrf-client';
 
 interface PortfolioImage {
   id: string;
@@ -29,12 +30,8 @@ export default function PortfolioPage() {
 
   const fetchPortfolio = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch('/api/barbers/portfolio', {
         credentials: 'include',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
       });
 
       const data = await response.json();
@@ -63,15 +60,9 @@ export default function PortfolioPage() {
   const handleUpload = async (dataUrl: string) => {
     try {
       setIsUploading(true);
-      const token = localStorage.getItem('accessToken');
 
-      const response = await fetch('/api/barbers/portfolio', {
+      const response = await secureFetch('/api/barbers/portfolio', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        credentials: 'include',
         body: JSON.stringify({ imageUrl: dataUrl, caption: '' }),
       });
 
@@ -106,14 +97,8 @@ export default function PortfolioPage() {
   const handleDeleteImage = async (id: string) => {
     if (confirm('Are you sure you want to delete this image?')) {
       try {
-        const token = localStorage.getItem('accessToken');
-
-        const response = await fetch(`/api/barbers/portfolio/${id}`, {
+        const response = await secureFetch(`/api/barbers/portfolio/${id}`, {
           method: 'DELETE',
-          headers: {
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          credentials: 'include',
         });
 
         const data = await response.json();
@@ -145,15 +130,8 @@ export default function PortfolioPage() {
 
   const handleUpdateCaption = async (id: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
-
-      const response = await fetch(`/api/barbers/portfolio/${id}`, {
+      const response = await secureFetch(`/api/barbers/portfolio/${id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        credentials: 'include',
         body: JSON.stringify({ caption }),
       });
 

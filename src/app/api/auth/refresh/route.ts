@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyRefreshToken, generateTokenPair } from '@/lib/auth/jwt';
+import { verifyToken, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 
 export async function POST(request: NextRequest) {
@@ -18,11 +19,10 @@ export async function POST(request: NextRequest) {
       throw AuthErrors.TOKEN_EXPIRED;
     }
 
-    // Check if session exists and is not revoked
-    const session = await prisma.session.findFirst({
+    // Find all active sessions for this user
+    const sessions = await prisma.session.findMany({
       where: {
         userId: payload.userId,
-        refreshTokenHash: refreshToken,
         isRevoked: false,
         expiresAt: {
           gt: new Date(),
@@ -30,7 +30,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!session) {
+    // Verify the refresh token against stored hashes
+    let matchingSession = null;
+    for (const session of sessions) {
+      const isValid = await verifyToken(refreshToken, session.refreshTokenHash);
+      if (isValid) {
+        matchingSession = session;
+        break;
+      }
+    }
+
+    if (!matchingSession) {
       throw AuthErrors.TOKEN_INVALID;
     }
 
@@ -56,26 +66,39 @@ export async function POST(request: NextRequest) {
       role: user.role,
     });
 
+    // Hash the new refresh token
+    const newRefreshTokenHash = await hashToken(newRefreshToken);
+
     // Revoke old session
     await prisma.session.update({
-      where: { id: session.id },
+      where: { id: matchingSession.id },
       data: { isRevoked: true },
     });
 
-    // Create new session
+    // Create new session with hashed token
     await prisma.session.create({
       data: {
         userId: user.id,
-        refreshTokenHash: newRefreshToken,
+        refreshTokenHash: newRefreshTokenHash,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         userAgent: request.headers.get('user-agent'),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
       },
     });
 
-    // Set new refresh token cookie
-    const response = successResponse({ accessToken });
+    // Set new token cookies
+    const response = successResponse({ message: 'Token refreshed successfully' });
 
+    // Set new access token cookie
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60, // 15 minutes
+      path: '/',
+    });
+
+    // Set new refresh token cookie
     response.cookies.set('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
