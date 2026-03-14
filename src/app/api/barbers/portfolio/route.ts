@@ -64,9 +64,9 @@ const addPortfolioImageHandler = async (request: { userId?: string; formData: ()
     }
 
     // Validate file (images only for portfolio)
-    const validation = validateFile(file, {
+    const validation = await validateFile(file, {
       maxSizeMB: 10,
-      allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
     });
 
     if (!validation.valid) {

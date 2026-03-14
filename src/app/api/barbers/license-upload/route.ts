@@ -37,10 +37,10 @@ const uploadLicenseHandler = async (request: { userId?: string; formData: () => 
       );
     }
 
-    // Validate file
-    const validation = validateFile(file, {
+    // Validate file with magic number checking
+    const validation = await validateFile(file, {
       maxSizeMB: 10,
-      allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'],
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
     });
 
     if (!validation.valid) {
