@@ -5,10 +5,16 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.public.blob.vercel-storage.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'vercel.blob.core.windows.net',
+      },
+      // Add any other specific image domains you need here
+      // Do NOT use wildcards like '**' as it allows any domain
     ],
-    // Allow base64 data URLs for uploaded images
+    // SVG support with CSP protection
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
