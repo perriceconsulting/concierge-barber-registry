@@ -62,7 +62,7 @@ const verifyBarberHandler = async (
     // Log the verification action
     await prisma.auditLog.create({
       data: {
-        userId: adminUserId,
+        actorUserId: adminUserId,
         action: 'barber_verification',
         entityType: 'barber_profile',
         entityId: barberId,
