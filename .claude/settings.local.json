@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install resend)"
+      "Bash(npm install resend)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []

@@ -113,21 +113,23 @@ const updateProfileHandler = async (request: any, context: any) => {
             .replace(/^-|-$/g, '')
         : `barber-${userId.substring(0, 8)}`;
 
+      const createData: any = {
+        userId,
+        ...profileData,
+        slug,
+        verificationStatus: 'pending',
+      };
+
+      if (specialtyIds) {
+        createData.specialties = {
+          create: specialtyIds.map((id: number) => ({
+            specialty: { connect: { id } },
+          })),
+        };
+      }
+
       updatedProfile = await prisma.barberProfile.create({
-        data: {
-          userId,
-          ...profileData,
-          slug,
-          verificationStatus: 'pending',
-          // Add specialties if provided
-          ...(specialtyIds && {
-            specialties: {
-              create: specialtyIds.map((id) => ({
-                specialty: { connect: { id } },
-              })),
-            },
-          }),
-        },
+        data: createData,
         include: {
           user: {
             select: {

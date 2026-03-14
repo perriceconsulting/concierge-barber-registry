@@ -15,11 +15,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!barberProfile) {
-      throw new ApiError('Barber profile not found', 404);
+      throw new ApiError(404, 'NOT_FOUND', 'Barber profile not found');
     }
 
     if (barberProfile.verificationStatus !== 'approved') {
-      throw new ApiError('This barber is not currently accepting requests', 400);
+      throw new ApiError(400, 'BAD_REQUEST', 'This barber is not currently accepting requests');
     }
 
     // Get client user ID if authenticated (optional)

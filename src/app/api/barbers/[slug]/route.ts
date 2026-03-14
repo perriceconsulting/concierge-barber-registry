@@ -62,7 +62,7 @@ export async function GET(
     });
 
     if (!barberProfile) {
-      throw new ApiError('Barber not found', 404);
+      throw new ApiError(404, 'NOT_FOUND', 'Barber not found');
     }
 
     // Increment profile views (fire and forget)

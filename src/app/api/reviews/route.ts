@@ -12,7 +12,7 @@ const createReviewHandler = async (request: NextRequest, context: any) => {
 
     // Only clients can submit reviews
     if (userRole !== 'client') {
-      throw new ApiError('Only clients can submit reviews', 403);
+      throw new ApiError(403, 'FORBIDDEN', 'Only clients can submit reviews');
     }
 
     const body = await request.json();
@@ -24,11 +24,11 @@ const createReviewHandler = async (request: NextRequest, context: any) => {
     });
 
     if (!barberProfile) {
-      throw new ApiError('Barber profile not found', 404);
+      throw new ApiError(404, 'NOT_FOUND', 'Barber profile not found');
     }
 
     if (barberProfile.verificationStatus !== 'approved') {
-      throw new ApiError('Cannot review a barber that is not approved', 400);
+      throw new ApiError(400, 'BAD_REQUEST', 'Cannot review a barber that is not approved');
     }
 
     // Check if user has already reviewed this barber
@@ -42,7 +42,7 @@ const createReviewHandler = async (request: NextRequest, context: any) => {
     });
 
     if (existingReview) {
-      throw new ApiError('You have already reviewed this barber', 409);
+      throw new ApiError(409, 'CONFLICT', 'You have already reviewed this barber');
     }
 
     // Create the review

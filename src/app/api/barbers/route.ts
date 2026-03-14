@@ -103,7 +103,7 @@ const createBarberHandler = async (request: NextRequest, context: any) => {
 
     // Only barbers can create barber profiles
     if (userRole !== 'barber') {
-      throw new ApiError('Only barbers can create barber profiles', 403);
+      throw new ApiError(403, 'FORBIDDEN', 'Only barbers can create barber profiles');
     }
 
     // Check if user already has a barber profile
@@ -112,7 +112,7 @@ const createBarberHandler = async (request: NextRequest, context: any) => {
     });
 
     if (existingProfile) {
-      throw new ApiError('You already have a barber profile', 409);
+      throw new ApiError(409, 'CONFLICT', 'You already have a barber profile');
     }
 
     const body = await request.json();
@@ -140,7 +140,7 @@ const createBarberHandler = async (request: NextRequest, context: any) => {
         city: validatedData.city,
         state: validatedData.state,
         zipCode: validatedData.zipCode,
-        acceptsWalkIns: validatedData.acceptsWalkIns,
+        acceptsWalkins: validatedData.acceptsWalkins,
         acceptsAppointments: validatedData.acceptsAppointments,
         verificationStatus: 'pending',
       },
