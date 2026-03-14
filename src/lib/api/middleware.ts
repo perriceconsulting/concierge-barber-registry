@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
 import { AuthErrors, handleApiError } from '@/lib/api/errors';
 import { UserRole } from '@/types';
+import { verifyCsrfToken } from '@/lib/api/csrf';
 
 export interface AuthRequest extends NextRequest {
   userId?: string;
@@ -48,7 +49,7 @@ export async function getAuthUser(request: NextRequest) {
       throw AuthErrors.TOKEN_EXPIRED;
     }
     if (error instanceof TokenInvalidError) {
-      throw AuthErrors.INVALID_TOKEN;
+      throw AuthErrors.TOKEN_INVALID;
     }
     throw error;
   }
@@ -103,7 +104,7 @@ export async function requireClient(request: NextRequest) {
 export async function optionalAuth(request: NextRequest) {
   try {
     return await getAuthUser(request);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -120,6 +121,7 @@ type ApiHandler = (req: AuthRequest, context?: RouteContext) => Promise<NextResp
 
 interface WithAuthOptions {
   requiredRole?: UserRole | UserRole[];
+  skipCsrf?: boolean; // Allow skipping CSRF for specific endpoints (e.g., GET requests)
 }
 
 export function withAuth(
@@ -128,6 +130,26 @@ export function withAuth(
 ): (req: NextRequest, context?: RouteContext) => Promise<NextResponse> {
   return async (req: NextRequest, context?: RouteContext) => {
     try {
+      // Verify CSRF token for state-changing requests (POST, PUT, DELETE, PATCH)
+      const isStateChanging = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method);
+
+      if (isStateChanging && !options.skipCsrf) {
+        try {
+          verifyCsrfToken(req);
+        } catch {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: 'CSRF_TOKEN_INVALID',
+                message: 'CSRF token validation failed'
+              }
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       // Extract and verify auth
       const user = await getAuthUser(req);
 

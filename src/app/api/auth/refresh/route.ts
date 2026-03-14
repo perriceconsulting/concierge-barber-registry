@@ -4,9 +4,13 @@ import { verifyRefreshToken, generateTokenPair, TokenExpiredError, TokenInvalidE
 import { verifyToken, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { verifyCsrfToken } from '@/lib/api/csrf';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify CSRF token to prevent CSRF attacks on token refresh
+    verifyCsrfToken(request);
+
     // Add rate limiting to prevent brute force attacks
     await rateLimiters.auth(request);
 

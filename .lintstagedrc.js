@@ -20,6 +20,6 @@ module.exports = {
     // Only run jest if there are files to test
     if (!testFiles) return [];
 
-    return `jest ${testFiles} --testPathIgnorePatterns="integration|e2e"`;
+    return `jest ${testFiles} --testPathIgnorePatterns="integration|e2e" --passWithNoTests`;
   },
 };

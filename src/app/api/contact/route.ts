@@ -3,10 +3,15 @@ import { prisma } from '@/lib/db';
 import { createContactRequestSchema } from '@/lib/validations/review';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { verifyCsrfToken } from '@/lib/api/csrf';
+import { optionalAuth } from '@/lib/api/middleware';
 
-// POST /api/contact - Submit a contact request (public endpoint)
+// POST /api/contact - Submit a contact request (public endpoint with optional auth)
 export async function POST(request: NextRequest) {
   try {
+    // Verify CSRF token to prevent CSRF attacks
+    verifyCsrfToken(request);
+
     // Apply rate limiting (5 requests per hour)
     await rateLimiters.contact(request);
 
@@ -27,13 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get client user ID if authenticated (optional)
-    const authHeader = request.headers.get('authorization');
-    let clientUserId: string | null = null;
-
-    if (authHeader?.startsWith('Bearer ')) {
-      // TODO: Decode JWT to get user ID
-      // For now, we'll leave it as null for unauthenticated users
-    }
+    const user = await optionalAuth(request);
+    const clientUserId = user?.userId || null;
 
     // Create contact request
     const contactRequest = await prisma.contactRequest.create({
