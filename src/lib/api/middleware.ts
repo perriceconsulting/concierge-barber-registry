@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { verifyAccessToken, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
 import { AuthErrors, handleApiError } from '@/lib/api/errors';
 import { UserRole } from '@/types';
 
@@ -35,17 +35,23 @@ export async function getAuthUser(request: NextRequest) {
     throw AuthErrors.UNAUTHORIZED;
   }
 
-  const payload = await verifyAccessToken(token);
+  try {
+    const payload = await verifyAccessToken(token);
 
-  if (!payload) {
-    throw AuthErrors.TOKEN_EXPIRED;
+    return {
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role as UserRole,
+    };
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      throw AuthErrors.TOKEN_EXPIRED;
+    }
+    if (error instanceof TokenInvalidError) {
+      throw AuthErrors.INVALID_TOKEN;
+    }
+    throw error;
   }
-
-  return {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role as UserRole,
-  };
 }
 
 /**

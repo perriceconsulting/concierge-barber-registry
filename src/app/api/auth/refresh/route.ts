@@ -1,22 +1,33 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyRefreshToken, generateTokenPair } from '@/lib/auth/jwt';
+import { verifyRefreshToken, generateTokenPair, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
 import { verifyToken, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
+import { rateLimiters } from '@/lib/api/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Add rate limiting to prevent brute force attacks
+    await rateLimiters.auth(request);
+
     const refreshToken = request.cookies.get('refreshToken')?.value;
 
     if (!refreshToken) {
       throw AuthErrors.TOKEN_INVALID;
     }
 
-    // Verify the refresh token
-    const payload = await verifyRefreshToken(refreshToken);
-
-    if (!payload) {
-      throw AuthErrors.TOKEN_EXPIRED;
+    // Verify the refresh token (now throws errors instead of returning null)
+    let payload;
+    try {
+      payload = await verifyRefreshToken(refreshToken);
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        throw AuthErrors.TOKEN_EXPIRED;
+      }
+      if (error instanceof TokenInvalidError) {
+        throw AuthErrors.TOKEN_INVALID;
+      }
+      throw error;
     }
 
     // Find all active sessions for this user

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { verifyAccessToken, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -35,9 +35,16 @@ export async function middleware(request: NextRequest) {
       // Token valid - allow request
       return NextResponse.next();
     } catch (error) {
-      // Invalid token - redirect to login
+      // Token expired or invalid - redirect to login with appropriate message
       const url = new URL('/login', request.url);
       url.searchParams.set('redirect', pathname);
+
+      if (error instanceof TokenExpiredError) {
+        url.searchParams.set('error', 'session_expired');
+      } else if (error instanceof TokenInvalidError) {
+        url.searchParams.set('error', 'invalid_session');
+      }
+
       return NextResponse.redirect(url);
     }
   }

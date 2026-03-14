@@ -1,11 +1,23 @@
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT, jwtVerify, errors } from 'jose';
+
+// Enforce JWT secrets in production
+const getSecret = (envVar: string | undefined, name: string) => {
+  if (!envVar) {
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+      throw new Error(`${name} must be set in production environment`);
+    }
+    console.warn(`⚠️  ${name} not set - using development default (NOT FOR PRODUCTION)`);
+    return `dev-secret-${name}-for-local-development-only`;
+  }
+  return envVar;
+};
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-in-production'
+  getSecret(process.env.JWT_ACCESS_SECRET, 'JWT_ACCESS_SECRET')
 );
 
 const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production'
+  getSecret(process.env.JWT_REFRESH_SECRET, 'JWT_REFRESH_SECRET')
 );
 
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
@@ -15,6 +27,20 @@ export interface JWTPayload {
   userId: string;
   email: string;
   role: string;
+}
+
+export class TokenExpiredError extends Error {
+  constructor(message = 'Token has expired') {
+    super(message);
+    this.name = 'TokenExpiredError';
+  }
+}
+
+export class TokenInvalidError extends Error {
+  constructor(message = 'Token is invalid') {
+    super(message);
+    this.name = 'TokenInvalidError';
+  }
 }
 
 /**
@@ -41,25 +67,35 @@ export async function generateRefreshToken(payload: JWTPayload): Promise<string>
 
 /**
  * Verify an access token
+ * @throws {TokenExpiredError} If token has expired
+ * @throws {TokenInvalidError} If token is invalid or tampered with
  */
-export async function verifyAccessToken(token: string): Promise<JWTPayload | null> {
+export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {
     const { payload } = await jwtVerify(token, ACCESS_TOKEN_SECRET);
-    return payload as unknown as JWTPayload;
+    return payload as JWTPayload;
   } catch (error) {
-    return null;
+    if (error instanceof errors.JWTExpired) {
+      throw new TokenExpiredError('Access token has expired');
+    }
+    throw new TokenInvalidError('Access token is invalid');
   }
 }
 
 /**
  * Verify a refresh token
+ * @throws {TokenExpiredError} If token has expired
+ * @throws {TokenInvalidError} If token is invalid or tampered with
  */
-export async function verifyRefreshToken(token: string): Promise<JWTPayload | null> {
+export async function verifyRefreshToken(token: string): Promise<JWTPayload> {
   try {
     const { payload } = await jwtVerify(token, REFRESH_TOKEN_SECRET);
-    return payload as unknown as JWTPayload;
+    return payload as JWTPayload;
   } catch (error) {
-    return null;
+    if (error instanceof errors.JWTExpired) {
+      throw new TokenExpiredError('Refresh token has expired');
+    }
+    throw new TokenInvalidError('Refresh token is invalid');
   }
 }
 
