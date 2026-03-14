@@ -57,41 +57,53 @@ const createReviewHandler = async (request: NextRequest, context: any) => {
       throw new ApiError(409, 'CONFLICT', 'You have already reviewed this barber');
     }
 
-    // Create the review
-    const review = await prisma.review.create({
-      data: {
-        barberProfileId: sanitizedData.barberProfileId,
-        clientUserId: userId,
-        rating: sanitizedData.rating,
-        title: sanitizedData.title,
-        comment: sanitizedData.comment,
-        isVisible: true,
-      },
-      include: {
-        client: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
+    // Create the review and update rating in a transaction to prevent race conditions
+    const review = await prisma.$transaction(async (tx) => {
+      // Create the review
+      const newReview = await tx.review.create({
+        data: {
+          barberProfileId: sanitizedData.barberProfileId,
+          clientUserId: userId,
+          rating: sanitizedData.rating,
+          title: sanitizedData.title,
+          comment: sanitizedData.comment,
+          isVisible: true,
+        },
+        include: {
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Update barber's average rating and review count
-    const reviews = await prisma.review.findMany({
-      where: { barberProfileId: validatedData.barberProfileId },
-    });
+      // Use aggregate to calculate average rating atomically
+      const aggregateResult = await tx.review.aggregate({
+        where: { barberProfileId: validatedData.barberProfileId },
+        _avg: {
+          rating: true,
+        },
+        _count: {
+          id: true,
+        },
+      });
 
-    const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+      // Update barber's average rating and review count
+      await tx.barberProfile.update({
+        where: { id: validatedData.barberProfileId },
+        data: {
+          averageRating: aggregateResult._avg.rating
+            ? Math.round(aggregateResult._avg.rating * 10) / 10
+            : 0,
+          totalReviews: aggregateResult._count.id,
+        },
+      });
 
-    await prisma.barberProfile.update({
-      where: { id: validatedData.barberProfileId },
-      data: {
-        averageRating: Math.round(averageRating * 10) / 10,
-        totalReviews: reviews.length,
-      },
+      return newReview;
     });
 
     return NextResponse.json({
