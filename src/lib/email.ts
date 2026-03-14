@@ -20,13 +20,13 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const isDevelopment = process.env.NODE_ENV === 'development';
   const verifiedEmail = 'perriceconsulting@gmail.com';
 
-  if (isDevelopment) {
-    console.log('🔧 Development mode: Email system configured but domain not verified');
-    console.log(`📧 Would send to: ${to}`);
+  if (isDevelopment && to !== verifiedEmail) {
+    console.log('🔧 Development mode: Redirecting email to verified address');
+    console.log(`📧 Original recipient: ${to}`);
+    console.log(`📧 Sending to verified email instead: ${verifiedEmail}`);
     console.log('📝 Subject:', subject);
-    console.log('ℹ️  To receive test emails, register using:', verifiedEmail);
-    console.log('ℹ️  Or verify a domain at resend.com/domains for production use');
-    return { success: true, message: 'Email logged in development mode' };
+    // Override recipient to verified email in development
+    to = verifiedEmail;
   }
 
   try {
