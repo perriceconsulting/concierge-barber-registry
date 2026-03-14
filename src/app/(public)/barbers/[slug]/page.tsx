@@ -424,7 +424,7 @@ export default function BarberProfilePage() {
                       onChange={(e) => setContactForm({ ...contactForm, service: e.target.value })}
                     >
                       <option value="">Select a service</option>
-                      {barber.services.map(service => (
+                      {barber.services.map((service: any) => (
                         <option key={service.id} value={service.name}>{service.name}</option>
                       ))}
                     </select>
