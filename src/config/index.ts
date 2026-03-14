@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
   name: 'Concierge Barber Registry',
-  domain: 'conciergebarberregistry.online',
+  domain: 'conciergebarberregistry.com',
   description: 'Discover and connect with verified, top-rated barbers in your area. Browse portfolios, read reviews, and find your perfect cut.',
   url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
 } as const;

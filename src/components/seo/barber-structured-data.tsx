@@ -38,7 +38,7 @@ export function BarberStructuredData({ barber }: BarberStructuredDataProps) {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    '@id': `${process.env.NEXT_PUBLIC_APP_URL || 'https://concierge-barber-registry.vercel.app'}/barbers/${barber.slug}`,
+    '@id': `${process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com'}/barbers/${barber.slug}`,
     name: barber.displayName,
     description: barber.bio || `Professional barber services in ${barber.city}, ${barber.state}`,
     image: barber.portfolioImages.map((img) => img.imageUrl),

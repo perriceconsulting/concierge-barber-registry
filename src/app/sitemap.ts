@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://concierge-barber-registry.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
 
   try {
     // Fetch all approved barbers
