@@ -16,17 +16,22 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
     return { success: false, message: 'Email service not configured' };
   }
 
-  // In development without domain verification, Resend only allows sending to verified email
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const verifiedEmail = 'perriceconsulting@gmail.com';
+  // In development, log email details without sending
+  // Use VERCEL_ENV to ensure we're truly in production
+  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 
-  if (isDevelopment && to !== verifiedEmail) {
-    console.log('🔧 Development mode: Redirecting email to verified address');
-    console.log(`📧 Original recipient: ${to}`);
-    console.log(`📧 Sending to verified email instead: ${verifiedEmail}`);
+  if (!isProduction) {
+    console.log('🔧 Development mode: Simulating email send (not actually sending)');
+    console.log(`📧 Would send to: ${to}`);
     console.log('📝 Subject:', subject);
-    // Override recipient to verified email in development
-    to = verifiedEmail;
+    console.log('📤 From:', process.env.EMAIL_FROM || 'onboarding@resend.dev');
+    return {
+      success: true,
+      data: {
+        id: 'dev-simulated-email',
+        message: 'Email simulated in development'
+      }
+    };
   }
 
   try {
