@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Container } from '@/components/layout/container';
 import { useToast } from '@/components/ui/toast';
+import { BarberStructuredData } from '@/components/seo/barber-structured-data';
 
 export default function BarberProfilePage() {
   const params = useParams();
@@ -160,8 +161,10 @@ export default function BarberProfilePage() {
   }
 
   return (
-    <div className="py-10">
-      <Container>
+    <>
+      {barber && <BarberStructuredData barber={barber} />}
+      <div className="py-10">
+        <Container>
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
@@ -464,5 +467,6 @@ export default function BarberProfilePage() {
         )}
       </Container>
     </div>
+    </>
   );
 }
