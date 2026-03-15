@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
+import { sanitizeText } from '@/lib/sanitize';
 
 // DELETE /api/barbers/portfolio/[id] - Delete portfolio image
 const deletePortfolioImageHandler = async (
@@ -78,12 +79,18 @@ const updatePortfolioImageHandler = async (
     const body = await request.json();
     const { caption } = body;
 
+    // Sanitize and validate caption
+    const MAX_CAPTION_LENGTH = 255;
+    const sanitizedCaption = caption
+      ? sanitizeText(caption.substring(0, MAX_CAPTION_LENGTH).trim())
+      : null;
+
     const updatedImage = await prisma.portfolioImage.updateMany({
       where: {
         id: imageId,
         barberProfileId: barberProfile.id,
       },
-      data: { caption },
+      data: { caption: sanitizedCaption },
     });
 
     if (updatedImage.count === 0) {

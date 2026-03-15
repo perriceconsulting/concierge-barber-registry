@@ -4,10 +4,15 @@ import { withAuth } from '@/lib/api/middleware';
 import { handleApiError, ApiError } from '@/lib/api/errors';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { z } from 'zod';
+import { passwordSchema } from '@/lib/validations/auth';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  newPassword: passwordSchema, // Use same validation as registration
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
 // PUT /api/user/password - Change user's password

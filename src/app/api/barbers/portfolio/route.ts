@@ -3,6 +3,9 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 import { uploadFile, validateFile } from '@/lib/upload';
+import { rateLimiters } from '@/lib/api/rate-limit';
+
+const MAX_PORTFOLIO_IMAGES = 20;
 
 // GET /api/barbers/portfolio - Get authenticated barber's portfolio images
 const getPortfolioHandler = async (request: any) => {
@@ -38,6 +41,9 @@ const getPortfolioHandler = async (request: any) => {
 // POST /api/barbers/portfolio - Upload and add portfolio image
 const addPortfolioImageHandler = async (request: { userId?: string; formData: () => Promise<FormData> }) => {
   try {
+    // Add rate limiting
+    await rateLimiters.upload(request as any);
+
     const userId = request.userId;
 
     const barberProfile = await prisma.barberProfile.findUnique({
@@ -49,6 +55,21 @@ const addPortfolioImageHandler = async (request: { userId?: string; formData: ()
       return NextResponse.json(
         { success: false, message: 'Barber profile not found' },
         { status: 404 }
+      );
+    }
+
+    // Check current image count
+    const currentCount = await prisma.portfolioImage.count({
+      where: { barberProfileId: barberProfile.id },
+    });
+
+    if (currentCount >= MAX_PORTFOLIO_IMAGES) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Maximum of ${MAX_PORTFOLIO_IMAGES} portfolio images allowed. Please delete some images first.`,
+        },
+        { status: 400 }
       );
     }
 
