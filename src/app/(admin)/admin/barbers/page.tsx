@@ -30,7 +30,7 @@ interface Barber {
 
 export default function AdminBarbersPage() {
   const { showToast } = useToast();
-  const { showConfirm } = useModal();
+  const { showConfirm, showPrompt } = useModal();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'suspended'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -134,39 +134,46 @@ export default function AdminBarbersPage() {
   };
 
   const handleReject = async (id: string) => {
-    const reason = prompt('Enter rejection reason:');
-    if (reason) {
-      try {
-        const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'rejected', notes: reason }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          showToast({
-            title: 'Success!',
-            description: data.message || 'Barber rejected successfully!',
-            variant: 'success',
+    showPrompt({
+      title: 'Reject Barber',
+      description: 'Enter rejection reason:',
+      placeholder: 'Reason for rejection...',
+      confirmText: 'Reject',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: async (reason: string) => {
+        try {
+          const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'rejected', notes: reason }),
           });
-          fetchBarbers();
-        } else {
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showToast({
+              title: 'Success!',
+              description: data.message || 'Barber rejected successfully!',
+              variant: 'success',
+            });
+            fetchBarbers();
+          } else {
+            showToast({
+              title: 'Error',
+              description: data.message || 'Failed to reject barber',
+              variant: 'error',
+            });
+          }
+        } catch (err) {
+          console.error('Failed to reject barber:', err);
           showToast({
             title: 'Error',
-            description: data.message || 'Failed to reject barber',
+            description: 'Failed to reject barber. Please try again.',
             variant: 'error',
           });
         }
-      } catch (err) {
-        console.error('Failed to reject barber:', err);
-        showToast({
-          title: 'Error',
-          description: 'Failed to reject barber. Please try again.',
-          variant: 'error',
-        });
-      }
-    }
+      },
+    });
   };
 
   const handleSuspend = async (id: string) => {
