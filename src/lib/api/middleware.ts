@@ -158,8 +158,8 @@ export function withAuth(
           ? options.requiredRole
           : [options.requiredRole];
 
-        // Explicit role check - admin doesn't bypass unless explicitly allowed
-        if (!allowedRoles.includes(user.role)) {
+        // Admin bypasses all role checks for testing and full platform access
+        if (user.role !== 'admin' && !allowedRoles.includes(user.role)) {
           return NextResponse.json(
             {
               success: false,

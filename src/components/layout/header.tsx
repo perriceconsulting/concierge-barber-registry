@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { ROUTES, APP_CONFIG } from '@/config';
 import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
 
@@ -11,6 +12,7 @@ export function Header() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [actualRole, setActualRole] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is logged in by calling /api/auth/me
@@ -24,18 +26,41 @@ export function Header() {
           const data = await response.json();
           setIsLoggedIn(true);
           setUserRole(data.data?.user?.role || null);
+          setActualRole(data.data?.user?.actualRole || data.data?.user?.role || null);
         } else {
           setIsLoggedIn(false);
           setUserRole(null);
+          setActualRole(null);
         }
-      } catch (error) {
+      } catch {
         setIsLoggedIn(false);
         setUserRole(null);
+        setActualRole(null);
       }
     }
 
     checkAuth();
   }, []);
+
+  const isAdmin = actualRole === 'admin';
+
+  const handleSwitchRole = async (newRole: string) => {
+    try {
+      const res = await secureFetch('/api/auth/switch-role', {
+        method: 'POST',
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (res.ok) {
+        setUserRole(newRole);
+        // Redirect to appropriate page
+        if (newRole === 'admin') router.push(ROUTES.ADMIN);
+        else if (newRole === 'barber') router.push('/dashboard');
+        else router.push('/');
+      }
+    } catch (error) {
+      console.error('Failed to switch role:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -88,15 +113,29 @@ export function Header() {
         <div className="flex items-center space-x-4">
           {isLoggedIn ? (
             <>
-              {userRole === 'barber' && (
+              {(userRole === 'barber' || isAdmin) && (
                 <Link href={ROUTES.DASHBOARD}>
                   <Button variant="ghost">Dashboard</Button>
                 </Link>
               )}
-              {userRole === 'admin' && (
+              {isAdmin && (
                 <Link href={ROUTES.ADMIN}>
                   <Button variant="ghost">Admin</Button>
                 </Link>
+              )}
+              {isAdmin && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">View as:</span>
+                  <Select
+                    value={userRole || 'admin'}
+                    onChange={(e) => handleSwitchRole(e.target.value)}
+                    className="h-8 w-24 text-xs"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="barber">Barber</option>
+                    <option value="client">Client</option>
+                  </Select>
+                </div>
               )}
               <Button variant="outline" onClick={handleLogout}>
                 Sign Out

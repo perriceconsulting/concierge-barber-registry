@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { secureFetch } from '@/lib/csrf-client';
 
 interface User {
@@ -29,7 +30,7 @@ interface Pagination {
 
 export default function AdminUsersPage() {
   const { showToast } = useToast();
-  const { showConfirm, showPrompt } = useModal();
+  const { showConfirm } = useModal();
   const [filter, setFilter] = useState<'all' | 'client' | 'barber' | 'admin'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,52 +165,45 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleChangeRole = (id: string) => {
-    showPrompt({
-      title: 'Change User Role',
-      description: 'Enter new role (client/barber/admin):',
-      placeholder: 'client',
-      confirmText: 'Change Role',
-      cancelText: 'Cancel',
-      onConfirm: async (newRole: string) => {
-        if (['client', 'barber', 'admin'].includes(newRole.toLowerCase())) {
-          try {
-            const res = await secureFetch(`/api/admin/users/${id}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ role: newRole.toLowerCase() }),
-            });
-            const data = await res.json();
+  const [roleChangeUser, setRoleChangeUser] = useState<{ id: string; currentRole: string } | null>(null);
+  const [selectedRole, setSelectedRole] = useState('');
 
-            if (data.success) {
-              showToast({
-                title: 'Success',
-                description: `User role changed to ${newRole}`,
-                variant: 'success',
-              });
-              fetchUsers();
-            } else {
-              showToast({
-                title: 'Error',
-                description: data.error?.message || 'Failed to change role',
-                variant: 'error',
-              });
-            }
-          } catch {
-            showToast({
-              title: 'Error',
-              description: 'Failed to change role',
-              variant: 'error',
-            });
-          }
-        } else {
-          showToast({
-            title: 'Error',
-            description: 'Invalid role. Must be client, barber, or admin.',
-            variant: 'error',
-          });
-        }
-      },
-    });
+  const handleChangeRole = (user: User) => {
+    setRoleChangeUser({ id: user.id, currentRole: user.role });
+    setSelectedRole(user.role);
+  };
+
+  const submitRoleChange = async () => {
+    if (!roleChangeUser || selectedRole === roleChangeUser.currentRole) return;
+    try {
+      const res = await secureFetch(`/api/admin/users/${roleChangeUser.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: selectedRole }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast({
+          title: 'Success',
+          description: `User role changed to ${selectedRole}`,
+          variant: 'success',
+        });
+        fetchUsers();
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.error?.message || 'Failed to change role',
+          variant: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Failed to change role',
+        variant: 'error',
+      });
+    }
+    setRoleChangeUser(null);
   };
 
   return (
@@ -382,7 +376,7 @@ export default function AdminUsersPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleChangeRole(user.id)}
+                        onClick={() => handleChangeRole(user)}
                       >
                         Change Role
                       </Button>
@@ -405,6 +399,39 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Role Change Dialog */}
+      {roleChangeUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle>Change User Role</CardTitle>
+              <CardDescription>Select a new role for this user</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+              >
+                <option value="client">Client</option>
+                <option value="barber">Barber</option>
+                <option value="admin">Admin</option>
+              </Select>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setRoleChangeUser(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitRoleChange}
+                  disabled={selectedRole === roleChangeUser.currentRole}
+                >
+                  Change Role
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

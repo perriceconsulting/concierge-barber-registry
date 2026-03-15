@@ -26,13 +26,22 @@ export async function GET(request: NextRequest) {
       throw AuthErrors.ACCOUNT_DEACTIVATED;
     }
 
+    // Check for admin role override (allows admin to test as other roles)
+    let activeRole = user.role;
+    const isAdmin = user.role === 'admin';
+    const roleOverride = request.cookies.get('adminRoleOverride')?.value;
+    if (isAdmin && roleOverride && ['client', 'barber'].includes(roleOverride)) {
+      activeRole = roleOverride as typeof user.role;
+    }
+
     return successResponse({
       user: {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
+        role: activeRole,
+        actualRole: user.role,
         emailVerified: user.emailVerified,
         avatarUrl: user.avatarUrl,
       },
