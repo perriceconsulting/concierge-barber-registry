@@ -58,7 +58,7 @@ const faqs: FAQItem[] = [
     id: 8,
     category: 'For Barbers',
     question: 'What information should I include in my profile?',
-    answer: 'Include high-quality photos of your work, detailed service descriptions with pricing, your specialties, operating hours, and your business location. A complete profile attracts more clients.',
+    answer: 'Include high-quality photos of your work, detailed service descriptions with pricing, your specialties, and your business location. A complete profile attracts more clients.',
   },
   {
     id: 9,
@@ -214,7 +214,7 @@ export default function FAQPage() {
           <CardHeader>
             <CardTitle>Still Have Questions?</CardTitle>
             <CardDescription>
-              Can't find the answer you're looking for? We're here to help.
+              Can&apos;t find the answer you&apos;re looking for? We&apos;re here to help.
             </CardDescription>
           </CardHeader>
           <CardContent>

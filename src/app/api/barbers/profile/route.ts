@@ -33,9 +33,6 @@ const getProfileHandler = async (request: { userId?: string }) => {
           },
         },
         services: true,
-        operatingHours: {
-          orderBy: { dayOfWeek: 'asc' },
-        },
       },
     });
 

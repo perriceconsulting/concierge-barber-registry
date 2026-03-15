@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
@@ -30,14 +31,21 @@ const customJestConfig = {
     '**/__tests__/unit/**/*.(test|spec).[jt]s?(x)',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
-  transformIgnorePatterns: [
-    '/node_modules/(?!(isomorphic-dompurify|@exodus|html-encoding-sniffer|jsdom|whatwg-encoding)/)',
-    '^.+\\.module\\.(css|sass|scss)$',
-  ],
   testEnvironmentOptions: {
     customExportConditions: [''],
   },
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig);
+// Override transformIgnorePatterns after next/jest resolves to ensure ESM deps are transformed
+const jestConfig = async () => {
+  const nextConfig = await createJestConfig(customJestConfig)();
+  return {
+    ...nextConfig,
+    transformIgnorePatterns: [
+      '/node_modules/(?!(geist)/)',
+      '^.+\\.module\\.(css|sass|scss)$',
+    ],
+  };
+};
+
+module.exports = jestConfig;

@@ -46,14 +46,6 @@ interface ReviewItem {
   client: { firstName: string; lastName: string };
 }
 
-interface OperatingHoursItem {
-  id: string;
-  dayOfWeek: number;
-  openTime: string | null;
-  closeTime: string | null;
-  isClosed: boolean;
-}
-
 interface BarberProfile {
   id: string;
   slug: string;
@@ -80,7 +72,6 @@ interface BarberProfile {
   portfolioImages: PortfolioImageItem[];
   services: ServiceItem[];
   reviews: ReviewItem[];
-  operatingHours: OperatingHoursItem[];
   user?: { phone: string | null; email: string };
 }
 
@@ -442,29 +433,6 @@ export default function BarberProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Operating Hours */}
-            {barber.operatingHours && barber.operatingHours.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Operating Hours</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {barber.operatingHours.map((hours) => {
-                      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                      return (
-                        <div key={hours.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{days[hours.dayOfWeek]}</span>
-                          <span className="font-medium">
-                            {hours.isClosed ? 'Closed' : `${hours.openTime} - ${hours.closeTime}`}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
 

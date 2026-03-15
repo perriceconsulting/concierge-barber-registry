@@ -15,12 +15,6 @@ interface BarberStructuredDataProps {
     averageRating: number;
     totalReviews: number;
     portfolioImages: Array<{ imageUrl: string }>;
-    operatingHours: Array<{
-      dayOfWeek: number;
-      openTime: string | null;
-      closeTime: string | null;
-      isClosed: boolean;
-    }>;
     reviews: Array<{
       id: string;
       rating: number;
@@ -78,16 +72,6 @@ export function BarberStructuredData({ barber }: BarberStructuredDataProps) {
         },
         reviewBody: review.comment,
       })),
-    }),
-    ...(barber.operatingHours.length > 0 && {
-      openingHoursSpecification: barber.operatingHours
-        .filter((hours) => !hours.isClosed)
-        .map((hours) => ({
-          '@type': 'OpeningHoursSpecification',
-          dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][hours.dayOfWeek],
-          opens: hours.openTime,
-          closes: hours.closeTime,
-        })),
     }),
   };
 

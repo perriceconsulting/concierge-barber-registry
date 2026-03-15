@@ -58,7 +58,6 @@ export interface BarberProfile {
   services?: Service[];
   portfolioImages?: PortfolioImage[];
   reviews?: Review[];
-  operatingHours?: OperatingHours[];
 }
 
 // Specialty types
@@ -106,16 +105,6 @@ export interface Review {
   createdAt: Date;
   updatedAt: Date;
   client?: User;
-}
-
-// Operating Hours types
-export interface OperatingHours {
-  id: number;
-  barberProfileId: string;
-  dayOfWeek: number; // 0 = Sunday, 6 = Saturday
-  openTime?: string | null;
-  closeTime?: string | null;
-  isClosed: boolean;
 }
 
 // Contact Request types

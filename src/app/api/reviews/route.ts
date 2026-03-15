@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { createReviewSchema } from '@/lib/validations/review';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { sanitizeText } from '@/lib/sanitize';
 import { rateLimiters } from '@/lib/api/rate-limit';
 
 // POST /api/reviews - Submit a review (authenticated client only)
-const createReviewHandler = async (request: any) => {
+const createReviewHandler = async (request: AuthRequest) => {
   try {
     // Apply rate limiting (5 reviews per day)
     await rateLimiters.reviews(request);
 
-    const userId = request.userId;
+    const userId = request.userId!;
     const userRole = request.userRole;
 
     // Only clients can submit reviews

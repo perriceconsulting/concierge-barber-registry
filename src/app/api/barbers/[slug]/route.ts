@@ -58,9 +58,6 @@ export async function GET(
         portfolioImages: {
           orderBy: { sortOrder: 'asc' },
         },
-        operatingHours: {
-          orderBy: { dayOfWeek: 'asc' },
-        },
         reviews: {
           where: { isVisible: true },
           include: {

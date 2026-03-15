@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
-import { handleApiError, ApiError } from '@/lib/api/errors';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
+import { handleApiError } from '@/lib/api/errors';
 import { z } from 'zod';
 
 const deleteAccountSchema = z.object({
@@ -11,7 +11,7 @@ const deleteAccountSchema = z.object({
 });
 
 // DELETE /api/user/delete - Permanently delete user's account
-const deleteAccountHandler = async (request: any) => {
+const deleteAccountHandler = async (request: AuthRequest) => {
   try {
     const userId = request.userId;
     const body = await request.json();

@@ -1,26 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+interface ContactRequestItem {
+  id: string;
+  clientName: string;
+  service: string;
+  date: string;
+  status: string;
+}
+
+interface ReviewItem {
+  id: string;
+  clientName: string;
+  rating: number;
+  comment: string | null;
+  date: string;
+}
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     profileViews: 0,
     totalReviews: 0,
     averageRating: 0,
     pendingRequests: 0,
   });
-  const [recentRequests, setRecentRequests] = useState<any[]>([]);
-  const [recentReviews, setRecentReviews] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [recentRequests] = useState<ContactRequestItem[]>([]);
+  const [recentReviews] = useState<ReviewItem[]>([]);
+  const isLoading = false;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome back! Here's an overview of your profile activity.
+          Welcome back! Here&apos;s an overview of your profile activity.
         </p>
       </div>
 

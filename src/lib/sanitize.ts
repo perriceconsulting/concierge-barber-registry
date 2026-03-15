@@ -38,6 +38,14 @@ export function sanitizeBio(dirty: string): string {
  * Sanitize a URL to ensure it's safe
  */
 export function sanitizeUrl(url: string): string {
+  if (!url) return '';
+
+  // Block dangerous URL schemes
+  const trimmed = url.trim().toLowerCase();
+  if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:') || trimmed.startsWith('vbscript:')) {
+    return 'about:blank';
+  }
+
   const sanitized = DOMPurify.sanitize(url, {
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: [],

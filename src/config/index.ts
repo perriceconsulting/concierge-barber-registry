@@ -31,7 +31,6 @@ export const ROUTES = {
   DASHBOARD_PORTFOLIO: '/dashboard/portfolio',
   DASHBOARD_REVIEWS: '/dashboard/reviews',
   DASHBOARD_REQUESTS: '/dashboard/requests',
-  DASHBOARD_HOURS: '/dashboard/hours',
   DASHBOARD_SETTINGS: '/dashboard/settings',
 
   // Admin routes

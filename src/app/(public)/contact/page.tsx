@@ -61,7 +61,7 @@ export default function ContactPage() {
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-primary">Contact Us</h1>
           <p className="text-lg text-muted-foreground">
-            Have a question or feedback? We'd love to hear from you.
+            Have a question or feedback? We&apos;d love to hear from you.
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export default function ContactPage() {
             <CardHeader>
               <CardTitle>Get in Touch</CardTitle>
               <CardDescription>
-                We're here to help with any questions or concerns
+                We&apos;re here to help with any questions or concerns
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -119,7 +119,7 @@ export default function ContactPage() {
             <CardHeader>
               <CardTitle>Send a Message</CardTitle>
               <CardDescription>
-                Fill out the form and we'll get back to you soon
+                Fill out the form and we&apos;ll get back to you soon
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -187,7 +187,7 @@ export default function ContactPage() {
             <div>
               <h3 className="font-semibold mb-1">How do I register as a barber?</h3>
               <p className="text-muted-foreground text-sm">
-                Click the "Register as Barber" link in the navigation menu and complete the registration form. Your profile will be reviewed by our team within 24-48 hours.
+                Click the &quot;Register as Barber&quot; link in the navigation menu and complete the registration form. Your profile will be reviewed by our team within 24-48 hours.
               </p>
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function ContactPage() {
             <div>
               <h3 className="font-semibold mb-1">How do I report an issue with a barber profile?</h3>
               <p className="text-muted-foreground text-sm">
-                Please contact us using the form above with details about the issue. Include the barber's name or profile URL if possible.
+                Please contact us using the form above with details about the issue. Include the barber&apos;s name or profile URL if possible.
               </p>
             </div>
             <div>

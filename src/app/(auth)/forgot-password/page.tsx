@@ -20,8 +20,15 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement forgot password API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to send reset email');
+      }
       setIsSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -37,12 +44,12 @@ export default function ForgotPasswordPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Check Your Email</CardTitle>
             <CardDescription className="text-center">
-              We've sent password reset instructions to <strong>{email}</strong>
+              We&apos;ve sent password reset instructions to <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
-              If you don't see the email, check your spam folder or try again.
+              If you don&apos;t see the email, check your spam folder or try again.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center">
@@ -61,7 +68,7 @@ export default function ForgotPasswordPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Reset Password</CardTitle>
           <CardDescription className="text-center">
-            Enter your email address and we'll send you a link to reset your password
+            Enter your email address and we&apos;ll send you a link to reset your password
           </CardDescription>
         </CardHeader>
         <CardContent>

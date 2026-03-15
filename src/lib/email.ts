@@ -78,7 +78,6 @@ export function getWelcomeEmailHtml(firstName: string, role: 'client' | 'barber'
             <ol style="padding-left: 20px;">
               <li>Complete your barber profile with your bio, specialties, and services</li>
               <li>Upload portfolio images showcasing your best work</li>
-              <li>Set your operating hours so clients know when you're available</li>
               <li>Wait for admin approval (typically within 24-48 hours)</li>
             </ol>
 
@@ -237,7 +236,6 @@ export function getLicenseApprovedEmailHtml(firstName: string) {
           <ul style="padding-left: 20px;">
             <li>Add portfolio images showcasing your best work</li>
             <li>List your services and pricing</li>
-            <li>Set your operating hours</li>
             <li>Complete your bio and specialty information</li>
           </ul>
 

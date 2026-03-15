@@ -60,19 +60,7 @@ export const createPortfolioImageSchema = z.object({
 
 export type CreatePortfolioImageInput = z.infer<typeof createPortfolioImageSchema>;
 
-// Operating hours schema
-export const operatingHoursSchema = z.object({
-  dayOfWeek: z.number().int().min(0).max(6),
-  openTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (HH:MM)').optional(),
-  closeTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (HH:MM)').optional(),
-  isClosed: z.boolean().default(false),
-});
 
-export type OperatingHoursInput = z.infer<typeof operatingHoursSchema>;
-
-export const updateOperatingHoursSchema = z.array(operatingHoursSchema);
-
-export type UpdateOperatingHoursInput = z.infer<typeof updateOperatingHoursSchema>;
 
 // Barber search/filter schema
 export const barberSearchSchema = z.object({

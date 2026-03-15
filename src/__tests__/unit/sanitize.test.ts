@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { sanitizeBio, sanitizeText, sanitizeUrl } from '@/lib/sanitize';
 
 describe('Input Sanitization', () => {

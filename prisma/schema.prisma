@@ -116,7 +116,6 @@ model BarberProfile {
   specialties                BarberSpecialty[]
   contactRequests            ContactRequest[]
   favorites                  Favorite[]
-  operatingHours             OperatingHours[]
   portfolioImages            PortfolioImage[]
   reviews                    Review[]
   services                   Service[]
@@ -204,19 +203,6 @@ model Review {
   @@index([rating])
   @@index([barberProfileId, isVisible]) // Composite for public reviews query
   @@map("reviews")
-}
-
-model OperatingHours {
-  id              Int           @id @default(autoincrement())
-  barberProfileId String        @map("barber_profile_id") @db.Uuid
-  dayOfWeek       Int           @map("day_of_week")
-  openTime        String?       @map("open_time")
-  closeTime       String?       @map("close_time")
-  isClosed        Boolean       @default(false) @map("is_closed")
-  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
-
-  @@unique([barberProfileId, dayOfWeek])
-  @@map("operating_hours")
 }
 
 model Favorite {

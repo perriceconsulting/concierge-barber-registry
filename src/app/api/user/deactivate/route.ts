@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 
 // POST /api/user/deactivate - Deactivate user's account
-const deactivateAccountHandler = async (request: any) => {
+const deactivateAccountHandler = async (request: AuthRequest) => {
   try {
     const userId = request.userId;
 

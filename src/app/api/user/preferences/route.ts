@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 import { z } from 'zod';
 
@@ -12,7 +12,7 @@ const updatePreferencesSchema = z.object({
 });
 
 // GET /api/user/preferences - Get user's notification preferences
-const getPreferencesHandler = async (request: any) => {
+const getPreferencesHandler = async (request: AuthRequest) => {
   try {
     const userId = request.userId;
 
@@ -36,7 +36,7 @@ const getPreferencesHandler = async (request: any) => {
 };
 
 // PUT /api/user/preferences - Update user's notification preferences
-const updatePreferencesHandler = async (request: any) => {
+const updatePreferencesHandler = async (request: AuthRequest) => {
   try {
     const userId = request.userId;
     const body = await request.json();
