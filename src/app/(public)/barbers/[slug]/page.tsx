@@ -12,8 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Container } from '@/components/layout/container';
 import { useToast } from '@/components/ui/toast';
 import { BarberStructuredData } from '@/components/seo/barber-structured-data';
+import { TierBadge } from '@/components/subscription/tier-badge';
 import { createLogger } from '@/lib/logger';
 import { secureFetch } from '@/lib/csrf-client';
+import type { TierName } from '@/lib/subscription';
 
 const logger = createLogger('BARBER');
 
@@ -82,6 +84,7 @@ export default function BarberProfilePage() {
   const slug = params.slug as string;
 
   const [barber, setBarber] = useState<BarberProfile | null>(null);
+  const [barberTier, setBarberTier] = useState<TierName>('starter');
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -131,6 +134,7 @@ export default function BarberProfilePage() {
 
       if (response.ok && data.success) {
         setBarber(data.data.barberProfile);
+        if (data.data.tier) setBarberTier(data.data.tier);
       }
     } catch (error) {
       logger.error('Failed to fetch barber profile:', error);
@@ -244,14 +248,19 @@ export default function BarberProfilePage() {
 
   return (
     <>
-      {barber && <BarberStructuredData barber={barber} />}
+      {barber && (barberTier === 'professional' || barberTier === 'elite') && (
+        <BarberStructuredData barber={barber} />
+      )}
       <div className="py-10">
         <Container>
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-primary mb-2">{barber.displayName}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-4xl font-bold text-primary">{barber.displayName}</h1>
+                <TierBadge tier={barberTier} />
+              </div>
               {barber.tagline && (
                 <p className="text-xl text-muted-foreground italic">{barber.tagline}</p>
               )}

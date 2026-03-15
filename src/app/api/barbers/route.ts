@@ -105,10 +105,16 @@ export async function GET(request: NextRequest) {
               specialty: true,
             },
           },
+          subscription: {
+            select: { tier: true, status: true },
+          },
         },
         skip: offset,
         take: limit,
-        orderBy: { averageRating: 'desc' },
+        orderBy: [
+          { isFeatured: 'desc' },
+          { averageRating: 'desc' },
+        ],
       }),
       prisma.barberProfile.count({ where }),
     ]);

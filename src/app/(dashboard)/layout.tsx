@@ -14,6 +14,7 @@ const navigation = [
   { name: 'Portfolio', href: ROUTES.DASHBOARD_PORTFOLIO, icon: '📸' },
   { name: 'Reviews', href: ROUTES.DASHBOARD_REVIEWS, icon: '⭐' },
   { name: 'Requests', href: ROUTES.DASHBOARD_REQUESTS, icon: '📬' },
+  { name: 'Subscription', href: ROUTES.DASHBOARD_SUBSCRIPTION, icon: '💳' },
   { name: 'Settings', href: ROUTES.DASHBOARD_SETTINGS, icon: '⚙️' },
 ];
 

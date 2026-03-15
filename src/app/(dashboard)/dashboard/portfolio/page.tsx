@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { ImageUploader } from '@/components/portfolio/image-uploader';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
+import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('PORTFOLIO');
@@ -28,10 +29,27 @@ export default function PortfolioPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [showCaptionForm, setShowCaptionForm] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
+  const [imageLimit, setImageLimit] = useState<number | null>(null);
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+
+  const fetchSubscriptionLimits = useCallback(async () => {
+    try {
+      const response = await fetch('/api/barbers/subscription', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setImageLimit(data.data.usage.portfolioImages.limit);
+        }
+      }
+    } catch {
+      // Fall back to no limit display
+    }
+  }, []);
 
   useEffect(() => {
     fetchPortfolio();
-  }, []);
+    fetchSubscriptionLimits();
+  }, [fetchSubscriptionLimits]);
 
   const fetchPortfolio = async () => {
     try {
@@ -88,10 +106,17 @@ export default function PortfolioPage() {
           variant: 'success',
         });
         await fetchPortfolio();
+      } else if (data.error?.code === 'TIER_LIMIT_REACHED') {
+        setUpgradeRequired(true);
+        showToast({
+          title: 'Limit Reached',
+          description: data.error.message,
+          variant: 'warning',
+        });
       } else {
         showToast({
           title: 'Error',
-          description: data.message || 'Failed to upload image',
+          description: data.message || data.error?.message || 'Failed to upload image',
           variant: 'error',
         });
       }
@@ -183,8 +208,9 @@ export default function PortfolioPage() {
     }
   };
 
-  const maxImages = 20;
+  const maxImages = imageLimit ?? 5; // Default to starter tier limit
   const remainingSlots = maxImages - images.length;
+  const isAtLimit = remainingSlots <= 0;
 
   if (isLoading) {
     return (
@@ -206,8 +232,17 @@ export default function PortfolioPage() {
         </p>
       </div>
 
+      {/* Upgrade Banner */}
+      {(isAtLimit || upgradeRequired) && (
+        <UpgradeBanner
+          feature="portfolio images"
+          currentUsage={images.length}
+          limit={maxImages}
+        />
+      )}
+
       {/* Upload Area */}
-      {images.length < maxImages && (
+      {!isAtLimit && (
         <Card>
           <CardHeader>
             <CardTitle>Upload Image</CardTitle>

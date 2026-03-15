@@ -32,6 +32,7 @@ export const ROUTES = {
   DASHBOARD_REVIEWS: '/dashboard/reviews',
   DASHBOARD_REQUESTS: '/dashboard/requests',
   DASHBOARD_SETTINGS: '/dashboard/settings',
+  DASHBOARD_SUBSCRIPTION: '/dashboard/subscription',
 
   // Admin routes
   ADMIN: '/admin',
@@ -50,6 +51,10 @@ export const ROUTES = {
   API_REVIEWS: '/api/reviews',
   API_SPECIALTIES: '/api/specialties',
   API_FAVORITES: '/api/favorites',
+  API_STRIPE_CHECKOUT: '/api/stripe/checkout',
+  API_STRIPE_PORTAL: '/api/stripe/portal',
+  API_STRIPE_WEBHOOKS: '/api/stripe/webhooks',
+  API_BARBERS_SUBSCRIPTION: '/api/barbers/subscription',
 } as const;
 
 export const COLORS = {
@@ -112,6 +117,21 @@ export const SPECIALTIES = [
   'Eyebrow Threading',
   'Facial Treatment',
 ] as const;
+
+export const SUBSCRIPTION = {
+  TRIAL_DAYS: 14,
+  TIERS: {
+    STARTER: 'starter',
+    PROFESSIONAL: 'professional',
+    ELITE: 'elite',
+  },
+  PRICES: {
+    PROFESSIONAL_MONTHLY_CENTS: 2900,
+    PROFESSIONAL_ANNUAL_CENTS: 29000,
+    ELITE_MONTHLY_CENTS: 5900,
+    ELITE_ANNUAL_CENTS: 59000,
+  },
+} as const;
 
 export const US_STATES = [
   { code: 'AL', name: 'Alabama' },

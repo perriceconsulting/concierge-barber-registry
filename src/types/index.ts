@@ -1,6 +1,10 @@
 // User types
 export type UserRole = 'barber' | 'client' | 'admin';
 
+// Subscription types
+export type SubscriptionTier = 'starter' | 'professional' | 'elite';
+export type SubscriptionStatusType = 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid';
+
 export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
 export type ContactRequestStatus = 'new' | 'read' | 'responded' | 'archived';
@@ -58,6 +62,7 @@ export interface BarberProfile {
   services?: Service[];
   portfolioImages?: PortfolioImage[];
   reviews?: Review[];
+  subscription?: Subscription;
 }
 
 // Specialty types
@@ -105,6 +110,42 @@ export interface Review {
   createdAt: Date;
   updatedAt: Date;
   client?: User;
+  response?: ReviewResponse;
+}
+
+// Review Response types
+export interface ReviewResponse {
+  id: string;
+  reviewId: string;
+  comment: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Subscription types
+export interface Subscription {
+  id: string;
+  barberProfileId: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string | null;
+  stripePriceId: string | null;
+  tier: SubscriptionTier;
+  status: SubscriptionStatusType;
+  currentPeriodStart: Date | null;
+  currentPeriodEnd: Date | null;
+  trialEndsAt: Date | null;
+  cancelAtPeriodEnd: boolean;
+  canceledAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface FeatureAccess {
+  allowed: boolean;
+  limit: number | null;
+  current: number;
+  upgradeRequired: boolean;
+  currentTier: SubscriptionTier;
 }
 
 // Contact Request types

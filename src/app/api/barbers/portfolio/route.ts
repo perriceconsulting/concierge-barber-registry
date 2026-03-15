@@ -4,11 +4,11 @@ import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError, ApiError } from '@/lib/api/errors';
 import { uploadFile, validateFile } from '@/lib/upload';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { checkFeatureAccess } from '@/lib/subscription';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('PORTFOLIO');
 
-const MAX_PORTFOLIO_IMAGES = 20; // Per barber limit
 const MAX_TOTAL_PORTFOLIO_IMAGES = 50000; // Platform-wide DoS protection
 
 // GET /api/barbers/portfolio - Get authenticated barber's portfolio images
@@ -62,21 +62,25 @@ const addPortfolioImageHandler = async (request: { userId?: string; formData: ()
       );
     }
 
-    // Check per-barber image count and platform-wide total
-    const [currentCount, totalCount] = await Promise.all([
-      prisma.portfolioImage.count({
-        where: { barberProfileId: barberProfile.id },
-      }),
+    // Check tier-based portfolio image limit
+    const [access, totalCount] = await Promise.all([
+      checkFeatureAccess(barberProfile.id, 'portfolioImages'),
       prisma.portfolioImage.count(), // Platform-wide count for DoS protection
     ]);
 
-    if (currentCount >= MAX_PORTFOLIO_IMAGES) {
+    if (!access.allowed) {
       return NextResponse.json(
         {
           success: false,
-          message: `Maximum of ${MAX_PORTFOLIO_IMAGES} portfolio images allowed. Please delete some images first.`,
+          error: {
+            code: 'TIER_LIMIT_REACHED',
+            message: access.limit
+              ? `You've reached your limit of ${access.limit} portfolio images. Upgrade your plan for more.`
+              : 'Portfolio image limit reached.',
+          },
+          upgrade: access.upgradeRequired,
         },
-        { status: 400 }
+        { status: 403 }
       );
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { getBarberTier } from '@/lib/subscription';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('PROFILE_VIEWS');
@@ -118,9 +119,12 @@ export async function GET(
       }
     })();
 
+    // Include subscription tier for frontend feature gating
+    const tier = await getBarberTier(barberProfile.id);
+
     return NextResponse.json({
       success: true,
-      data: { barberProfile },
+      data: { barberProfile, tier },
     });
   } catch (error) {
     return handleApiError(error);

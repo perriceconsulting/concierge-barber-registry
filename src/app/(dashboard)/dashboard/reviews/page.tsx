@@ -1,9 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/toast';
+import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
+import { secureFetch } from '@/lib/csrf-client';
+
+interface ReviewResponseItem {
+  id: string;
+  comment: string;
+  createdAt: string;
+}
 
 interface Review {
   id: string;
@@ -13,11 +23,36 @@ interface Review {
   comment: string;
   createdAt: string;
   isVerified: boolean;
+  response?: ReviewResponseItem | null;
 }
 
 export default function ReviewsPage() {
+  const { showToast } = useToast();
   const [filter, setFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [canRespondToReviews, setCanRespondToReviews] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchSubscriptionInfo = useCallback(async () => {
+    try {
+      const response = await fetch('/api/barbers/subscription', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          const tier = data.data.tier;
+          setCanRespondToReviews(tier === 'professional' || tier === 'elite');
+        }
+      }
+    } catch {
+      // Default to false
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSubscriptionInfo();
+  }, [fetchSubscriptionInfo]);
 
   const filteredReviews = filter === 'all'
     ? reviews
@@ -25,7 +60,9 @@ export default function ReviewsPage() {
 
   const stats = {
     total: reviews.length,
-    average: (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1),
+    average: reviews.length > 0
+      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+      : '0.0',
     breakdown: {
       5: reviews.filter(r => r.rating === 5).length,
       4: reviews.filter(r => r.rating === 4).length,
@@ -43,6 +80,55 @@ export default function ReviewsPage() {
     ));
   };
 
+  const handleReply = async (reviewId: string) => {
+    if (!replyText.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await secureFetch(`/api/reviews/${reviewId}/response`, {
+        method: 'POST',
+        body: JSON.stringify({ comment: replyText }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Response posted',
+          description: 'Your reply has been published.',
+          variant: 'success',
+        });
+        setReviews(reviews.map(r =>
+          r.id === reviewId
+            ? { ...r, response: data.data.response }
+            : r
+        ));
+        setReplyingTo(null);
+        setReplyText('');
+      } else if (data.error?.code === 'TIER_LIMIT_REACHED') {
+        showToast({
+          title: 'Upgrade Required',
+          description: data.error.message,
+          variant: 'warning',
+        });
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.error?.message || 'Failed to post response',
+          variant: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Failed to post response. Please try again.',
+        variant: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -51,6 +137,11 @@ export default function ReviewsPage() {
           See what clients are saying about your services
         </p>
       </div>
+
+      {/* Upgrade banner for review responses */}
+      {!canRespondToReviews && reviews.length > 0 && (
+        <UpgradeBanner feature="review responses" />
+      )}
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -119,7 +210,7 @@ export default function ReviewsPage() {
                 key={rating}
                 variant={filter === rating.toString() ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setFilter(rating.toString() as any)}
+                onClick={() => setFilter(rating.toString() as typeof filter)}
               >
                 {rating} ★ ({stats.breakdown[rating as keyof typeof stats.breakdown]})
               </Button>
@@ -154,11 +245,65 @@ export default function ReviewsPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               {review.title && (
                 <h4 className="font-semibold">{review.title}</h4>
               )}
               <p className="text-muted-foreground">{review.comment}</p>
+
+              {/* Existing response */}
+              {review.response && (
+                <div className="ml-4 pl-4 border-l-2 border-primary/20 mt-3">
+                  <p className="text-sm font-medium text-primary mb-1">Your Response</p>
+                  <p className="text-sm text-muted-foreground">{review.response.comment}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(review.response.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+
+              {/* Reply form */}
+              {canRespondToReviews && !review.response && (
+                <>
+                  {replyingTo === review.id ? (
+                    <div className="space-y-2 mt-3">
+                      <Textarea
+                        placeholder="Write your response..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleReply(review.id)}
+                          disabled={isSubmitting || !replyText.trim()}
+                        >
+                          {isSubmitting ? 'Posting...' : 'Post Response'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyText('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setReplyingTo(review.id)}
+                    >
+                      Reply
+                    </Button>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         ))}

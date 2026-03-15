@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
+import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 
 interface ContactRequest {
   id: string;
@@ -26,6 +27,28 @@ export default function RequestsPage() {
   const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
   const [responseMessage, setResponseMessage] = useState('');
   const [requests, setRequests] = useState<ContactRequest[]>([]);
+  const [contactLimit, setContactLimit] = useState<number | null>(null);
+  const [contactUsage, setContactUsage] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchContactLimits() {
+      try {
+        const response = await fetch('/api/barbers/subscription', { credentials: 'include' });
+        if (response.ok && !cancelled) {
+          const data = await response.json();
+          if (data.success) {
+            setContactLimit(data.data.usage.contactRequests.limit);
+            setContactUsage(data.data.usage.contactRequests.current);
+          }
+        }
+      } catch {
+        // Fall back to no limit display
+      }
+    }
+    fetchContactLimits();
+    return () => { cancelled = true; };
+  }, []);
 
   const filteredRequests = filter === 'all'
     ? requests
@@ -66,7 +89,7 @@ export default function RequestsPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
       new: 'default',
       read: 'secondary',
       responded: 'outline',
@@ -88,6 +111,15 @@ export default function RequestsPage() {
           Manage client inquiries and booking requests
         </p>
       </div>
+
+      {/* Upgrade Banner */}
+      {contactLimit !== null && contactUsage >= contactLimit && (
+        <UpgradeBanner
+          feature="contact requests this month"
+          currentUsage={contactUsage}
+          limit={contactLimit}
+        />
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">

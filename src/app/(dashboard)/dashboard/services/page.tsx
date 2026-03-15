@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useModal } from '@/components/ui/modal';
+import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 
 interface Service {
   id: string;
@@ -21,6 +22,29 @@ interface Service {
 export default function ServicesPage() {
   const { showConfirm } = useModal();
   const [services, setServices] = useState<Service[]>([]);
+  const [serviceLimit, setServiceLimit] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchServiceLimit() {
+      try {
+        const response = await fetch('/api/barbers/subscription', { credentials: 'include' });
+        if (response.ok && !cancelled) {
+          const data = await response.json();
+          if (data.success) {
+            setServiceLimit(data.data.usage.services.limit);
+          }
+        }
+      } catch {
+        // Fall back to no limit display
+      }
+    }
+    fetchServiceLimit();
+    return () => { cancelled = true; };
+  }, []);
+
+  const maxServices = serviceLimit ?? 3;
+  const isAtLimit = services.length >= maxServices;
 
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -93,13 +117,22 @@ export default function ServicesPage() {
         <div>
           <h1 className="text-3xl font-bold text-primary">Services</h1>
           <p className="text-muted-foreground mt-2">
-            Manage the services you offer
+            Manage the services you offer ({services.length}/{maxServices})
           </p>
         </div>
-        {!showForm && (
+        {!showForm && !isAtLimit && (
           <Button onClick={handleAddService}>Add Service</Button>
         )}
       </div>
+
+      {/* Upgrade Banner */}
+      {isAtLimit && (
+        <UpgradeBanner
+          feature="services"
+          currentUsage={services.length}
+          limit={maxServices}
+        />
+      )}
 
       {/* Add/Edit Form */}
       {showForm && (

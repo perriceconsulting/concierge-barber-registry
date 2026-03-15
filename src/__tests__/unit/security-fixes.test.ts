@@ -197,12 +197,12 @@ describe('Security Fixes - Critical Vulnerabilities', () => {
   });
 
   describe('8. Portfolio DoS Protection', () => {
-    it('should enforce per-barber image limit', () => {
+    it('should enforce per-barber image limit via subscription tier', () => {
       const portfolioPath = path.join(__dirname, '../../app/api/barbers/portfolio/route.ts');
       const code = fs.readFileSync(portfolioPath, 'utf-8');
 
-      expect(code).toContain('MAX_PORTFOLIO_IMAGES');
-      expect(code).toContain('= 20'); // Per-barber limit
+      expect(code).toContain('checkFeatureAccess');
+      expect(code).toContain('TIER_LIMIT_REACHED');
     });
 
     it('should enforce platform-wide image limit', () => {
