@@ -3,7 +3,15 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { createBarberProfileSchema } from '@/lib/validations/barber';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { generateUniqueBarberSlug } from '@/lib/slug';
 import { z } from 'zod';
+
+/**
+ * Escape special characters in LIKE patterns to prevent injection
+ */
+function escapeLikePattern(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&');
+}
 
 // Schema for validating search parameters
 const searchParamsSchema = z.object({
@@ -46,15 +54,17 @@ export async function GET(request: NextRequest) {
     };
 
     if (query) {
+      const escapedQuery = escapeLikePattern(query);
       where.OR = [
-        { displayName: { contains: query, mode: 'insensitive' } },
-        { shopName: { contains: query, mode: 'insensitive' } },
-        { city: { contains: query, mode: 'insensitive' } },
+        { displayName: { contains: escapedQuery, mode: 'insensitive' } },
+        { shopName: { contains: escapedQuery, mode: 'insensitive' } },
+        { city: { contains: escapedQuery, mode: 'insensitive' } },
       ];
     }
 
     if (city) {
-      where.city = { contains: city, mode: 'insensitive' };
+      const escapedCity = escapeLikePattern(city);
+      where.city = { contains: escapedCity, mode: 'insensitive' };
     }
 
     if (state) {
@@ -85,7 +95,8 @@ export async function GET(request: NextRequest) {
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              avatarUrl: true,
+              // Email removed - PII should not be exposed in public API
             },
           },
           specialties: {
@@ -119,10 +130,11 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/barbers - Create barber profile (authenticated barber only)
-const createBarberHandler = async (request: NextRequest, context: any) => {
+const createBarberHandler = async (request: any) => {
   try {
-    const userId = context.user.id;
-    const userRole = context.user.role;
+    // Get user info from request (set by withAuth middleware)
+    const userId = request.userId;
+    const userRole = request.userRole;
 
     // Only barbers can create barber profiles
     if (userRole !== 'barber') {
@@ -141,12 +153,11 @@ const createBarberHandler = async (request: NextRequest, context: any) => {
     const body = await request.json();
     const validatedData = createBarberProfileSchema.parse(body);
 
-    // Generate slug from display name
-    const slug = validatedData.displayName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      + '-' + Date.now();
+    // Generate unique slug with collision prevention
+    const slug = await generateUniqueBarberSlug(
+      validatedData.displayName,
+      userId
+    );
 
     // Create barber profile
     const barberProfile = await prisma.barberProfile.create({
