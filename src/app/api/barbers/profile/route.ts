@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/api/middleware';
 import { updateBarberProfileSchema } from '@/lib/validations/barber';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { sanitizeBio, sanitizeText, sanitizeUrl } from '@/lib/sanitize';
+import { generateUniqueBarberSlug } from '@/lib/slug';
 
 // GET /api/barbers/profile - Get authenticated barber's profile
 const getProfileHandler = async (request: { userId?: string }) => {
@@ -125,13 +126,11 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
       });
     } else {
       // Create new profile
-      // Generate slug from display name
-      const slug = profileData.displayName
-        ? profileData.displayName
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '')
-        : `barber-${userId.substring(0, 8)}`;
+      // Generate unique slug with collision prevention
+      const slug = await generateUniqueBarberSlug(
+        profileData.displayName || '',
+        userId!
+      );
 
       const createData: {
         userId: string;
@@ -140,7 +139,7 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
         specialties?: { create: Array<{ specialty: { connect: { id: number } } }> };
         [key: string]: unknown;
       } = {
-        userId,
+        userId: userId!,
         ...sanitizedProfileData,
         slug,
         verificationStatus: 'pending',
