@@ -16,7 +16,7 @@ export async function fetchCsrfToken(): Promise<string> {
 
     if (data.success && data.data?.csrfToken) {
       csrfToken = data.data.csrfToken;
-      return csrfToken;
+      return csrfToken as string;
     }
 
     throw new Error('Failed to fetch CSRF token');

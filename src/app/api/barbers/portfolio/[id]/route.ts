@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 import { sanitizeText } from '@/lib/sanitize';
 
 // DELETE /api/barbers/portfolio/[id] - Delete portfolio image
 const deletePortfolioImageHandler = async (
-  request: any,
-  context: { params: Promise<{ id: string }> }
+  request: AuthRequest,
+  context?: { params: Promise<{ id: string }> }
 ) => {
   try {
     const userId = request.userId;
-    const params = await context.params;
+    const params = await context!.params;
     const imageId = params.id;
 
     const barberProfile = await prisma.barberProfile.findUnique({
@@ -52,12 +52,12 @@ const deletePortfolioImageHandler = async (
 
 // PATCH /api/barbers/portfolio/[id] - Update portfolio image caption
 const updatePortfolioImageHandler = async (
-  request: any,
-  context: { params: Promise<{ id: string }> }
+  request: AuthRequest,
+  context?: { params: Promise<{ id: string }> }
 ) => {
   try {
     const userId = request.userId;
-    const params = await context.params;
+    const params = await context!.params;
     const imageId = params.id;
 
     const barberProfile = await prisma.barberProfile.findUnique({

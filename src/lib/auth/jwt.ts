@@ -73,7 +73,7 @@ export async function generateRefreshToken(payload: JWTPayload): Promise<string>
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {
     const { payload } = await jwtVerify(token, ACCESS_TOKEN_SECRET);
-    return payload as JWTPayload;
+    return payload as unknown as JWTPayload;
   } catch (error) {
     if (error instanceof errors.JWTExpired) {
       throw new TokenExpiredError('Access token has expired');
@@ -90,7 +90,7 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
 export async function verifyRefreshToken(token: string): Promise<JWTPayload> {
   try {
     const { payload } = await jwtVerify(token, REFRESH_TOKEN_SECRET);
-    return payload as JWTPayload;
+    return payload as unknown as JWTPayload;
   } catch (error) {
     if (error instanceof errors.JWTExpired) {
       throw new TokenExpiredError('Refresh token has expired');

@@ -305,7 +305,7 @@ export default function ProfilePage() {
                 showToast({
                   title: 'Upload Failed',
                   description: errorMsg,
-                  variant: 'destructive',
+                  variant: 'error',
                 });
               }}
             />
@@ -328,7 +328,7 @@ export default function ProfilePage() {
                 onChange={(e) => setFormData({ ...formData, shopName: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">
-                If you work at a barbershop, enter the shop name. If you're independent or mobile, you can leave this blank.
+                If you work at a barbershop, enter the shop name. If you&apos;re independent or mobile, you can leave this blank.
               </p>
             </div>
 

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import type { UserRole } from '@prisma/client';
+import type { Prisma, UserRole } from '@prisma/client';
 
 export type AuditAction =
   | 'user.login'
@@ -35,7 +35,7 @@ interface CreateAuditLogParams {
   action: AuditAction;
   entityType: AuditEntityType;
   entityId?: string | null;
-  details?: Record<string, any>;
+  details?: Prisma.InputJsonValue;
   ipAddress?: string | null;
 }
 
@@ -58,7 +58,7 @@ export async function createAuditLog({
         action,
         entityType,
         entityId: entityId || null,
-        details: details || null,
+        details: details || undefined,
         ipAddress: ipAddress || null,
       },
     });
@@ -91,7 +91,7 @@ export async function auditAuthEvent(
   action: Extract<AuditAction, 'user.login' | 'user.logout' | 'user.register' | 'user.password_reset' | 'user.password_change' | 'user.email_verify'>,
   userId: string,
   request: Request,
-  details?: Record<string, any>
+  details?: Record<string, Prisma.InputJsonValue>
 ): Promise<void> {
   await createAuditLog({
     actorUserId: userId,
@@ -114,7 +114,7 @@ export async function auditVerificationEvent(
   adminUserId: string,
   barberProfileId: string,
   request: Request,
-  details?: Record<string, any>
+  details?: Prisma.InputJsonValue
 ): Promise<void> {
   await createAuditLog({
     actorUserId: adminUserId,

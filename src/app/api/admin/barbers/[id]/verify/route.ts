@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { sendLicenseApprovedEmail, sendLicenseRejectedEmail } from '@/lib/email';
 import { auditVerificationEvent } from '@/lib/audit';
@@ -13,12 +13,12 @@ const verifyBarberSchema = z.object({
 
 // PATCH /api/admin/barbers/[id]/verify - Verify/approve/reject barber profile
 const verifyBarberHandler = async (
-  request: any,
-  context: { params: Promise<{ id: string }> }
+  request: AuthRequest,
+  context?: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const adminUserId = request.userId;
-    const params = await context.params;
+    const adminUserId = request.userId!;
+    const params = await context!.params;
     const barberId = params.id;
 
     // Validate barber exists

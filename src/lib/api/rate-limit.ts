@@ -57,11 +57,11 @@ async function getKVClient() {
  * Rate limit using Vercel KV (distributed)
  */
 async function rateLimitWithKV(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   kv: any,
   key: string,
   config: RateLimitConfig
 ): Promise<void> {
-  const now = Date.now();
   const windowSeconds = Math.ceil(config.windowMs / 1000);
 
   // Use Redis INCR for atomic increment
@@ -73,9 +73,7 @@ async function rateLimitWithKV(
   }
 
   if (count > config.limit) {
-    // Get TTL to calculate retry-after
-    const ttl = await kv.ttl(key);
-    throw new RateLimitError();
+    throw RateLimitError;
   }
 }
 
@@ -100,8 +98,7 @@ function rateLimitInMemory(key: string, config: RateLimitConfig): void {
 
   // Check if limit exceeded
   if (record.count > config.limit) {
-    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
-    throw new RateLimitError();
+    throw RateLimitError;
   }
 }
 

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { updateBarberProfileSchema } from '@/lib/validations/barber';
-import { ApiError, handleApiError } from '@/lib/api/errors';
+import { handleApiError } from '@/lib/api/errors';
 import { sanitizeBio, sanitizeText, sanitizeUrl } from '@/lib/sanitize';
 import { generateUniqueBarberSlug } from '@/lib/slug';
 
@@ -133,29 +134,24 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
         userId!
       );
 
-      const createData: {
-        userId: string;
-        slug: string;
-        verificationStatus: string;
-        specialties?: { create: Array<{ specialty: { connect: { id: number } } }> };
-        [key: string]: unknown;
-      } = {
-        userId: userId!,
-        ...sanitizedProfileData,
-        slug,
-        verificationStatus: 'pending',
-      };
-
-      if (specialtyIds) {
-        createData.specialties = {
-          create: specialtyIds.map((id: number) => ({
-            specialty: { connect: { id } },
-          })),
-        };
-      }
-
       updatedProfile = await prisma.barberProfile.create({
-        data: createData,
+        data: {
+          userId: userId!,
+          displayName: sanitizedProfileData.displayName || '',
+          city: sanitizedProfileData.city || '',
+          state: sanitizedProfileData.state || '',
+          zipCode: sanitizedProfileData.zipCode || '',
+          ...sanitizedProfileData,
+          slug,
+          verificationStatus: 'pending',
+          ...(specialtyIds && {
+            specialties: {
+              create: specialtyIds.map((id: number) => ({
+                specialty: { connect: { id } },
+              })),
+            },
+          }),
+        } as Prisma.BarberProfileUncheckedCreateInput,
         include: {
           user: {
             select: {

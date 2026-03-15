@@ -29,7 +29,7 @@ export async function getAuthUser(request: NextRequest) {
   // Fallback to Authorization header for API clients
   if (!token) {
     const authHeader = request.headers.get('authorization');
-    token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
   }
 
   if (!token) {
@@ -113,9 +113,8 @@ export async function optionalAuth(request: NextRequest) {
  * Higher-order function to wrap API route handlers with authentication
  */
 
-interface RouteContext {
-  params: Record<string, string | string[]>;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RouteContext = { params: Promise<any> } | undefined;
 
 type ApiHandler = (req: AuthRequest, context?: RouteContext) => Promise<NextResponse> | NextResponse;
 
