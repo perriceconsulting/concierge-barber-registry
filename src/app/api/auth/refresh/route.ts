@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyRefreshToken, generateTokenPair, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
-import { verifyToken, hashToken } from '@/lib/auth/password';
+import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';

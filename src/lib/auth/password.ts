@@ -41,15 +41,10 @@ export function generateSlug(text: string): string {
 }
 
 /**
- * Hash a refresh token using bcrypt (for secure storage)
+ * Hash a token using SHA-256 for deterministic storage and lookup.
+ * Unlike bcrypt, SHA-256 always produces the same output for the same input,
+ * which is required when tokens are looked up by hash in the database.
  */
-export async function hashToken(token: string): Promise<string> {
-  return bcrypt.hash(token, SALT_ROUNDS);
-}
-
-/**
- * Verify a token against a hash
- */
-export async function verifyToken(token: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(token, hash);
+export function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }

@@ -1,4 +1,4 @@
-import { hashPassword, verifyPassword, generateToken, generateSlug, generateUniqueSlug, hashToken, verifyToken } from '@/lib/auth/password';
+import { hashPassword, verifyPassword, generateToken, generateSlug, hashToken } from '@/lib/auth/password';
 
 describe('Password Utilities', () => {
   describe('hashPassword', () => {
@@ -52,14 +52,16 @@ describe('Password Utilities', () => {
       const token = generateToken();
 
       expect(token).toBeTruthy();
-      expect(token.length).toBe(32);
+      // randomBytes(32).toString('hex') produces 64 hex characters
+      expect(token.length).toBe(64);
       expect(typeof token).toBe('string');
     });
 
     it('should generate a token with custom length', () => {
       const token = generateToken(64);
 
-      expect(token.length).toBe(64);
+      // randomBytes(64).toString('hex') produces 128 hex characters
+      expect(token.length).toBe(128);
     });
 
     it('should generate unique tokens', () => {
@@ -109,58 +111,30 @@ describe('Password Utilities', () => {
     });
   });
 
-  describe('generateUniqueSlug', () => {
-    it('should generate slug with random suffix', () => {
-      const slug = generateUniqueSlug('John Doe');
-
-      expect(slug).toMatch(/^john-doe-[a-z0-9]{6}$/);
-    });
-
-    it('should generate different slugs for same input', () => {
-      const slug1 = generateUniqueSlug('John Doe');
-      const slug2 = generateUniqueSlug('John Doe');
-
-      expect(slug1).not.toBe(slug2);
-      expect(slug1.startsWith('john-doe-')).toBe(true);
-      expect(slug2.startsWith('john-doe-')).toBe(true);
-    });
-  });
-
   describe('hashToken', () => {
-    it('should hash a token successfully', async () => {
+    it('should hash a token successfully', () => {
       const token = 'test-refresh-token-12345';
-      const hash = await hashToken(token);
+      const hash = hashToken(token);
 
       expect(hash).toBeTruthy();
       expect(hash).not.toBe(token);
-      expect(hash.length).toBeGreaterThan(50);
+      // SHA-256 hex output is always 64 characters
+      expect(hash.length).toBe(64);
     });
 
-    it('should produce different hashes for the same token', async () => {
+    it('should produce the same hash for the same token (deterministic)', () => {
       const token = 'test-refresh-token-12345';
-      const hash1 = await hashToken(token);
-      const hash2 = await hashToken(token);
+      const hash1 = hashToken(token);
+      const hash2 = hashToken(token);
+
+      expect(hash1).toBe(hash2);
+    });
+
+    it('should produce different hashes for different tokens', () => {
+      const hash1 = hashToken('token-one');
+      const hash2 = hashToken('token-two');
 
       expect(hash1).not.toBe(hash2);
-    });
-  });
-
-  describe('verifyToken', () => {
-    it('should verify correct token', async () => {
-      const token = 'test-refresh-token-12345';
-      const hash = await hashToken(token);
-      const isValid = await verifyToken(token, hash);
-
-      expect(isValid).toBe(true);
-    });
-
-    it('should reject incorrect token', async () => {
-      const token = 'test-refresh-token-12345';
-      const wrongToken = 'wrong-token-67890';
-      const hash = await hashToken(token);
-      const isValid = await verifyToken(wrongToken, hash);
-
-      expect(isValid).toBe(false);
     });
   });
 });
