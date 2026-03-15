@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runCleanupJob } from '@/lib/session-cleanup';
 import { handleApiError } from '@/lib/api/errors';
+import crypto from 'crypto';
+
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(a, 'utf8'),
+      Buffer.from(b, 'utf8')
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Cron job endpoint for cleaning up expired sessions and tokens
@@ -24,18 +40,26 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
+    // Require CRON_SECRET in all environments
     if (!cronSecret) {
+      console.error('[SECURITY] CRON_SECRET not configured - cron endpoint unavailable');
       return NextResponse.json(
         {
           success: false,
-          error: 'Cron secret not configured',
+          error: 'Service unavailable',
         },
-        { status: 500 }
+        { status: 503 }
       );
     }
 
-    // Check authorization header
-    if (authHeader !== `Bearer ${cronSecret}`) {
+    // Validate authorization header exists and matches (using timing-safe comparison)
+    const expectedAuth = `Bearer ${cronSecret}`;
+    if (!authHeader || !secureCompare(authHeader, expectedAuth)) {
+      console.warn('[SECURITY] Unauthorized cron access attempt', {
+        ip: request.headers.get('x-forwarded-for'),
+        userAgent: request.headers.get('user-agent'),
+        hasAuth: !!authHeader,
+      });
       return NextResponse.json(
         {
           success: false,
