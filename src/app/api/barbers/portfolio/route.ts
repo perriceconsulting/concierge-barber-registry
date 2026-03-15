@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
-import { handleApiError } from '@/lib/api/errors';
+import { handleApiError, ApiError } from '@/lib/api/errors';
 import { uploadFile, validateFile } from '@/lib/upload';
 import { rateLimiters } from '@/lib/api/rate-limit';
 
-const MAX_PORTFOLIO_IMAGES = 20;
+const MAX_PORTFOLIO_IMAGES = 20; // Per barber limit
+const MAX_TOTAL_PORTFOLIO_IMAGES = 50000; // Platform-wide DoS protection
 
 // GET /api/barbers/portfolio - Get authenticated barber's portfolio images
 const getPortfolioHandler = async (request: any) => {
@@ -58,10 +59,13 @@ const addPortfolioImageHandler = async (request: { userId?: string; formData: ()
       );
     }
 
-    // Check current image count
-    const currentCount = await prisma.portfolioImage.count({
-      where: { barberProfileId: barberProfile.id },
-    });
+    // Check per-barber image count and platform-wide total
+    const [currentCount, totalCount] = await Promise.all([
+      prisma.portfolioImage.count({
+        where: { barberProfileId: barberProfile.id },
+      }),
+      prisma.portfolioImage.count(), // Platform-wide count for DoS protection
+    ]);
 
     if (currentCount >= MAX_PORTFOLIO_IMAGES) {
       return NextResponse.json(
@@ -70,6 +74,16 @@ const addPortfolioImageHandler = async (request: { userId?: string; formData: ()
           message: `Maximum of ${MAX_PORTFOLIO_IMAGES} portfolio images allowed. Please delete some images first.`,
         },
         { status: 400 }
+      );
+    }
+
+    // Platform-wide DoS protection - prevent storage exhaustion
+    if (totalCount >= MAX_TOTAL_PORTFOLIO_IMAGES) {
+      console.error(`[PORTFOLIO] Platform-wide image limit reached: ${totalCount}/${MAX_TOTAL_PORTFOLIO_IMAGES}`);
+      throw new ApiError(
+        503,
+        'SERVICE_UNAVAILABLE',
+        'Platform storage limit reached. Please contact support.'
       );
     }
 
