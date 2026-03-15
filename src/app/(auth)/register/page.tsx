@@ -22,6 +22,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,24 +53,58 @@ export default function RegisterPage() {
       if (!response.ok) {
         // Handle validation errors from Zod
         if (data.error?.details && Array.isArray(data.error.details)) {
-          const errorMessages = data.error.details.map((detail: any) => detail.message).join('. ');
+          const errorMessages = data.error.details.map((detail: { message: string }) => detail.message).join('. ');
           throw new Error(errorMessages);
         }
         throw new Error(data.error?.message || data.message || 'Registration failed');
       }
 
-      // Redirect based on role
-      if (formData.role === 'barber') {
-        router.push(ROUTES.DASHBOARD);
-      } else {
-        router.push(ROUTES.HOME);
-      }
+      // Show verification modal instead of redirecting
+      setShowVerifyModal(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (showVerifyModal) {
+    return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center min-h-[calc(100vh-4rem)] py-10">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader className="space-y-4 pb-2">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+            <CardDescription className="text-base">
+              We sent a verification link to
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="font-medium text-lg">{formData.email}</p>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>Click the link in the email to verify your account and get started.</p>
+              <p>The link will expire in 24 hours.</p>
+            </div>
+            <div className="pt-2 space-y-3">
+              <Button
+                className="w-full"
+                onClick={() => router.push(ROUTES.LOGIN)}
+              >
+                Go to Sign In
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Didn&apos;t receive the email? Check your spam folder or contact support.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center min-h-[calc(100vh-4rem)] py-10">
