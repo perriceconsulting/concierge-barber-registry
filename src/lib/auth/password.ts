@@ -17,19 +17,14 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 /**
- * Generate a random token for password reset, email verification, etc.
+ * Generate a cryptographically secure random token
+ * Uses crypto.randomBytes to avoid modulo bias
+ * @param length - Number of bytes (output will be hex string of length * 2)
  */
 export function generateToken(length: number = 32): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-
-  for (let i = 0; i < length; i++) {
-    token += chars[array[i] % chars.length];
-  }
-
-  return token;
+  // Use Node.js crypto.randomBytes for true cryptographic randomness
+  // Returns hex string which is 2x the byte length
+  return crypto.randomBytes(length).toString('hex');
 }
 
 /**
