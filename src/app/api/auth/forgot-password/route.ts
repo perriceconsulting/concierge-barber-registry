@@ -4,6 +4,7 @@ import { forgotPasswordSchema } from '@/lib/validations/auth';
 import { generateToken, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ResourceErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,11 +53,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send password reset email
-    // const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
-    // await sendPasswordResetEmail(user.email, user.firstName, resetUrl);
-
-    console.log(`Password reset token for ${user.email}: ${resetToken}`);
+    // Send password reset email (fire and forget to prevent timing attacks)
+    sendPasswordResetEmail(user.email, user.firstName, resetToken)
+      .then((result) => {
+        if (result.success) {
+          console.log(`✅ Password reset email sent to ${user.email}`);
+        } else {
+          console.error(`❌ Failed to send password reset email to ${user.email}:`, result.message || result.error);
+        }
+      })
+      .catch((error) => console.error(`❌ Error sending password reset email:`, error));
 
     return successResponse({
       message: 'If an account exists with this email, you will receive password reset instructions.',
