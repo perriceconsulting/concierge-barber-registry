@@ -69,7 +69,10 @@ export async function GET(
     prisma.barberProfile.update({
       where: { id: barberProfile.id },
       data: { profileViews: { increment: 1 } },
-    }).catch(() => {}); // Ignore errors
+    }).catch((error) => {
+      // Log error but don't fail request
+      console.error('[PROFILE VIEWS] Failed to increment view counter:', error);
+    });
 
     return NextResponse.json({
       success: true,
