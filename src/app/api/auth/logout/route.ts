@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyRefreshToken } from '@/lib/auth/jwt';
-import { verifyToken } from '@/lib/auth/password';
+import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse } from '@/lib/api/errors';
 import { verifyCsrfToken } from '@/lib/api/csrf';
+import { rateLimiters } from '@/lib/api/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
     // Verify CSRF token
     verifyCsrfToken(request);
+
+    // Apply rate limiting to prevent DoS
+    await rateLimiters.api(request);
 
     const refreshToken = request.cookies.get('refreshToken')?.value;
 
@@ -17,24 +21,24 @@ export async function POST(request: NextRequest) {
       const payload = await verifyRefreshToken(refreshToken);
 
       if (payload) {
-        // Find all active sessions for this user
-        const sessions = await prisma.session.findMany({
+        // SECURITY FIX: Prevent timing attack from N bcrypt operations
+        // Solution: Hash the refresh token and lookup by hash
+        const refreshTokenHash = await hashToken(refreshToken);
+
+        // Find matching session by hash (O(1) lookup)
+        const matchingSession = await prisma.session.findFirst({
           where: {
             userId: payload.userId,
+            refreshTokenHash: refreshTokenHash,
             isRevoked: false,
           },
         });
 
-        // Find and revoke the matching session
-        for (const session of sessions) {
-          const isValid = await verifyToken(refreshToken, session.refreshTokenHash);
-          if (isValid) {
-            await prisma.session.update({
-              where: { id: session.id },
-              data: { isRevoked: true },
-            });
-            break;
-          }
+        if (matchingSession) {
+          await prisma.session.update({
+            where: { id: matchingSession.id },
+            data: { isRevoked: true },
+          });
         }
       }
     }

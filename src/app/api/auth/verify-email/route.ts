@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
+import { rateLimiters } from '@/lib/api/rate-limit';
 
 // GET /api/auth/verify-email?token=xxx - Verify email with token
 export async function GET(request: NextRequest) {
   try {
+    // Apply rate limiting to prevent token brute-forcing
+    await rateLimiters.auth(request);
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 

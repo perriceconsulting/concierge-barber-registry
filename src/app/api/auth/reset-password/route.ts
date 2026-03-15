@@ -3,9 +3,13 @@ import { prisma } from '@/lib/db';
 import { resetPasswordSchema } from '@/lib/validations/auth';
 import { hashPassword, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
+import { rateLimiters } from '@/lib/api/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply strict rate limiting to prevent token brute-forcing
+    await rateLimiters.authStrict(request);
+
     const body = await request.json();
 
     // Validate input

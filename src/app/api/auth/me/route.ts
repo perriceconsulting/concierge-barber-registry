@@ -1,10 +1,30 @@
 import { NextRequest } from 'next/server';
 import { getAuthUser } from '@/lib/api/middleware';
-import { handleApiError, successResponse } from '@/lib/api/errors';
+import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
+import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser(request);
+    const authUser = await getAuthUser(request);
+
+    // Fetch full user data from database
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        emailVerified: true,
+        avatarUrl: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      throw AuthErrors.ACCOUNT_DEACTIVATED;
+    }
 
     return successResponse({
       user: {

@@ -4,11 +4,15 @@ import { withAuth } from '@/lib/api/middleware';
 import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
 import { sendVerificationEmail } from '@/lib/email';
+import { rateLimiters } from '@/lib/api/rate-limit';
 import crypto from 'crypto';
 
 // POST /api/auth/resend-verification - Resend email verification
 const resendVerificationHandler = async (request: any) => {
   try {
+    // Apply rate limiting to prevent email spam
+    await rateLimiters.contact(request);
+
     const userId = request.userId;
 
     // Get user data
