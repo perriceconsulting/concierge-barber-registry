@@ -7,13 +7,13 @@ import { sanitizeText } from '@/lib/sanitize';
 import { rateLimiters } from '@/lib/api/rate-limit';
 
 // POST /api/reviews - Submit a review (authenticated client only)
-const createReviewHandler = async (request: NextRequest, context: any) => {
+const createReviewHandler = async (request: any) => {
   try {
     // Apply rate limiting (5 reviews per day)
     await rateLimiters.reviews(request);
 
-    const userId = context.user.id;
-    const userRole = context.user.role;
+    const userId = request.userId;
+    const userRole = request.userRole;
 
     // Only clients can submit reviews
     if (userRole !== 'client') {

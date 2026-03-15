@@ -62,40 +62,50 @@ export async function POST(request: NextRequest) {
     // Hash the refresh token before storing
     const refreshTokenHash = await hashToken(refreshToken);
 
-    // Enforce maximum sessions per user
+    // Enforce maximum sessions per user with atomic transaction to prevent race conditions
     const MAX_SESSIONS_PER_USER = 5;
-    const activeSessions = await prisma.session.count({
-      where: {
-        userId: user.id,
-        isRevoked: false,
-        expiresAt: { gt: new Date() },
-      },
-    });
+    const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    if (activeSessions >= MAX_SESSIONS_PER_USER) {
-      // Delete oldest session to make room
-      const oldestSession = await prisma.session.findFirst({
+    await prisma.$transaction(async (tx) => {
+      // Lock user row to prevent concurrent session creation race conditions
+      await tx.$executeRaw`SELECT 1 FROM users WHERE id = ${user.id}::uuid FOR UPDATE`;
+
+      const activeSessions = await tx.session.count({
         where: {
           userId: user.id,
           isRevoked: false,
+          expiresAt: { gt: new Date() },
         },
-        orderBy: { createdAt: 'asc' },
       });
 
-      if (oldestSession) {
-        await prisma.session.delete({ where: { id: oldestSession.id } });
-      }
-    }
+      if (activeSessions >= MAX_SESSIONS_PER_USER) {
+        // Delete oldest session to make room
+        const oldestSession = await tx.session.findFirst({
+          where: {
+            userId: user.id,
+            isRevoked: false,
+          },
+          orderBy: { createdAt: 'asc' },
+        });
 
-    // Store hashed refresh token in database
-    await prisma.session.create({
-      data: {
-        userId: user.id,
-        refreshTokenHash,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        userAgent: request.headers.get('user-agent'),
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-      },
+        if (oldestSession) {
+          await tx.session.delete({ where: { id: oldestSession.id } });
+        }
+      }
+
+      // Store hashed refresh token in database
+      await tx.session.create({
+        data: {
+          userId: user.id,
+          refreshTokenHash,
+          expiresAt: sessionExpiresAt,
+          userAgent: request.headers.get('user-agent'),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        },
+      });
+    }, {
+      isolationLevel: 'Serializable',
+      timeout: 5000,
     });
 
     // Prepare user response (exclude sensitive fields)
