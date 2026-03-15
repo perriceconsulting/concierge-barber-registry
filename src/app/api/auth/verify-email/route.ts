@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       return successResponse({
         message: 'Email is already verified',
         alreadyVerified: true,
+        role: verificationToken.user.role,
       });
     }
 
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
     return successResponse({
       message: 'Email verified successfully',
       verified: true,
+      role: verificationToken.user.role,
     });
   } catch (error) {
     return handleApiError(error);

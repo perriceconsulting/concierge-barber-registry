@@ -5,18 +5,28 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+function getRedirectPath(role: string): string {
+  switch (role) {
+    case 'admin':
+      return '/admin/barbers';
+    case 'barber':
+      return '/dashboard';
+    default:
+      return '/';
+  }
+}
+
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'already-verified'>('loading');
   const [message, setMessage] = useState('');
+  const [redirectPath, setRedirectPath] = useState('/dashboard');
+
+  const token = searchParams.get('token');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-
     if (!token) {
-      setStatus('error');
-      setMessage('No verification token provided');
       return;
     }
 
@@ -25,15 +35,17 @@ export default function VerifyEmailPage() {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
+          const path = getRedirectPath(data.data.role);
+          setRedirectPath(path);
           if (data.data.alreadyVerified) {
             setStatus('already-verified');
             setMessage(data.data.message);
           } else {
             setStatus('success');
             setMessage(data.data.message);
-            // Redirect to dashboard after 3 seconds
+            // Redirect after 3 seconds
             setTimeout(() => {
-              router.push('/dashboard');
+              router.push(path);
             }, 3000);
           }
         } else {
@@ -46,7 +58,25 @@ export default function VerifyEmailPage() {
         setStatus('error');
         setMessage('An error occurred while verifying your email');
       });
-  }, [searchParams, router]);
+  }, [token, router]);
+
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Verification Failed</CardTitle>
+            <CardDescription>No verification token provided</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => router.push('/login')} className="w-full">
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -76,15 +106,15 @@ export default function VerifyEmailPage() {
             <div className="text-center space-y-4">
               <div className="text-6xl">✓</div>
               <p className="text-muted-foreground">{message}</p>
-              <p className="text-sm text-muted-foreground">You'll be redirected to your dashboard in a few seconds...</p>
+              <p className="text-sm text-muted-foreground">You&apos;ll be redirected to your dashboard in a few seconds...</p>
             </div>
           )}
 
           {status === 'already-verified' && (
             <div className="text-center space-y-4">
               <p className="text-muted-foreground">{message}</p>
-              <Button onClick={() => router.push('/dashboard')} className="w-full">
-                Go to Dashboard
+              <Button onClick={() => router.push(redirectPath)} className="w-full">
+                Continue
               </Button>
             </div>
           )}
