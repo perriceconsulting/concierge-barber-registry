@@ -96,27 +96,28 @@ export async function POST(request: NextRequest) {
     });
 
     // Send both emails in parallel
+    // DO NOT log email addresses - GDPR violation
     await Promise.all([
       sendWelcomeEmail(user.email, user.firstName, user.role as 'client' | 'barber')
         .then((result) => {
           if (result.success) {
-            console.log(`✅ Welcome email sent to ${user.email}`);
+            console.log('[AUTH] Welcome email sent successfully');
           } else {
-            console.error(`❌ Failed to send welcome email to ${user.email}:`, result.message || result.error);
+            console.error('[AUTH] Failed to send welcome email:', result.message || result.error);
           }
         })
-        .catch((error) => console.error(`❌ Error sending welcome email:`, error)),
+        .catch((error) => console.error('[AUTH] Error sending welcome email:', error)),
 
       sendVerificationEmail(user.email, user.firstName, verificationToken)
         .then((result) => {
           if (result.success) {
-            console.log(`✅ Verification email sent to ${user.email}`);
+            console.log('[AUTH] Verification email sent successfully');
           } else {
-            console.error(`❌ Failed to send verification email to ${user.email}:`, result.message || result.error);
+            console.error('[AUTH] Failed to send verification email:', result.message || result.error);
           }
         })
-        .catch((error) => console.error(`❌ Error sending verification email:`, error)),
-    ]).catch((error) => console.error(`❌ Error in email sending:`, error));
+        .catch((error) => console.error('[AUTH] Error sending verification email:', error)),
+    ]).catch((error) => console.error('[AUTH] Error in email sending:', error));
 
     // Set cookies for both tokens (httpOnly for security)
     const response = successResponse(

@@ -54,15 +54,16 @@ export async function POST(request: NextRequest) {
     });
 
     // Send password reset email (fire and forget to prevent timing attacks)
+    // DO NOT log email addresses - GDPR violation
     sendPasswordResetEmail(user.email, user.firstName, resetToken)
       .then((result) => {
         if (result.success) {
-          console.log(`✅ Password reset email sent to ${user.email}`);
+          console.log('[AUTH] Password reset email sent successfully');
         } else {
-          console.error(`❌ Failed to send password reset email to ${user.email}:`, result.message || result.error);
+          console.error('[AUTH] Failed to send password reset email:', result.message || result.error);
         }
       })
-      .catch((error) => console.error(`❌ Error sending password reset email:`, error));
+      .catch((error) => console.error('[AUTH] Error sending password reset email:', error));
 
     return successResponse({
       message: 'If an account exists with this email, you will receive password reset instructions.',

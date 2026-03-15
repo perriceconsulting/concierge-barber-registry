@@ -159,9 +159,16 @@ export function withAuth(
           ? options.requiredRole
           : [options.requiredRole];
 
+        // Explicit role check - admin doesn't bypass unless explicitly allowed
         if (!allowedRoles.includes(user.role)) {
           return NextResponse.json(
-            { error: 'Insufficient permissions' },
+            {
+              success: false,
+              error: {
+                code: 'FORBIDDEN',
+                message: 'Insufficient permissions'
+              }
+            },
             { status: 403 }
           );
         }

@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
     })
       .then((result) => {
         if (result.success) {
-          console.log(`✅ Contact request email sent to ${barberProfile.user.email}`);
+          console.log('[CONTACT] Contact request email sent successfully');
         } else {
-          console.error(`❌ Failed to send contact request email to ${barberProfile.user.email}:`, result.message || result.error);
+          console.error('[CONTACT] Failed to send contact request email:', result.message || result.error);
         }
       })
-      .catch((error) => console.error(`❌ Error sending contact request email:`, error));
+      .catch((error) => console.error('[CONTACT] Error sending contact request email:', error));
 
     return NextResponse.json({
       success: true,

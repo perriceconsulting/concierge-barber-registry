@@ -60,16 +60,17 @@ const resendVerificationHandler = async (request: any) => {
     });
 
     // Send verification email (fire and forget)
+    // DO NOT log email addresses - GDPR violation
     sendVerificationEmail(user.email, user.firstName, token)
       .then((result) => {
         if (result.success) {
-          console.log(`Verification email sent to ${user.email}`);
+          console.log('[AUTH] Verification email sent successfully');
         } else {
-          console.error(`Failed to send verification email to ${user.email}:`, result.message || result.error);
+          console.error('[AUTH] Failed to send verification email:', result.message || result.error);
         }
       })
       .catch((error) => {
-        console.error(`Error sending verification email to ${user.email}:`, error);
+        console.error('[AUTH] Error sending verification email:', error);
       });
 
     return successResponse({

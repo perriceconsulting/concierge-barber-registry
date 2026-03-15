@@ -10,9 +10,8 @@ interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   if (!resend) {
-    console.log('⚠️  Email service not configured. RESEND_API_KEY is missing.');
-    console.log('📧 Email would have been sent to:', to);
-    console.log('📝 Subject:', subject);
+    console.log('[EMAIL] Service not configured - RESEND_API_KEY missing');
+    // DO NOT log PII (email address) - GDPR violation
     return { success: false, message: 'Email service not configured' };
   }
 
@@ -21,10 +20,8 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 
   if (!isProduction) {
-    console.log('🔧 Development mode: Simulating email send (not actually sending)');
-    console.log(`📧 Would send to: ${to}`);
-    console.log('📝 Subject:', subject);
-    console.log('📤 From:', process.env.EMAIL_FROM || 'onboarding@resend.dev');
+    console.log('[EMAIL] Development mode - simulating email send');
+    // DO NOT log recipient email - GDPR violation
     return {
       success: true,
       data: {
@@ -35,9 +32,8 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   }
 
   try {
-    console.log('📧 Sending email to:', to);
-    console.log('📝 Subject:', subject);
-    console.log('📤 From:', process.env.EMAIL_FROM || 'onboarding@resend.dev');
+    // DO NOT log email addresses - GDPR violation
+    console.log('[EMAIL] Sending email');
 
     const data = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
@@ -46,10 +42,10 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
       html,
     });
 
-    console.log('✅ Email sent successfully!', data);
+    console.log('[EMAIL] Email sent successfully');
     return { success: true, data };
   } catch (error) {
-    console.error('❌ Failed to send email:', error);
+    console.error('[EMAIL] Failed to send email:', error);
     return { success: false, error };
   }
 }
