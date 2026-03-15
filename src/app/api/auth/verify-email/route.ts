@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashToken } from '@/lib/auth/password';
+import { generateTokenPair } from '@/lib/auth/jwt';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 
@@ -42,17 +43,17 @@ export async function GET(request: NextRequest) {
       throw new ApiError(400, 'TOKEN_EXPIRED', 'Verification token has expired. Please request a new one.');
     }
 
+    const user = verificationToken.user;
+
     // Check if email is already verified
-    if (verificationToken.user.emailVerified) {
-      // Delete the token since it's no longer needed
+    if (user.emailVerified) {
       await prisma.verificationToken.delete({
         where: { id: verificationToken.id },
       });
-      return successResponse({
-        message: 'Email is already verified',
-        alreadyVerified: true,
-        role: verificationToken.user.role,
-      });
+
+      // Auto-login even if already verified
+      const response = await createSessionResponse(user, request);
+      return response;
     }
 
     // Update user's emailVerified status
@@ -66,12 +67,59 @@ export async function GET(request: NextRequest) {
       where: { id: verificationToken.id },
     });
 
-    return successResponse({
-      message: 'Email verified successfully',
-      verified: true,
-      role: verificationToken.user.role,
-    });
+    // Auto-login after verification
+    const response = await createSessionResponse(user, request);
+    return response;
   } catch (error) {
     return handleApiError(error);
   }
+}
+
+async function createSessionResponse(
+  user: { id: string; email: string; role: string; emailVerified: boolean },
+  request: NextRequest,
+) {
+  const { accessToken, refreshToken } = await generateTokenPair({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  const refreshTokenHash = await hashToken(refreshToken);
+  const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      refreshTokenHash,
+      expiresAt: sessionExpiresAt,
+      userAgent: request.headers.get('user-agent'),
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+    },
+  });
+
+  const response = successResponse({
+    message: user.emailVerified ? 'Email is already verified' : 'Email verified successfully',
+    alreadyVerified: user.emailVerified,
+    verified: !user.emailVerified,
+    role: user.role,
+  });
+
+  response.cookies.set('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 15 * 60,
+    path: '/',
+  });
+
+  response.cookies.set('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60,
+    path: '/',
+  });
+
+  return response;
 }
