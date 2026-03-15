@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/toast';
 
 export default function ContactPage() {
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -28,14 +30,26 @@ export default function ContactPage() {
       });
 
       if (response.ok) {
-        alert('Message sent successfully! We\'ll get back to you soon.');
+        showToast({
+          title: 'Message Sent',
+          description: 'Thank you for contacting us! We\'ll get back to you soon.',
+          variant: 'success',
+        });
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to send message. Please try again.');
+        showToast({
+          title: 'Error',
+          description: error.error || 'Failed to send message. Please try again.',
+          variant: 'error',
+        });
       }
     } catch (error) {
-      alert('An error occurred. Please try again later.');
+      showToast({
+        title: 'Error',
+        description: 'An error occurred. Please try again later.',
+        variant: 'error',
+      });
     } finally {
       setIsLoading(false);
     }

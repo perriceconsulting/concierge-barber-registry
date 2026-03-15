@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/toast';
 
 interface ContactRequest {
   id: string;
@@ -20,6 +21,7 @@ interface ContactRequest {
 }
 
 export default function RequestsPage() {
+  const { showToast } = useToast();
   const [filter, setFilter] = useState<'all' | 'new' | 'read' | 'responded' | 'archived'>('all');
   const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
   const [responseMessage, setResponseMessage] = useState('');
@@ -45,7 +47,11 @@ export default function RequestsPage() {
 
   const handleRespond = (id: string) => {
     // TODO: Implement actual email/notification sending
-    alert(`Response sent to client: ${responseMessage}`);
+    showToast({
+      title: 'Response Sent',
+      description: 'Your response has been sent to the client.',
+      variant: 'success',
+    });
     setRequests(requests.map(r =>
       r.id === id ? { ...r, status: 'responded' } : r
     ));

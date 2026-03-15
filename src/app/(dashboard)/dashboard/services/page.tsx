@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useModal } from '@/components/ui/modal';
 
 interface Service {
   id: string;
@@ -18,6 +19,7 @@ interface Service {
 }
 
 export default function ServicesPage() {
+  const { showConfirm } = useModal();
   const [services, setServices] = useState<Service[]>([]);
 
   const [showForm, setShowForm] = useState(false);
@@ -69,9 +71,16 @@ export default function ServicesPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this service?')) {
-      setServices(services.filter(s => s.id !== id));
-    }
+    showConfirm({
+      title: 'Delete Service',
+      description: 'Are you sure you want to delete this service? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: () => {
+        setServices(services.filter(s => s.id !== id));
+      },
+    });
   };
 
   const formatPrice = (cents: number) => {

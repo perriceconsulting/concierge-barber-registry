@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/toast';
+import { useModal } from '@/components/ui/modal';
 
 interface Review {
   id: string;
@@ -19,6 +21,8 @@ interface Review {
 }
 
 export default function AdminReviewsPage() {
+  const { showToast } = useToast();
+  const { showConfirm } = useModal();
   const [filter, setFilter] = useState<'all' | 'flagged' | 'hidden'>('all');
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [moderationNote, setModerationNote] = useState('');
@@ -43,29 +47,52 @@ export default function AdminReviewsPage() {
       r.id === id ? { ...r, isVisible: false } : r
     ));
     setExpandedReview(null);
-    alert('Review hidden successfully');
+    showToast({
+      title: 'Success',
+      description: 'Review hidden successfully',
+      variant: 'success',
+    });
   };
 
   const handleShow = (id: string) => {
     setReviews(reviews.map(r =>
       r.id === id ? { ...r, isVisible: true } : r
     ));
-    alert('Review made visible');
+    showToast({
+      title: 'Success',
+      description: 'Review made visible',
+      variant: 'success',
+    });
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to permanently delete this review?')) {
-      setReviews(reviews.filter(r => r.id !== id));
-      setExpandedReview(null);
-      alert('Review deleted');
-    }
+    showConfirm({
+      title: 'Delete Review',
+      description: 'Are you sure you want to permanently delete this review? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: () => {
+        setReviews(reviews.filter(r => r.id !== id));
+        setExpandedReview(null);
+        showToast({
+          title: 'Success',
+          description: 'Review deleted',
+          variant: 'success',
+        });
+      },
+    });
   };
 
   const handleUnflag = (id: string) => {
     setReviews(reviews.map(r =>
       r.id === id ? { ...r, isFlagged: false } : r
     ));
-    alert('Review unflagged');
+    showToast({
+      title: 'Success',
+      description: 'Review unflagged',
+      variant: 'success',
+    });
   };
 
   const renderStars = (rating: number) => {

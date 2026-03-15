@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
+import { useModal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 
 interface User {
@@ -18,6 +20,8 @@ interface User {
 }
 
 export default function AdminUsersPage() {
+  const { showToast } = useToast();
+  const { showConfirm, showPrompt } = useModal();
   const [filter, setFilter] = useState<'all' | 'client' | 'barber' | 'admin'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,20 +59,53 @@ export default function AdminUsersPage() {
   };
 
   const handleDeactivate = (id: string) => {
-    if (confirm('Are you sure you want to deactivate this user?')) {
-      alert(`Deactivating user ${id}`);
-    }
+    showConfirm({
+      title: 'Deactivate User',
+      description: 'Are you sure you want to deactivate this user? They will not be able to log in.',
+      confirmText: 'Deactivate',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: () => {
+        showToast({
+          title: 'Success',
+          description: 'User deactivated successfully',
+          variant: 'success',
+        });
+      },
+    });
   };
 
   const handleActivate = (id: string) => {
-    alert(`Activating user ${id}`);
+    showToast({
+      title: 'Success',
+      description: 'User activated successfully',
+      variant: 'success',
+    });
   };
 
   const handleChangeRole = (id: string) => {
-    const newRole = prompt('Enter new role (client/barber/admin):');
-    if (newRole && ['client', 'barber', 'admin'].includes(newRole)) {
-      alert(`Changing role for user ${id} to ${newRole}`);
-    }
+    showPrompt({
+      title: 'Change User Role',
+      description: 'Enter new role (client/barber/admin):',
+      placeholder: 'client',
+      confirmText: 'Change Role',
+      cancelText: 'Cancel',
+      onConfirm: (newRole: string) => {
+        if (['client', 'barber', 'admin'].includes(newRole.toLowerCase())) {
+          showToast({
+            title: 'Success',
+            description: `User role changed to ${newRole}`,
+            variant: 'success',
+          });
+        } else {
+          showToast({
+            title: 'Error',
+            description: 'Invalid role. Must be client, barber, or admin.',
+            variant: 'error',
+          });
+        }
+      },
+    });
   };
 
   return (

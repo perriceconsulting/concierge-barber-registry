@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/toast';
+import { useModal } from '@/components/ui/modal';
 
 interface Specialty {
   id: number;
@@ -15,6 +17,8 @@ interface Specialty {
 }
 
 export default function AdminSpecialtiesPage() {
+  const { showToast } = useToast();
+  const { showConfirm } = useModal();
   const [showForm, setShowForm] = useState(false);
   const [editingSpecialty, setEditingSpecialty] = useState<Specialty | null>(null);
   const [formData, setFormData] = useState({
@@ -50,7 +54,11 @@ export default function AdminSpecialtiesPage() {
           ? { ...s, name: formData.name, slug: formData.slug, icon: formData.icon }
           : s
       ));
-      alert('Specialty updated successfully');
+      showToast({
+        title: 'Success',
+        description: 'Specialty updated successfully',
+        variant: 'success',
+      });
     } else {
       const newSpecialty: Specialty = {
         id: Math.max(...specialties.map(s => s.id)) + 1,
@@ -60,7 +68,11 @@ export default function AdminSpecialtiesPage() {
         barberCount: 0,
       };
       setSpecialties([...specialties, newSpecialty]);
-      alert('Specialty created successfully');
+      showToast({
+        title: 'Success',
+        description: 'Specialty created successfully',
+        variant: 'success',
+      });
     }
 
     setShowForm(false);
@@ -69,14 +81,29 @@ export default function AdminSpecialtiesPage() {
 
   const handleDelete = (id: number, barberCount: number = 0) => {
     if (barberCount > 0) {
-      alert(`Cannot delete specialty with ${barberCount} active barbers. Remove barbers first.`);
+      showToast({
+        title: 'Cannot Delete',
+        description: `Cannot delete specialty with ${barberCount} active barbers. Remove barbers first.`,
+        variant: 'error',
+      });
       return;
     }
 
-    if (confirm('Are you sure you want to delete this specialty?')) {
-      setSpecialties(specialties.filter(s => s.id !== id));
-      alert('Specialty deleted successfully');
-    }
+    showConfirm({
+      title: 'Delete Specialty',
+      description: 'Are you sure you want to delete this specialty? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: () => {
+        setSpecialties(specialties.filter(s => s.id !== id));
+        showToast({
+          title: 'Success',
+          description: 'Specialty deleted successfully',
+          variant: 'success',
+        });
+      },
+    });
   };
 
   const generateSlug = (name: string) => {

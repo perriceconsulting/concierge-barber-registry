@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
+import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
 
 interface Barber {
@@ -29,6 +30,7 @@ interface Barber {
 
 export default function AdminBarbersPage() {
   const { showToast } = useToast();
+  const { showConfirm } = useModal();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'suspended'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -168,14 +170,20 @@ export default function AdminBarbersPage() {
   };
 
   const handleSuspend = async (id: string) => {
-    if (confirm('Are you sure you want to suspend this barber?')) {
-      try {
-        const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'suspended' }),
-        });
+    showConfirm({
+      title: 'Suspend Barber',
+      description: 'Are you sure you want to suspend this barber? They will no longer be visible to clients.',
+      confirmText: 'Suspend',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'suspended' }),
+          });
 
-        const data = await response.json();
+          const data = await response.json();
 
         if (response.ok) {
           showToast({
@@ -199,7 +207,8 @@ export default function AdminBarbersPage() {
           variant: 'error',
         });
       }
-    }
+    },
+    });
   };
 
   if (isLoading) {
