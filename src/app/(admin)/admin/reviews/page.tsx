@@ -8,6 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ADMIN_REVIEWS');
+
+interface ReviewResponse {
+  id: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  createdAt: string;
+  isVisible: boolean;
+  barberProfile?: { displayName: string } | null;
+  client?: { firstName?: string; lastName?: string } | null;
+}
 
 interface Review {
   id: string;
@@ -37,8 +51,7 @@ export default function AdminReviewsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapped = data.data.reviews.map((r: any) => ({
+        const mapped = data.data.reviews.map((r: ReviewResponse) => ({
           id: r.id,
           barberName: r.barberProfile?.displayName || 'Unknown Barber',
           clientName: r.client
@@ -53,7 +66,7 @@ export default function AdminReviewsPage() {
         setReviews(mapped);
       }
     } catch (error) {
-      console.error('Failed to fetch reviews:', error);
+      logger.error('Failed to fetch reviews:', error);
       showToast({
         title: 'Error',
         description: 'Failed to load reviews',

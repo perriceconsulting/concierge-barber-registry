@@ -6,7 +6,7 @@ interface BarberStructuredDataProps {
     displayName: string;
     slug: string;
     bio: string | null;
-    address: string;
+    address: string | null;
     city: string;
     state: string;
     zipCode: string;
@@ -24,8 +24,8 @@ interface BarberStructuredDataProps {
     reviews: Array<{
       id: string;
       rating: number;
-      comment: string;
-      createdAt: Date;
+      comment: string | null;
+      createdAt: string | Date;
       client: {
         firstName: string;
         lastName: string;

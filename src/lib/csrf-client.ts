@@ -21,7 +21,8 @@ export async function fetchCsrfToken(): Promise<string> {
 
     throw new Error('Failed to fetch CSRF token');
   } catch (error) {
-    console.error('Error fetching CSRF token:', error);
+    // Keep as console.error for client-side visibility during development
+    if (process.env.NODE_ENV !== 'production') console.error('Error fetching CSRF token:', error);
     throw error;
   }
 }

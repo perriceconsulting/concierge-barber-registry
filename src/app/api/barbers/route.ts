@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { Prisma } from '@prisma/client';
+import { AuthRequest, withAuth } from '@/lib/api/middleware';
 import { createBarberProfileSchema } from '@/lib/validations/barber';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { generateUniqueBarberSlug } from '@/lib/slug';
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.BarberProfileWhereInput = {
       verificationStatus: 'approved',
     };
 
@@ -130,10 +131,10 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/barbers - Create barber profile (authenticated barber only)
-const createBarberHandler = async (request: any) => {
+const createBarberHandler = async (request: AuthRequest) => {
   try {
     // Get user info from request (set by withAuth middleware)
-    const userId = request.userId;
+    const userId = request.userId!;
     const userRole = request.userRole;
 
     // Only barbers can create barber profiles

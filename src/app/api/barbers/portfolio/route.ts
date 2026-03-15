@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError, ApiError } from '@/lib/api/errors';
 import { uploadFile, validateFile } from '@/lib/upload';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('PORTFOLIO');
 
 const MAX_PORTFOLIO_IMAGES = 20; // Per barber limit
 const MAX_TOTAL_PORTFOLIO_IMAGES = 50000; // Platform-wide DoS protection
 
 // GET /api/barbers/portfolio - Get authenticated barber's portfolio images
-const getPortfolioHandler = async (request: any) => {
+const getPortfolioHandler = async (request: AuthRequest) => {
   try {
     const userId = request.userId;
 
@@ -43,7 +46,7 @@ const getPortfolioHandler = async (request: any) => {
 const addPortfolioImageHandler = async (request: { userId?: string; formData: () => Promise<FormData> }) => {
   try {
     // Add rate limiting
-    await rateLimiters.upload(request as any);
+    await rateLimiters.upload(request as AuthRequest);
 
     const userId = request.userId;
 
@@ -79,7 +82,7 @@ const addPortfolioImageHandler = async (request: { userId?: string; formData: ()
 
     // Platform-wide DoS protection - prevent storage exhaustion
     if (totalCount >= MAX_TOTAL_PORTFOLIO_IMAGES) {
-      console.error(`[PORTFOLIO] Platform-wide image limit reached: ${totalCount}/${MAX_TOTAL_PORTFOLIO_IMAGES}`);
+      logger.error(`Platform-wide image limit reached: ${totalCount}/${MAX_TOTAL_PORTFOLIO_IMAGES}`);
       throw new ApiError(
         503,
         'SERVICE_UNAVAILABLE',

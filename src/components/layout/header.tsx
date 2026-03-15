@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { ROUTES, APP_CONFIG } from '@/config';
 import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('HEADER');
 
 export function Header() {
   const router = useRouter();
@@ -58,7 +61,7 @@ export function Header() {
         else router.push('/');
       }
     } catch (error) {
-      console.error('Failed to switch role:', error);
+      logger.error('Failed to switch role:', error);
     }
   };
 
@@ -73,7 +76,7 @@ export function Header() {
       setUserRole(null);
       router.push(ROUTES.HOME);
     } catch (error) {
-      console.error('Logout failed:', error);
+      logger.error('Logout failed:', error);
     }
   };
 

@@ -6,7 +6,29 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
+import { createLogger } from '@/lib/logger';
 
+const logger = createLogger('SEARCH');
+
+interface SpecialtyItem {
+  specialty: { id: string; name: string };
+}
+
+interface SearchBarber {
+  id: string;
+  displayName: string;
+  slug: string;
+  tagline: string | null;
+  city: string;
+  state: string;
+  averageRating: number;
+  totalReviews: number;
+  yearsExperience: number | null;
+  licenseVerified: boolean;
+  verificationStatus: string;
+  specialties: SpecialtyItem[];
+  portfolioImages: Array<{ imageUrl: string }>;
+}
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,7 +39,7 @@ export default function SearchPage() {
     minRating: 0,
     verifiedOnly: false,
   });
-  const [barbers, setBarbers] = useState<any[]>([]);
+  const [barbers, setBarbers] = useState<SearchBarber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch barbers on mount and when filters change
@@ -46,7 +68,7 @@ export default function SearchPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch barbers:', error);
+      logger.error('Failed to fetch barbers:', error);
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +78,7 @@ export default function SearchPage() {
   const filteredBarbers = barbers.filter((barber) => {
     // Specialty filter (client-side since we use specialty name, not slug)
     const matchesSpecialty = !filters.specialty ||
-      barber.specialties?.some((item: any) =>
+      barber.specialties?.some((item: SpecialtyItem) =>
         item.specialty?.name?.toLowerCase().includes(filters.specialty.toLowerCase())
       );
 
@@ -213,7 +235,7 @@ export default function SearchPage() {
                         <p className="text-sm text-muted-foreground mb-3 italic">{barber.tagline}</p>
                       )}
                       <div className="flex gap-2 flex-wrap">
-                        {barber.specialties?.map((item: any) => (
+                        {barber.specialties?.map((item: SpecialtyItem) => (
                           <Badge key={item.specialty.id} variant="secondary">
                             {item.specialty.name}
                           </Badge>

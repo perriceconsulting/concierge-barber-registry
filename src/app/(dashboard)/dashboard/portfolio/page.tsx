@@ -9,6 +9,9 @@ import { ImageUploader } from '@/components/portfolio/image-uploader';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('PORTFOLIO');
 
 interface PortfolioImage {
   id: string;
@@ -56,7 +59,7 @@ export default function PortfolioPage() {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch portfolio:', error);
+      logger.error('Failed to fetch portfolio:', error);
       showToast({
         title: 'Error',
         description: 'Failed to load portfolio. Please try again.',
@@ -93,7 +96,7 @@ export default function PortfolioPage() {
         });
       }
     } catch (error) {
-      console.error('Failed to upload image:', error);
+      logger.error('Failed to upload image:', error);
       showToast({
         title: 'Error',
         description: 'Failed to upload image. Please try again.',
@@ -134,7 +137,7 @@ export default function PortfolioPage() {
             });
           }
         } catch (error) {
-          console.error('Failed to delete image:', error);
+          logger.error('Failed to delete image:', error);
           showToast({
             title: 'Error',
             description: 'Failed to delete image. Please try again.',
@@ -171,7 +174,7 @@ export default function PortfolioPage() {
         });
       }
     } catch (error) {
-      console.error('Failed to update caption:', error);
+      logger.error('Failed to update caption:', error);
       showToast({
         title: 'Error',
         description: 'Failed to update caption. Please try again.',

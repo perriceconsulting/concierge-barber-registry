@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('SETTINGS');
 
 export default function SettingsPage() {
   const { showToast } = useToast();
@@ -62,7 +65,7 @@ export default function SettingsPage() {
         setEmailVerified(user.emailVerified);
       }
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      logger.error('Failed to fetch user data:', error);
     }
   };
 
@@ -77,7 +80,7 @@ export default function SettingsPage() {
         setPreferences(data.data.preferences);
       }
     } catch (error) {
-      console.error('Failed to fetch preferences:', error);
+      logger.error('Failed to fetch preferences:', error);
     } finally {
       setIsLoadingPreferences(false);
     }
@@ -101,10 +104,11 @@ export default function SettingsPage() {
       } else {
         throw new Error(data.message || 'Failed to save preferences');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       showToast({
         title: 'Error',
-        description: error.message || 'Failed to save preferences',
+        description: message,
         variant: 'error',
       });
     } finally {
@@ -151,10 +155,11 @@ export default function SettingsPage() {
       } else {
         throw new Error(data.message || 'Failed to change password');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       showToast({
         title: 'Error',
-        description: error.message || 'Failed to change password',
+        description: message,
         variant: 'error',
       });
     } finally {
@@ -184,10 +189,11 @@ export default function SettingsPage() {
       } else {
         throw new Error(data.message || 'Failed to deactivate account');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       showToast({
         title: 'Error',
-        description: error.message || 'Failed to deactivate account',
+        description: message,
         variant: 'error',
       });
     }
@@ -216,10 +222,11 @@ export default function SettingsPage() {
       } else {
         throw new Error(data.message || 'Failed to delete account');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       showToast({
         title: 'Error',
-        description: error.message || 'Failed to delete account',
+        description: message,
         variant: 'error',
       });
     }
@@ -243,10 +250,11 @@ export default function SettingsPage() {
       } else {
         throw new Error(data.message || 'Failed to send verification email');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       showToast({
         title: 'Error',
-        description: error.message || 'Failed to send verification email',
+        description: message,
         variant: 'error',
       });
     } finally {

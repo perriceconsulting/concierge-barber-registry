@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError, ApiError } from '@/lib/api/errors';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { auditAuthEvent } from '@/lib/audit';
 import { z } from 'zod';
 import { passwordSchema } from '@/lib/validations/auth';
+import { createLogger } from '@/lib/logger';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -17,7 +18,7 @@ const changePasswordSchema = z.object({
 });
 
 // PUT /api/user/password - Change user's password
-const changePasswordHandler = async (request: any) => {
+const changePasswordHandler = async (request: AuthRequest) => {
   try {
     const userId = request.userId;
     const body = await request.json();
@@ -63,8 +64,8 @@ const changePasswordHandler = async (request: any) => {
     });
 
     // Audit log for password change (fire and forget)
-    auditAuthEvent('user.password_change', userId, request)
-      .catch((error) => console.error('[AUDIT] Failed to log password change:', error));
+    auditAuthEvent('user.password_change', userId!, request)
+      .catch((error) => createLogger('AUDIT').error('Failed to log password change:', error));
 
     return NextResponse.json({
       success: true,

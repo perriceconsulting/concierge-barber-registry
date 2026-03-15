@@ -5,6 +5,9 @@ import { generateToken, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ResourceErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { sendPasswordResetEmail } from '@/lib/email';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AUTH'); // [AUTH] tag for log messages
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,12 +61,12 @@ export async function POST(request: NextRequest) {
     sendPasswordResetEmail(user.email, user.firstName, resetToken)
       .then((result) => {
         if (result.success) {
-          console.log('[AUTH] Password reset email sent successfully');
+          logger.info('Password reset email sent successfully');
         } else {
-          console.error('[AUTH] Failed to send password reset email:', result.message || result.error);
+          logger.error('Failed to send password reset email:', result.message || result.error);
         }
       })
-      .catch((error) => console.error('[AUTH] Error sending password reset email:', error));
+      .catch((error) => logger.error('Error sending password reset email:', error));
 
     return successResponse({
       message: 'If an account exists with this email, you will receive password reset instructions.',

@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AUTH');
 
 function getRedirectPath(role: string): string {
   switch (role) {
@@ -54,7 +57,7 @@ export default function VerifyEmailPage() {
         }
       })
       .catch((error) => {
-        console.error('Verification error:', error);
+        logger.error('Verification error:', error);
         setStatus('error');
         setMessage('An error occurred while verifying your email');
       });

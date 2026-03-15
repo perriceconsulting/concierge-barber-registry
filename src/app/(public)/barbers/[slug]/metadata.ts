@@ -1,5 +1,8 @@
 import { Metadata } from 'next';
 import { prisma } from '@/lib/db';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('METADATA');
 
 export async function generateBarberMetadata(slug: string): Promise<Metadata> {
   try {
@@ -83,7 +86,7 @@ export async function generateBarberMetadata(slug: string): Promise<Metadata> {
       },
     };
   } catch (error) {
-    console.error('Error generating barber metadata:', error);
+    logger.error('Error generating barber metadata:', error);
     return {
       title: 'Barber Profile',
       description: 'View barber profile, portfolio, and reviews.',

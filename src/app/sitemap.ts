@@ -1,5 +1,8 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/db';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('SITEMAP');
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
@@ -90,7 +93,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
     ];
   } catch (error) {
-    console.error('Error generating sitemap:', error);
+    logger.error('Error generating sitemap:', error);
     // Return basic sitemap if database query fails
     return [
       {

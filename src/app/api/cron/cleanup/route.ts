@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runCleanupJob } from '@/lib/session-cleanup';
 import { handleApiError } from '@/lib/api/errors';
+import { createLogger } from '@/lib/logger';
 import crypto from 'crypto';
+
+const logger = createLogger('CRON');
 
 /**
  * Constant-time string comparison to prevent timing attacks
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // Require CRON_SECRET in all environments
     if (!cronSecret) {
-      console.error('[SECURITY] CRON_SECRET not configured - cron endpoint unavailable');
+      logger.error('CRON_SECRET not configured - cron endpoint unavailable');
       return NextResponse.json(
         {
           success: false,
@@ -55,7 +58,7 @@ export async function GET(request: NextRequest) {
     // Validate authorization header exists and matches (using timing-safe comparison)
     const expectedAuth = `Bearer ${cronSecret}`;
     if (!authHeader || !secureCompare(authHeader, expectedAuth)) {
-      console.warn('[SECURITY] Unauthorized cron access attempt', {
+      logger.warn('Unauthorized cron access attempt', {
         ip: request.headers.get('x-forwarded-for'),
         userAgent: request.headers.get('user-agent'),
         hasAuth: !!authHeader,
@@ -78,7 +81,7 @@ export async function GET(request: NextRequest) {
       message: 'Cleanup completed successfully',
     });
   } catch (error) {
-    console.error('[Cron Cleanup] Error:', error);
+    logger.error('Error:', error);
     return handleApiError(error);
   }
 }

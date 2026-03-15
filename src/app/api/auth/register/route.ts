@@ -8,7 +8,10 @@ import { sendWelcomeEmail, sendVerificationEmail } from '@/lib/email';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { auditAuthEvent } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
 import crypto from 'crypto';
+
+const logger = createLogger('AUTH'); // [AUTH] tag for log messages
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,23 +104,23 @@ export async function POST(request: NextRequest) {
       sendWelcomeEmail(user.email, user.firstName, user.role as 'client' | 'barber')
         .then((result) => {
           if (result.success) {
-            console.log('[AUTH] Welcome email sent successfully');
+            logger.info('Welcome email sent successfully');
           } else {
-            console.error('[AUTH] Failed to send welcome email:', result.message || result.error);
+            logger.error('Failed to send welcome email:', result.message || result.error);
           }
         })
-        .catch((error) => console.error('[AUTH] Error sending welcome email:', error)),
+        .catch((error) => logger.error('Error sending welcome email:', error)),
 
       sendVerificationEmail(user.email, user.firstName, verificationToken)
         .then((result) => {
           if (result.success) {
-            console.log('[AUTH] Verification email sent successfully');
+            logger.info('Verification email sent successfully');
           } else {
-            console.error('[AUTH] Failed to send verification email:', result.message || result.error);
+            logger.error('Failed to send verification email:', result.message || result.error);
           }
         })
-        .catch((error) => console.error('[AUTH] Error sending verification email:', error)),
-    ]).catch((error) => console.error('[AUTH] Error in email sending:', error));
+        .catch((error) => logger.error('Error sending verification email:', error)),
+    ]).catch((error) => logger.error('Error in email sending:', error));
 
     // Set cookies for both tokens (httpOnly for security)
     const response = successResponse(
@@ -150,7 +153,7 @@ export async function POST(request: NextRequest) {
     auditAuthEvent('user.register', user.id, request, {
       email: user.email,
       role: user.role,
-    }).catch((error) => console.error('[AUDIT] Failed to log registration event:', error));
+    }).catch((error) => createLogger('AUDIT').error('Failed to log registration event:', error));
 
     return response;
   } catch (error) {

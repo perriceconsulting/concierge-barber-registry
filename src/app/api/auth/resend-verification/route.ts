@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
 import { sendVerificationEmail } from '@/lib/email';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { createLogger } from '@/lib/logger';
 import crypto from 'crypto';
 
+const logger = createLogger('AUTH');
+
 // POST /api/auth/resend-verification - Resend email verification
-const resendVerificationHandler = async (request: any) => {
+const resendVerificationHandler = async (request: AuthRequest) => {
   try {
     // Apply rate limiting to prevent email spam
     await rateLimiters.contact(request);
@@ -68,13 +71,13 @@ const resendVerificationHandler = async (request: any) => {
     sendVerificationEmail(user.email, user.firstName, token)
       .then((result) => {
         if (result.success) {
-          console.log('[AUTH] Verification email sent successfully');
+          logger.info('Verification email sent successfully');
         } else {
-          console.error('[AUTH] Failed to send verification email:', result.message || result.error);
+          logger.error('Failed to send verification email:', result.message || result.error);
         }
       })
       .catch((error) => {
-        console.error('[AUTH] Error sending verification email:', error);
+        logger.error('Error sending verification email:', error);
       });
 
     return successResponse({

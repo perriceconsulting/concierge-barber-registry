@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
 import { RateLimitError } from './errors';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('RATE_LIMIT');
 
 interface RateLimitRecord {
   count: number;
@@ -46,7 +49,7 @@ async function getKVClient() {
       const { kv } = await import('@vercel/kv');
       return kv;
     } catch (error) {
-      console.warn('[RATE LIMIT] Vercel KV unavailable, falling back to in-memory:', error);
+      logger.warn('Vercel KV unavailable, falling back to in-memory:', error);
       return null;
     }
   }
@@ -57,8 +60,7 @@ async function getKVClient() {
  * Rate limit using Vercel KV (distributed)
  */
 async function rateLimitWithKV(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  kv: any,
+  kv: { incr: (key: string) => Promise<number>; expire: (key: string, seconds: number) => Promise<unknown> },
   key: string,
   config: RateLimitConfig
 ): Promise<void> {

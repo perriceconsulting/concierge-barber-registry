@@ -6,7 +6,8 @@ const getSecret = (envVar: string | undefined, name: string) => {
     if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
       throw new Error(`${name} must be set in production environment`);
     }
-    console.warn(`⚠️  ${name} not set - using development default (NOT FOR PRODUCTION)`);
+    // Only warn in development - production throws above
+    if (typeof console !== 'undefined') console.warn(`${name} not set - using development default`);
     return `dev-secret-${name}-for-local-development-only`;
   }
   return envVar;

@@ -8,6 +8,27 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ADMIN_BARBERS');
+
+interface BarberResponse {
+  id: string;
+  displayName: string;
+  city: string;
+  state: string;
+  verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
+  licenseNumber?: string;
+  licenseState?: string;
+  licenseExpirationDate?: string;
+  licenseDocumentUrl?: string;
+  createdAt: string;
+  user?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+}
 
 interface Barber {
   id: string;
@@ -57,8 +78,7 @@ export default function AdminBarbersPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setBarbers(data.data.barbers.map((b: any) => ({
+        setBarbers(data.data.barbers.map((b: BarberResponse) => ({
           id: b.id,
           displayName: b.displayName,
           email: b.user?.email || '',
@@ -76,7 +96,7 @@ export default function AdminBarbersPage() {
         setError(data.message || 'Failed to fetch barbers');
       }
     } catch (err) {
-      console.error('Failed to fetch barbers:', err);
+      logger.error('Failed to fetch barbers:', err);
       setError('Failed to load barbers. Please try again.');
     } finally {
       setIsLoading(false);
@@ -125,7 +145,7 @@ export default function AdminBarbersPage() {
         });
       }
     } catch (err) {
-      console.error('Failed to approve barber:', err);
+      logger.error('Failed to approve barber:', err);
       showToast({
         title: 'Error',
         description: 'Failed to approve barber. Please try again.',
@@ -166,7 +186,7 @@ export default function AdminBarbersPage() {
             });
           }
         } catch (err) {
-          console.error('Failed to reject barber:', err);
+          logger.error('Failed to reject barber:', err);
           showToast({
             title: 'Error',
             description: 'Failed to reject barber. Please try again.',
@@ -208,7 +228,7 @@ export default function AdminBarbersPage() {
           });
         }
       } catch (err) {
-        console.error('Failed to suspend barber:', err);
+        logger.error('Failed to suspend barber:', err);
         showToast({
           title: 'Error',
           description: 'Failed to suspend barber. Please try again.',

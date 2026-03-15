@@ -7,6 +7,7 @@ import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { auditAuthEvent } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
     auditAuthEvent('user.login', user.id, request, {
       email: user.email,
       role: user.role,
-    }).catch((error) => console.error('[AUDIT] Failed to log login event:', error));
+    }).catch((error) => createLogger('AUDIT').error('Failed to log login event:', error));
 
     return response;
   } catch (error) {

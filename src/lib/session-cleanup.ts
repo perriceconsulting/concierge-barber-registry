@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { createLogger } from '@/lib/logger';
 
 /**
  * Clean up expired and revoked sessions
@@ -34,9 +35,8 @@ export async function cleanupExpiredSessions(): Promise<{
 
     const totalDeleted = deletedExpired.count + deletedRevoked.count;
 
-    console.log(`[Session Cleanup] Deleted ${totalDeleted} sessions:`);
-    console.log(`  - ${deletedExpired.count} expired sessions`);
-    console.log(`  - ${deletedRevoked.count} old revoked sessions`);
+    const sessionLogger = createLogger('SESSION_CLEANUP');
+    sessionLogger.info(`Deleted ${totalDeleted} sessions: ${deletedExpired.count} expired, ${deletedRevoked.count} old revoked`);
 
     return {
       deletedCount: totalDeleted,
@@ -44,7 +44,7 @@ export async function cleanupExpiredSessions(): Promise<{
       deletedRevoked: deletedRevoked.count,
     };
   } catch (error) {
-    console.error('[Session Cleanup] Error cleaning up sessions:', error);
+    createLogger('SESSION_CLEANUP').error('Error cleaning up sessions:', error);
     throw error;
   }
 }
@@ -65,11 +65,11 @@ export async function cleanupExpiredVerificationTokens(): Promise<{ deletedCount
       },
     });
 
-    console.log(`[Token Cleanup] Deleted ${result.count} expired verification tokens`);
+    createLogger('TOKEN_CLEANUP').info(`Deleted ${result.count} expired verification tokens`);
 
     return { deletedCount: result.count };
   } catch (error) {
-    console.error('[Token Cleanup] Error cleaning up verification tokens:', error);
+    createLogger('TOKEN_CLEANUP').error('Error cleaning up verification tokens:', error);
     throw error;
   }
 }
@@ -81,14 +81,14 @@ export async function runCleanupJob(): Promise<{
   sessions: { deletedCount: number; deletedRevoked: number; deletedExpired: number };
   tokens: { deletedCount: number };
 }> {
-  console.log('[Cleanup Job] Starting cleanup...');
+  createLogger('CLEANUP').info('Starting cleanup...');
 
   const [sessions, tokens] = await Promise.all([
     cleanupExpiredSessions(),
     cleanupExpiredVerificationTokens(),
   ]);
 
-  console.log('[Cleanup Job] Cleanup completed successfully');
+  createLogger('CLEANUP').info('Cleanup completed successfully');
 
   return { sessions, tokens };
 }

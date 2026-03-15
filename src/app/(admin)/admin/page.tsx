@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ROUTES } from '@/config';
 import { secureFetch } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ADMIN_DASHBOARD');
 
 interface DashboardStats {
   totalBarbers: number;
@@ -54,7 +57,7 @@ export default function AdminDashboardPage() {
           setRecentSignups(json.data.recentSignups);
         }
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        logger.error('Failed to fetch dashboard data:', error);
       } finally {
         setLoading(false);
       }

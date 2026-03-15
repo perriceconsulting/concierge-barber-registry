@@ -5,6 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AUDIT_LOG');
+
+interface AuditLogResponse {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  details: Record<string, unknown> | null;
+  ipAddress: string | null;
+  createdAt: string;
+  actor?: { email: string; firstName?: string; lastName?: string } | null;
+}
 
 interface AuditLogEntry {
   id: string;
@@ -48,8 +62,7 @@ export default function AdminAuditLogPage() {
       const json = await res.json();
 
       if (json.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapped: AuditLogEntry[] = json.data.logs.map((log: any) => ({
+        const mapped: AuditLogEntry[] = json.data.logs.map((log: AuditLogResponse) => ({
           id: log.id,
           action: log.action,
           entityType: log.entityType || '',
@@ -66,7 +79,7 @@ export default function AdminAuditLogPage() {
         setPagination(json.data.pagination);
       }
     } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
+      logger.error('Failed to fetch audit logs:', error);
     } finally {
       setLoading(false);
     }

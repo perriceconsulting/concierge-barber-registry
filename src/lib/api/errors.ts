@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('API');
 
 export class ApiError extends Error {
   constructor(
@@ -14,7 +17,7 @@ export class ApiError extends Error {
 }
 
 export function handleApiError(error: unknown) {
-  console.error('API Error:', error);
+  logger.error('Error:', error);
 
   // Zod validation error
   if (error instanceof ZodError) {

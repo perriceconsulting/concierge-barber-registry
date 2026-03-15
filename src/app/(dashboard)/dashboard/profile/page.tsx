@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
 import { secureFetch } from '@/lib/csrf-client';
 import { LicenseUploader } from '@/components/barber/license-uploader';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('PROFILE');
 
 export default function ProfilePage() {
   const { showToast } = useToast();
@@ -91,7 +94,7 @@ export default function ProfilePage() {
         setError('Failed to load profile');
       }
     } catch (err) {
-      console.error('Failed to fetch profile:', err);
+      logger.error('Failed to fetch profile:', err);
       setError('Failed to load profile');
     } finally {
       setIsFetching(false);
@@ -121,7 +124,7 @@ export default function ProfilePage() {
         setError(data.message || 'Failed to update profile');
       }
     } catch (err) {
-      console.error('Failed to update profile:', err);
+      logger.error('Failed to update profile:', err);
       setError('Failed to update profile. Please try again.');
     } finally {
       setIsLoading(false);

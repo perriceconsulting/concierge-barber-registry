@@ -6,6 +6,9 @@ import { updateBarberProfileSchema } from '@/lib/validations/barber';
 import { handleApiError } from '@/lib/api/errors';
 import { sanitizeBio, sanitizeText, sanitizeUrl } from '@/lib/sanitize';
 import { generateUniqueBarberSlug } from '@/lib/slug';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('PROFILE');
 
 // GET /api/barbers/profile - Get authenticated barber's profile
 const getProfileHandler = async (request: { userId?: string }) => {
@@ -51,7 +54,7 @@ const getProfileHandler = async (request: { userId?: string }) => {
       data: { barberProfile },
     });
   } catch (error) {
-    console.error('[PROFILE] GET error:', error);
+    logger.error('GET error:', error);
     return handleApiError(error);
   }
 };

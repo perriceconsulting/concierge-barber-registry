@@ -3,6 +3,9 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 import { uploadFile, validateFile } from '@/lib/upload';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('LICENSE_UPLOAD');
 
 // POST /api/barbers/license-upload - Upload license document
 const uploadLicenseHandler = async (request: { userId?: string; formData: () => Promise<FormData> }) => {
@@ -73,7 +76,7 @@ const uploadLicenseHandler = async (request: { userId?: string; formData: () => 
     });
   } catch (error) {
     // Log sanitized error without potentially sensitive details
-    console.error('[LICENSE UPLOAD] Upload failed:', {
+    logger.error('Upload failed:', {
       errorType: error instanceof Error ? error.name : 'Unknown',
       timestamp: new Date().toISOString(),
     });

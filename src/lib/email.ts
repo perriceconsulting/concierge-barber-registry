@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
+import { createLogger } from '@/lib/logger';
 
+const logger = createLogger('EMAIL'); // [EMAIL] tag for log messages
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 interface SendEmailParams {
@@ -10,7 +12,7 @@ interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   if (!resend) {
-    console.log('[EMAIL] Service not configured - RESEND_API_KEY missing');
+    logger.warn('Service not configured - RESEND_API_KEY missing');
     // DO NOT log PII (email address) - GDPR violation
     return { success: false, message: 'Email service not configured' };
   }
@@ -20,7 +22,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 
   if (!isProduction) {
-    console.log('[EMAIL] Development mode - simulating email send');
+    logger.info('Development mode - simulating email send');
     // DO NOT log recipient email - GDPR violation
     return {
       success: true,
@@ -33,7 +35,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
 
   try {
     // DO NOT log email addresses - GDPR violation
-    console.log('[EMAIL] Sending email');
+    logger.info('Sending email');
 
     const data = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
@@ -42,10 +44,10 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
       html,
     });
 
-    console.log('[EMAIL] Email sent successfully');
+    logger.info('Email sent successfully');
     return { success: true, data };
   } catch (error) {
-    console.error('[EMAIL] Failed to send email:', error);
+    logger.error('Failed to send email:', error);
     return { success: false, error };
   }
 }

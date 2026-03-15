@@ -7,10 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
 import { ROUTES } from '@/config';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('HOME');
+
+interface FeaturedBarber {
+  id: string;
+  slug: string;
+  displayName: string;
+  city: string;
+  state: string;
+  tagline: string | null;
+  averageRating: number;
+  yearsExperience: number | null;
+  specialties: Array<{ specialty: { id: number; name: string } }>;
+}
 
 export default function HomeContent() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [featuredBarbers, setFeaturedBarbers] = useState<any[]>([]);
+  const [featuredBarbers, setFeaturedBarbers] = useState<FeaturedBarber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +41,7 @@ export default function HomeContent() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch featured barbers:', error);
+      logger.error('Failed to fetch featured barbers:', error);
     } finally {
       setIsLoading(false);
     }
@@ -189,8 +203,7 @@ export default function HomeContent() {
                         <p className="text-sm text-muted-foreground mb-3 italic">{barber.tagline}</p>
                       )}
                       <div className="flex gap-2 flex-wrap">
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {barber.specialties?.slice(0, 3).map((item: any) => (
+                          {barber.specialties?.slice(0, 3).map((item) => (
                           <Badge key={item.specialty.id} variant="secondary">
                             {item.specialty.name}
                           </Badge>

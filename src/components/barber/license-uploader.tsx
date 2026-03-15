@@ -4,6 +4,9 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { secureFetch } from '@/lib/csrf-client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('LICENSE');
 
 interface LicenseUploaderProps {
   currentDocumentUrl?: string;
@@ -75,7 +78,7 @@ export function LicenseUploader({
         setPreviewUrl(currentDocumentUrl || null);
       }
     } catch (err) {
-      console.error('Upload error:', err);
+      logger.error('Upload error:', err);
       onUploadError?.('Failed to upload file. Please try again.');
       setPreviewUrl(currentDocumentUrl || null);
     } finally {

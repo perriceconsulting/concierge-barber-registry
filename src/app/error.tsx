@@ -3,6 +3,9 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('APP');
 
 export default function Error({
   error,
@@ -12,7 +15,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Application error:', error);
+    logger.error('Application error:', error);
   }, [error]);
 
   return (

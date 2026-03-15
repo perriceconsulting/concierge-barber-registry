@@ -1,3 +1,14 @@
+/**
+ * @jest-environment node
+ */
+// Polyfill Request for Next.js server imports in test environment
+import { Request as NodeRequest, Response as NodeResponse, Headers as NodeHeaders } from 'undici';
+Object.assign(globalThis, {
+  Request: globalThis.Request || NodeRequest,
+  Response: globalThis.Response || NodeResponse,
+  Headers: globalThis.Headers || NodeHeaders,
+});
+
 import { NextRequest } from 'next/server';
 import { generateCsrfToken, verifyCsrfToken } from '@/lib/api/csrf';
 import { ApiError } from '@/lib/api/errors';

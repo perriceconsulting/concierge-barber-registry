@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('PROFILE_VIEWS');
 
 interface RouteParams {
   params: Promise<{
@@ -114,7 +117,7 @@ export async function GET(
           });
         }
       } catch (error) {
-        console.error('[PROFILE VIEWS] Failed to increment view counter:', error);
+        logger.error('Failed to increment view counter:', error);
       }
     })();
 

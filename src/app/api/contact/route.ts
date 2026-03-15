@@ -6,6 +6,9 @@ import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { optionalAuth } from '@/lib/api/middleware';
 import { sendContactRequestEmail } from '@/lib/email';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('CONTACT'); // [CONTACT] tag for log messages
 
 // POST /api/contact - Submit a contact request (public endpoint with optional auth)
 export async function POST(request: NextRequest) {
@@ -74,12 +77,12 @@ export async function POST(request: NextRequest) {
     })
       .then((result) => {
         if (result.success) {
-          console.log('[CONTACT] Contact request email sent successfully');
+          logger.info('Contact request email sent successfully');
         } else {
-          console.error('[CONTACT] Failed to send contact request email:', result.message || result.error);
+          logger.error('Failed to send contact request email:', result.message || result.error);
         }
       })
-      .catch((error) => console.error('[CONTACT] Error sending contact request email:', error));
+      .catch((error) => logger.error('Error sending contact request email:', error));
 
     return NextResponse.json({
       success: true,

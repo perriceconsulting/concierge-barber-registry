@@ -12,6 +12,77 @@ import { Textarea } from '@/components/ui/textarea';
 import { Container } from '@/components/layout/container';
 import { useToast } from '@/components/ui/toast';
 import { BarberStructuredData } from '@/components/seo/barber-structured-data';
+import { createLogger } from '@/lib/logger';
+import { secureFetch } from '@/lib/csrf-client';
+
+const logger = createLogger('BARBER');
+
+interface BarberSpecialtyItem {
+  specialty: { id: number; name: string; slug: string };
+}
+
+interface PortfolioImageItem {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  sortOrder: number;
+}
+
+interface ServiceItem {
+  id: string;
+  name: string;
+  description: string | null;
+  priceCents: number;
+  durationMinutes: number;
+  price: number;
+  duration: number;
+}
+
+interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  client: { firstName: string; lastName: string };
+}
+
+interface OperatingHoursItem {
+  id: string;
+  dayOfWeek: number;
+  openTime: string | null;
+  closeTime: string | null;
+  isClosed: boolean;
+}
+
+interface BarberProfile {
+  id: string;
+  slug: string;
+  displayName: string;
+  bio: string | null;
+  tagline: string | null;
+  yearsExperience: number | null;
+  averageRating: number;
+  totalReviews: number;
+  city: string;
+  state: string;
+  zipCode: string;
+  address: string | null;
+  phone: string | null;
+  website: string | null;
+  instagram: string | null;
+  shopName: string | null;
+  shopAddressLine1: string | null;
+  acceptsWalkIns: boolean;
+  acceptsAppointments: boolean;
+  websiteUrl: string | null;
+  instagramHandle: string | null;
+  specialties: BarberSpecialtyItem[];
+  portfolioImages: PortfolioImageItem[];
+  services: ServiceItem[];
+  reviews: ReviewItem[];
+  operatingHours: OperatingHoursItem[];
+  user?: { phone: string | null; email: string };
+}
 
 export default function BarberProfilePage() {
   const params = useParams();
@@ -19,7 +90,7 @@ export default function BarberProfilePage() {
   const { showToast } = useToast();
   const slug = params.slug as string;
 
-  const [barber, setBarber] = useState<any>(null);
+  const [barber, setBarber] = useState<BarberProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -71,7 +142,7 @@ export default function BarberProfilePage() {
         setBarber(data.data.barberProfile);
       }
     } catch (error) {
-      console.error('Failed to fetch barber profile:', error);
+      logger.error('Failed to fetch barber profile:', error);
     } finally {
       setIsLoading(false);
     }
@@ -113,14 +184,43 @@ export default function BarberProfilePage() {
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement contact form API call
-    showToast({
-      title: 'Success!',
-      description: 'Contact request sent!',
-      variant: 'success',
-    });
-    setShowContactForm(false);
-    setContactForm({ name: '', email: '', phone: '', message: '', service: '', preferredDate: '' });
+    try {
+      const response = await secureFetch('/api/contact', {
+        method: 'POST',
+        body: JSON.stringify({
+          barberProfileId: barber?.id,
+          clientName: contactForm.name,
+          clientEmail: contactForm.email,
+          clientPhone: contactForm.phone || undefined,
+          message: contactForm.message,
+          serviceInterested: contactForm.service || undefined,
+          preferredDate: contactForm.preferredDate || undefined,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast({
+          title: 'Success!',
+          description: 'Contact request sent! The barber will get back to you soon.',
+          variant: 'success',
+        });
+        setShowContactForm(false);
+        setContactForm({ name: '', email: '', phone: '', message: '', service: '', preferredDate: '' });
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.error?.message || 'Failed to send contact request',
+          variant: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Failed to send contact request. Please try again.',
+        variant: 'error',
+      });
+    }
   };
 
   if (isLoading) {
@@ -214,7 +314,7 @@ export default function BarberProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-2 flex-wrap">
-                    {barber.specialties.map((item: any) => (
+                    {barber.specialties.map((item) => (
                       <Badge key={item.specialty.id} variant="outline">
                         {item.specialty.name}
                       </Badge>
@@ -229,11 +329,11 @@ export default function BarberProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Portfolio</CardTitle>
-                  <CardDescription>View {barber.displayName}'s work</CardDescription>
+                  <CardDescription>View {barber.displayName}&apos;s work</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {barber.portfolioImages.map((image: any) => (
+                    {barber.portfolioImages.map((image) => (
                       <div key={image.id} className="aspect-square bg-muted relative rounded-lg overflow-hidden group">
                         <Image
                           src={image.imageUrl}
@@ -262,7 +362,7 @@ export default function BarberProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {barber.services.map((service: any) => (
+                    {barber.services.map((service) => (
                       <div key={service.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                         <div>
                           <p className="font-medium">{service.name}</p>
@@ -284,7 +384,7 @@ export default function BarberProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {barber.reviews.map((review: any) => (
+                    {barber.reviews.map((review) => (
                       <div key={review.id} className="border-b pb-4 last:border-0">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-medium">
@@ -350,7 +450,7 @@ export default function BarberProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {barber.operatingHours.map((hours: any) => {
+                    {barber.operatingHours.map((hours) => {
                       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                       return (
                         <div key={hours.id} className="flex justify-between text-sm">
@@ -418,7 +518,7 @@ export default function BarberProfilePage() {
                       onChange={(e) => setContactForm({ ...contactForm, service: e.target.value })}
                     >
                       <option value="">Select a service</option>
-                      {barber.services.map((service: any) => (
+                      {barber.services.map((service) => (
                         <option key={service.id} value={service.name}>{service.name}</option>
                       ))}
                     </select>

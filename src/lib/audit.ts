@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db';
 import type { Prisma, UserRole } from '@prisma/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AUDIT');
 
 export type AuditAction =
   | 'user.login'
@@ -63,8 +66,8 @@ export async function createAuditLog({
       },
     });
   } catch (error) {
-    // Log to console but don't throw - audit logging should not break application flow
-    console.error('[AUDIT LOG ERROR]', {
+    // Log but don't throw - audit logging should not break application flow
+    logger.error('Failed to create audit log', {
       action,
       entityType,
       entityId,
