@@ -437,3 +437,99 @@ export async function sendPasswordResetEmail(email: string, firstName: string, t
 
   return sendEmail({ to: email, subject, html });
 }
+
+// Contact request email template
+export function getContactRequestEmailHtml(
+  barberName: string,
+  clientName: string,
+  clientEmail: string,
+  clientPhone: string | null,
+  message: string,
+  serviceInterested: string | null,
+  preferredDate: string | null,
+  preferredTime: string | null
+) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Contact Request</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #7c2d12; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 28px;">📬 New Contact Request</h1>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+          <p style="font-size: 18px; margin-bottom: 20px;">Hi ${barberName},</p>
+
+          <p>You have received a new contact request through Concierge Barber Registry!</p>
+
+          <div style="background-color: white; border: 1px solid #e5e7eb; padding: 20px; margin: 20px 0; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #7c2d12;">Client Information</h3>
+            <p style="margin: 8px 0;"><strong>Name:</strong> ${clientName}</p>
+            <p style="margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${clientEmail}" style="color: #7c2d12;">${clientEmail}</a></p>
+            ${clientPhone ? `<p style="margin: 8px 0;"><strong>Phone:</strong> ${clientPhone}</p>` : ''}
+            ${serviceInterested ? `<p style="margin: 8px 0;"><strong>Service Interested:</strong> ${serviceInterested}</p>` : ''}
+            ${preferredDate ? `<p style="margin: 8px 0;"><strong>Preferred Date:</strong> ${preferredDate}</p>` : ''}
+            ${preferredTime ? `<p style="margin: 8px 0;"><strong>Preferred Time:</strong> ${preferredTime}</p>` : ''}
+          </div>
+
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #92400e;">Message:</h3>
+            <p style="margin: 0; white-space: pre-wrap;">${message}</p>
+          </div>
+
+          <p><strong>Next steps:</strong></p>
+          <ul style="padding-left: 20px;">
+            <li>Reply to ${clientEmail} directly to schedule an appointment</li>
+            ${clientPhone ? `<li>Call ${clientPhone} to discuss their needs</li>` : ''}
+            <li>Respond within 24 hours for the best client experience</li>
+          </ul>
+
+          <p style="color: #6b7280; font-size: 13px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            This contact request was submitted through your Concierge Barber Registry profile. To manage your profile settings or view your dashboard, log in to your account.
+          </p>
+        </div>
+
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">
+          <p>© ${new Date().getFullYear()} Concierge Barber Registry. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendContactRequestEmail(
+  barberEmail: string,
+  barberName: string,
+  contactRequest: {
+    clientName: string;
+    clientEmail: string;
+    clientPhone: string | null;
+    message: string;
+    serviceInterested: string | null;
+    preferredDate: Date | null;
+    preferredTime: string | null;
+  }
+) {
+  const subject = `New Contact Request from ${contactRequest.clientName}`;
+  const preferredDate = contactRequest.preferredDate
+    ? new Date(contactRequest.preferredDate).toLocaleDateString()
+    : null;
+
+  const html = getContactRequestEmailHtml(
+    barberName,
+    contactRequest.clientName,
+    contactRequest.clientEmail,
+    contactRequest.clientPhone,
+    contactRequest.message,
+    contactRequest.serviceInterested,
+    preferredDate,
+    contactRequest.preferredTime
+  );
+
+  return sendEmail({ to: barberEmail, subject, html });
+}

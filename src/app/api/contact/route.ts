@@ -5,6 +5,7 @@ import { ApiError, handleApiError } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { optionalAuth } from '@/lib/api/middleware';
+import { sendContactRequestEmail } from '@/lib/email';
 
 // POST /api/contact - Submit a contact request (public endpoint with optional auth)
 export async function POST(request: NextRequest) {
@@ -18,9 +19,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createContactRequestSchema.parse(body);
 
-    // Check if barber profile exists
+    // Check if barber profile exists and get barber user info
     const barberProfile = await prisma.barberProfile.findUnique({
       where: { id: validatedData.barberProfileId },
+      include: {
+        user: {
+          select: {
+            email: true,
+            firstName: true,
+          },
+        },
+      },
     });
 
     if (!barberProfile) {
@@ -53,8 +62,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send email notification to barber
-    // await sendContactRequestEmail(barberProfile, contactRequest);
+    // Send email notification to barber (fire and forget)
+    sendContactRequestEmail(barberProfile.user.email, barberProfile.user.firstName, {
+      clientName: contactRequest.clientName,
+      clientEmail: contactRequest.clientEmail,
+      clientPhone: contactRequest.clientPhone,
+      message: contactRequest.message,
+      serviceInterested: contactRequest.serviceInterested,
+      preferredDate: contactRequest.preferredDate,
+      preferredTime: contactRequest.preferredTime,
+    })
+      .then((result) => {
+        if (result.success) {
+          console.log(`✅ Contact request email sent to ${barberProfile.user.email}`);
+        } else {
+          console.error(`❌ Failed to send contact request email to ${barberProfile.user.email}:`, result.message || result.error);
+        }
+      })
+      .catch((error) => console.error(`❌ Error sending contact request email:`, error));
 
     return NextResponse.json({
       success: true,
