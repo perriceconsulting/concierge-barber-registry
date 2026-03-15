@@ -10,11 +10,12 @@ function escapeLikePattern(str: string): string {
   return str.replace(/[%_\\]/g, '\\$&');
 }
 
-// GET /api/admin/barbers - List all barbers with filters (admin only)
-const listBarbersHandler = async (request: NextRequest) => {
+// GET /api/admin/users - List all users with filters (admin only)
+const listUsersHandler = async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q') || '';
+    const role = searchParams.get('role') || '';
     const status = searchParams.get('status') || '';
 
     // Validate and sanitize pagination parameters
@@ -30,59 +31,51 @@ const listBarbersHandler = async (request: NextRequest) => {
     const where: Record<string, unknown> = {};
 
     if (query) {
-      // SECURITY FIX: Escape LIKE pattern special characters to prevent SQL injection
       const escapedQuery = escapeLikePattern(query);
       where.OR = [
-        { displayName: { contains: escapedQuery, mode: 'insensitive' } },
-        { shopName: { contains: escapedQuery, mode: 'insensitive' } },
-        { city: { contains: escapedQuery, mode: 'insensitive' } },
-        { user: { email: { contains: escapedQuery, mode: 'insensitive' } } },
+        { firstName: { contains: escapedQuery, mode: 'insensitive' } },
+        { lastName: { contains: escapedQuery, mode: 'insensitive' } },
+        { email: { contains: escapedQuery, mode: 'insensitive' } },
       ];
     }
 
-    if (status && ['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
-      where.verificationStatus = status;
+    if (role && ['client', 'barber', 'admin'].includes(role)) {
+      where.role = role;
+    }
+
+    if (status === 'active') {
+      where.isActive = true;
+    } else if (status === 'inactive') {
+      where.isActive = false;
     }
 
     // Execute query
-    const [barbers, total] = await Promise.all([
-      prisma.barberProfile.findMany({
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
         where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-              createdAt: true,
-            },
-          },
-          specialties: {
-            include: {
-              specialty: true,
-            },
-          },
-          _count: {
-            select: {
-              reviews: true,
-              portfolioImages: true,
-              services: true,
-            },
-          },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          phone: true,
+          isActive: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
         },
         skip: offset,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.barberProfile.count({ where }),
+      prisma.user.count({ where }),
     ]);
 
     return NextResponse.json({
       success: true,
       data: {
-        barbers,
+        users,
         pagination: {
           page,
           limit,
@@ -96,4 +89,4 @@ const listBarbersHandler = async (request: NextRequest) => {
   }
 };
 
-export const GET = withAuth(listBarbersHandler, { requiredRole: 'admin' });
+export const GET = withAuth(listUsersHandler, { requiredRole: 'admin' });

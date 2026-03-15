@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,23 +18,70 @@ interface AuditLogEntry {
   createdAt: string;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function AdminAuditLogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 });
+  const [loading, setLoading] = useState(true);
 
-  const auditLogs: AuditLogEntry[] = [];
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('q', searchQuery);
+      if (actionFilter !== 'all') params.set('action', actionFilter);
+      if (dateRange.from) params.set('from', dateRange.from);
+      if (dateRange.to) params.set('to', dateRange.to);
+      params.set('page', String(pagination.page));
+      params.set('limit', String(pagination.limit));
 
-  const filteredLogs = auditLogs.filter(log => {
-    const matchesSearch = searchQuery === '' ||
-      log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.actorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchQuery.toLowerCase());
+      const res = await fetch(`/api/admin/audit-log?${params.toString()}`);
+      const json = await res.json();
 
-    const matchesAction = actionFilter === 'all' || log.action.startsWith(actionFilter);
+      if (json.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped: AuditLogEntry[] = json.data.logs.map((log: any) => ({
+          id: log.id,
+          action: log.action,
+          entityType: log.entityType || '',
+          entityId: log.entityId || '',
+          actorName: log.actor
+            ? `${log.actor.firstName || ''} ${log.actor.lastName || ''}`.trim() || 'System'
+            : 'System',
+          actorEmail: log.actor?.email || 'N/A',
+          details: log.details ? (typeof log.details === 'string' ? log.details : JSON.stringify(log.details)) : '',
+          ipAddress: log.ipAddress || '',
+          createdAt: log.createdAt,
+        }));
+        setAuditLogs(mapped);
+        setPagination(json.data.pagination);
+      }
+    } catch (error) {
+      console.error('Failed to fetch audit logs:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, actionFilter, dateRange.from, dateRange.to, pagination.page, pagination.limit]);
 
-    return matchesSearch && matchesAction;
-  });
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [searchQuery, actionFilter, dateRange.from, dateRange.to]);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   const actionTypes = [
     { value: 'all', label: 'All Actions' },
@@ -44,7 +91,7 @@ export default function AdminAuditLogPage() {
     { value: 'specialty', label: 'Specialty Actions' },
   ];
 
-  const getActionBadgeVariant = (action: string): any => {
+  const getActionBadgeVariant = (action: string): 'default' | 'destructive' | 'secondary' | 'outline' => {
     if (action.includes('approved') || action.includes('created')) return 'default';
     if (action.includes('rejected') || action.includes('banned') || action.includes('deleted')) return 'destructive';
     if (action.includes('hidden') || action.includes('suspended')) return 'secondary';
@@ -65,14 +112,14 @@ export default function AdminAuditLogPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Events</CardDescription>
-            <CardTitle className="text-3xl">{auditLogs.length}</CardTitle>
+            <CardTitle className="text-3xl">{pagination.total}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Today</CardDescription>
             <CardTitle className="text-3xl">
-              {auditLogs.filter(l => l.createdAt.startsWith('2026-03-13')).length}
+              {auditLogs.filter(l => l.createdAt.startsWith(todayStr)).length}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -148,48 +195,83 @@ export default function AdminAuditLogPage() {
 
       {/* Audit Log Entries */}
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {filteredLogs.length} event{filteredLogs.length !== 1 ? 's' : ''} found
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {loading ? 'Loading...' : `${pagination.total} event${pagination.total !== 1 ? 's' : ''} found`}
+          </p>
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
 
-        {filteredLogs.map((log) => (
-          <Card key={log.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={getActionBadgeVariant(log.action)}>
-                      {log.action}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {log.entityType}
-                    </span>
-                  </div>
-                  <CardTitle className="text-lg">{log.details}</CardTitle>
-                  <CardDescription className="mt-1">
-                    By {log.actorName} ({log.actorEmail})
-                  </CardDescription>
-                </div>
-                <div className="text-right text-sm text-muted-foreground">
-                  <p>{log.createdAt}</p>
-                  <p className="text-xs mt-1">{log.ipAddress}</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p>Entity ID: <code className="text-xs bg-muted px-1 py-0.5 rounded">{log.entityId}</code></p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {filteredLogs.length === 0 && (
+        {loading ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No audit log entries found</p>
+              <p className="text-muted-foreground">Loading audit logs...</p>
             </CardContent>
           </Card>
+        ) : (
+          <>
+            {auditLogs.map((log) => (
+              <Card key={log.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant={getActionBadgeVariant(log.action)}>
+                          {log.action}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {log.entityType}
+                        </span>
+                      </div>
+                      <CardTitle className="text-lg">{log.details}</CardTitle>
+                      <CardDescription className="mt-1">
+                        By {log.actorName} ({log.actorEmail})
+                      </CardDescription>
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      <p>{log.createdAt}</p>
+                      <p className="text-xs mt-1">{log.ipAddress}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>Entity ID: <code className="text-xs bg-muted px-1 py-0.5 rounded">{log.entityId}</code></p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {auditLogs.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">No audit log entries found</p>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
     </div>

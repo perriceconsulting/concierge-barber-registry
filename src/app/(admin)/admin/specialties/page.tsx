@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
+import { secureFetch } from '@/lib/csrf-client';
 
 interface Specialty {
   id: number;
@@ -28,6 +29,33 @@ export default function AdminSpecialtiesPage() {
   });
 
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSpecialties = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/specialties', {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSpecialties(data.data);
+      }
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Failed to load specialties',
+        variant: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSpecialties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAdd = () => {
     setEditingSpecialty(null);
@@ -45,38 +73,64 @@ export default function AdminSpecialtiesPage() {
     setShowForm(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingSpecialty) {
-      setSpecialties(specialties.map(s =>
-        s.id === editingSpecialty.id
-          ? { ...s, name: formData.name, slug: formData.slug, icon: formData.icon }
-          : s
-      ));
+    try {
+      if (editingSpecialty) {
+        const response = await secureFetch(`/api/admin/specialties/${editingSpecialty.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(formData),
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+          showToast({
+            title: 'Error',
+            description: data.error?.message || 'Failed to update specialty',
+            variant: 'error',
+          });
+          return;
+        }
+
+        showToast({
+          title: 'Success',
+          description: 'Specialty updated successfully',
+          variant: 'success',
+        });
+      } else {
+        const response = await secureFetch('/api/admin/specialties', {
+          method: 'POST',
+          body: JSON.stringify(formData),
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+          showToast({
+            title: 'Error',
+            description: data.error?.message || 'Failed to create specialty',
+            variant: 'error',
+          });
+          return;
+        }
+
+        showToast({
+          title: 'Success',
+          description: 'Specialty created successfully',
+          variant: 'success',
+        });
+      }
+
+      setShowForm(false);
+      setFormData({ name: '', slug: '', icon: '' });
+      await fetchSpecialties();
+    } catch {
       showToast({
-        title: 'Success',
-        description: 'Specialty updated successfully',
-        variant: 'success',
-      });
-    } else {
-      const newSpecialty: Specialty = {
-        id: Math.max(...specialties.map(s => s.id)) + 1,
-        name: formData.name,
-        slug: formData.slug,
-        icon: formData.icon,
-        barberCount: 0,
-      };
-      setSpecialties([...specialties, newSpecialty]);
-      showToast({
-        title: 'Success',
-        description: 'Specialty created successfully',
-        variant: 'success',
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'error',
       });
     }
-
-    setShowForm(false);
-    setFormData({ name: '', slug: '', icon: '' });
   };
 
   const handleDelete = (id: number, barberCount: number = 0) => {
@@ -95,13 +149,35 @@ export default function AdminSpecialtiesPage() {
       confirmText: 'Delete',
       cancelText: 'Cancel',
       variant: 'destructive',
-      onConfirm: () => {
-        setSpecialties(specialties.filter(s => s.id !== id));
-        showToast({
-          title: 'Success',
-          description: 'Specialty deleted successfully',
-          variant: 'success',
-        });
+      onConfirm: async () => {
+        try {
+          const response = await secureFetch(`/api/admin/specialties/${id}`, {
+            method: 'DELETE',
+          });
+          const data = await response.json();
+
+          if (!data.success) {
+            showToast({
+              title: 'Error',
+              description: data.error?.message || 'Failed to delete specialty',
+              variant: 'error',
+            });
+            return;
+          }
+
+          showToast({
+            title: 'Success',
+            description: 'Specialty deleted successfully',
+            variant: 'success',
+          });
+          await fetchSpecialties();
+        } catch {
+          showToast({
+            title: 'Error',
+            description: 'An unexpected error occurred',
+            variant: 'error',
+          });
+        }
       },
     });
   };
@@ -237,52 +313,62 @@ export default function AdminSpecialtiesPage() {
       {/* Specialties List */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">All Specialties</h2>
-        {specialties.map((specialty) => (
-          <Card key={specialty.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  {specialty.icon && (
-                    <span className="text-2xl">{specialty.icon}</span>
-                  )}
-                  <div>
-                    <CardTitle>{specialty.name}</CardTitle>
-                    <CardDescription>
-                      Slug: {specialty.slug}
-                      {specialty.barberCount !== undefined && (
-                        <> • {specialty.barberCount} barber{specialty.barberCount !== 1 ? 's' : ''}</>
-                      )}
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(specialty)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(specialty.id, specialty.barberCount)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
-
-        {specialties.length === 0 && (
+        {loading ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">No specialties created yet</p>
-              <Button onClick={handleAdd}>Add Your First Specialty</Button>
+              <p className="text-muted-foreground">Loading specialties...</p>
             </CardContent>
           </Card>
+        ) : (
+          <>
+            {specialties.map((specialty) => (
+              <Card key={specialty.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      {specialty.icon && (
+                        <span className="text-2xl">{specialty.icon}</span>
+                      )}
+                      <div>
+                        <CardTitle>{specialty.name}</CardTitle>
+                        <CardDescription>
+                          Slug: {specialty.slug}
+                          {specialty.barberCount !== undefined && (
+                            <> • {specialty.barberCount} barber{specialty.barberCount !== 1 ? 's' : ''}</>
+                          )}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(specialty)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(specialty.id, specialty.barberCount)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+
+            {specialties.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground mb-4">No specialties created yet</p>
+                  <Button onClick={handleAdd}>Add Your First Specialty</Button>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
     </div>

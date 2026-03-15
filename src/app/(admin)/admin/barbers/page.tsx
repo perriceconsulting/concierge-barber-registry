@@ -57,6 +57,7 @@ export default function AdminBarbersPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setBarbers(data.data.barbers.map((b: any) => ({
           id: b.id,
           displayName: b.displayName,

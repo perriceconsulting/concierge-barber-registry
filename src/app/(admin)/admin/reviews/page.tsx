@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
+import { secureFetch } from '@/lib/csrf-client';
 
 interface Review {
   id: string;
@@ -17,52 +18,126 @@ interface Review {
   comment: string;
   createdAt: string;
   isVisible: boolean;
-  isFlagged: boolean;
 }
 
 export default function AdminReviewsPage() {
   const { showToast } = useToast();
   const { showConfirm } = useModal();
-  const [filter, setFilter] = useState<'all' | 'flagged' | 'hidden'>('all');
+  const [filter, setFilter] = useState<'all' | 'hidden'>('all');
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [moderationNote, setModerationNote] = useState('');
-
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin/reviews?filter=${filter}`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped = data.data.reviews.map((r: any) => ({
+          id: r.id,
+          barberName: r.barberProfile?.displayName || 'Unknown Barber',
+          clientName: r.client
+            ? `${r.client.firstName || ''} ${r.client.lastName || ''}`.trim()
+            : 'Anonymous',
+          rating: r.rating,
+          title: r.title || '',
+          comment: r.comment || '',
+          createdAt: new Date(r.createdAt).toLocaleDateString(),
+          isVisible: r.isVisible,
+        }));
+        setReviews(mapped);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+      showToast({
+        title: 'Error',
+        description: 'Failed to load reviews',
+        variant: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, showToast]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const filteredReviews = reviews.filter(review => {
-    if (filter === 'flagged') return review.isFlagged;
     if (filter === 'hidden') return !review.isVisible;
     return true;
   });
 
   const stats = {
     total: reviews.length,
-    flagged: reviews.filter(r => r.isFlagged).length,
     hidden: reviews.filter(r => !r.isVisible).length,
     visible: reviews.filter(r => r.isVisible).length,
   };
 
-  const handleHide = (id: string) => {
-    setReviews(reviews.map(r =>
-      r.id === id ? { ...r, isVisible: false } : r
-    ));
-    setExpandedReview(null);
-    showToast({
-      title: 'Success',
-      description: 'Review hidden successfully',
-      variant: 'success',
-    });
+  const handleHide = async (id: string) => {
+    try {
+      const res = await secureFetch(`/api/admin/reviews/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isVisible: false }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setExpandedReview(null);
+        showToast({
+          title: 'Success',
+          description: 'Review hidden successfully',
+          variant: 'success',
+        });
+        await fetchReviews();
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.error?.message || 'Failed to hide review',
+          variant: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Failed to hide review',
+        variant: 'error',
+      });
+    }
   };
 
-  const handleShow = (id: string) => {
-    setReviews(reviews.map(r =>
-      r.id === id ? { ...r, isVisible: true } : r
-    ));
-    showToast({
-      title: 'Success',
-      description: 'Review made visible',
-      variant: 'success',
-    });
+  const handleShow = async (id: string) => {
+    try {
+      const res = await secureFetch(`/api/admin/reviews/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isVisible: true }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast({
+          title: 'Success',
+          description: 'Review made visible',
+          variant: 'success',
+        });
+        await fetchReviews();
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.error?.message || 'Failed to show review',
+          variant: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Failed to show review',
+        variant: 'error',
+      });
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -72,26 +147,35 @@ export default function AdminReviewsPage() {
       confirmText: 'Delete',
       cancelText: 'Cancel',
       variant: 'destructive',
-      onConfirm: () => {
-        setReviews(reviews.filter(r => r.id !== id));
-        setExpandedReview(null);
-        showToast({
-          title: 'Success',
-          description: 'Review deleted',
-          variant: 'success',
-        });
+      onConfirm: async () => {
+        try {
+          const res = await secureFetch(`/api/admin/reviews/${id}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            setExpandedReview(null);
+            showToast({
+              title: 'Success',
+              description: 'Review deleted',
+              variant: 'success',
+            });
+            await fetchReviews();
+          } else {
+            showToast({
+              title: 'Error',
+              description: data.error?.message || 'Failed to delete review',
+              variant: 'error',
+            });
+          }
+        } catch {
+          showToast({
+            title: 'Error',
+            description: 'Failed to delete review',
+            variant: 'error',
+          });
+        }
       },
-    });
-  };
-
-  const handleUnflag = (id: string) => {
-    setReviews(reviews.map(r =>
-      r.id === id ? { ...r, isFlagged: false } : r
-    ));
-    showToast({
-      title: 'Success',
-      description: 'Review unflagged',
-      variant: 'success',
     });
   };
 
@@ -103,6 +187,24 @@ export default function AdminReviewsPage() {
     ));
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-destructive">Moderate Reviews</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage and moderate platform reviews
+          </p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">Loading reviews...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -113,17 +215,11 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Reviews</CardDescription>
             <CardTitle className="text-3xl">{stats.total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-yellow-500/50 bg-yellow-50/50">
-          <CardHeader className="pb-2">
-            <CardDescription>Flagged</CardDescription>
-            <CardTitle className="text-3xl text-yellow-600">{stats.flagged}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -155,13 +251,6 @@ export default function AdminReviewsPage() {
               All ({stats.total})
             </Button>
             <Button
-              variant={filter === 'flagged' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('flagged')}
-            >
-              Flagged ({stats.flagged})
-            </Button>
-            <Button
               variant={filter === 'hidden' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('hidden')}
@@ -175,15 +264,12 @@ export default function AdminReviewsPage() {
       {/* Reviews List */}
       <div className="space-y-4">
         {filteredReviews.map((review) => (
-          <Card key={review.id} className={review.isFlagged ? 'border-yellow-500' : ''}>
+          <Card key={review.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <CardTitle className="text-lg">{review.clientName}</CardTitle>
-                    {review.isFlagged && (
-                      <Badge variant="destructive">Flagged</Badge>
-                    )}
                     {!review.isVisible && (
                       <Badge variant="outline">Hidden</Badge>
                     )}
@@ -225,15 +311,6 @@ export default function AdminReviewsPage() {
                         onClick={() => handleShow(review.id)}
                       >
                         Show Review
-                      </Button>
-                    )}
-                    {review.isFlagged && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleUnflag(review.id)}
-                      >
-                        Unflag
                       </Button>
                     )}
                     <Button
