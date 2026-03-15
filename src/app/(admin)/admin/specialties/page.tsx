@@ -250,7 +250,7 @@ export default function AdminSpecialtiesPage() {
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   placeholder="e.g., fades"
                   required
-                  pattern="[a-z0-9-]+"
+                  pattern="[a-z0-9\-]+"
                 />
                 <p className="text-xs text-muted-foreground">
                   URL-friendly identifier (lowercase letters, numbers, and hyphens only)
