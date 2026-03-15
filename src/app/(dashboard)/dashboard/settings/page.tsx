@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
-import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { PromptModal } from '@/components/ui/prompt-modal';
+import { useModal } from '@/components/ui/modal';
 import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
 
 export default function SettingsPage() {
   const { showToast } = useToast();
+  const { showConfirm, showPrompt } = useModal();
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -36,8 +36,6 @@ export default function SettingsPage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
 
@@ -481,7 +479,16 @@ export default function SettingsPage() {
                 Temporarily deactivate your account. You can reactivate it anytime.
               </p>
             </div>
-            <Button variant="outline" onClick={() => setShowDeactivateModal(true)}>
+            <Button
+              variant="outline"
+              onClick={() => showConfirm({
+                title: 'Deactivate Account',
+                description: 'Are you sure you want to deactivate your account? This action can be reversed by contacting support.',
+                confirmText: 'Deactivate',
+                variant: 'destructive',
+                onConfirm: handleDeactivateAccount,
+              })}
+            >
               Deactivate
             </Button>
           </div>
@@ -493,34 +500,22 @@ export default function SettingsPage() {
                 Permanently delete your account and all associated data. This cannot be undone.
               </p>
             </div>
-            <Button variant="destructive" onClick={() => setShowDeleteModal(true)}>
+            <Button
+              variant="destructive"
+              onClick={() => showPrompt({
+                title: 'Delete Account',
+                description: 'This action is permanent and cannot be undone. All your data will be permanently deleted.',
+                expectedValue: 'DELETE',
+                confirmText: 'Delete Account',
+                variant: 'destructive',
+                onConfirm: handleDeleteAccount,
+              })}
+            >
               Delete
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Modals */}
-      <ConfirmModal
-        isOpen={showDeactivateModal}
-        onClose={() => setShowDeactivateModal(false)}
-        onConfirm={handleDeactivateAccount}
-        title="Deactivate Account"
-        description="Are you sure you want to deactivate your account? This action can be reversed by contacting support."
-        confirmText="Deactivate"
-        variant="destructive"
-      />
-
-      <PromptModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDeleteAccount}
-        title="Delete Account"
-        description="This action is permanent and cannot be undone. All your data will be permanently deleted."
-        expectedValue="DELETE"
-        confirmText="Delete Account"
-        variant="destructive"
-      />
     </div>
   );
 }

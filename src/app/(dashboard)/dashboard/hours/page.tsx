@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface DayHours {
   dayOfWeek: number;
@@ -15,6 +17,9 @@ interface DayHours {
 }
 
 export default function OperatingHoursPage() {
+  const { showConfirm } = useModal();
+  const { showToast } = useToast();
+
   const [hours, setHours] = useState<DayHours[]>([
     { dayOfWeek: 0, dayName: 'Sunday', openTime: '', closeTime: '', isClosed: true },
     { dayOfWeek: 1, dayName: 'Monday', openTime: '09:00', closeTime: '18:00', isClosed: false },
@@ -47,17 +52,23 @@ export default function OperatingHoursPage() {
     const dayToCopy = hours.find(day => day.dayOfWeek === dayOfWeek);
     if (!dayToCopy) return;
 
-    if (confirm(`Copy ${dayToCopy.dayName}'s hours to all other open days?`)) {
-      setHours(hours.map(day =>
-        day.isClosed
-          ? day
-          : {
-              ...day,
-              openTime: dayToCopy.openTime,
-              closeTime: dayToCopy.closeTime,
-            }
-      ));
-    }
+    showConfirm({
+      title: 'Copy Hours',
+      description: `Copy ${dayToCopy.dayName}'s hours to all other open days?`,
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        setHours(hours.map(day =>
+          day.isClosed
+            ? day
+            : {
+                ...day,
+                openTime: dayToCopy.openTime,
+                closeTime: dayToCopy.closeTime,
+              }
+        ));
+      },
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,13 +78,21 @@ export default function OperatingHoursPage() {
     // Validate times
     for (const day of hours) {
       if (!day.isClosed && (!day.openTime || !day.closeTime)) {
-        alert(`Please set both open and close times for ${day.dayName} or mark it as closed.`);
+        showToast({
+          title: 'Validation Error',
+          description: `Please set both open and close times for ${day.dayName} or mark it as closed.`,
+          variant: 'error',
+        });
         setIsLoading(false);
         return;
       }
 
       if (!day.isClosed && day.openTime >= day.closeTime) {
-        alert(`${day.dayName}: Close time must be after open time.`);
+        showToast({
+          title: 'Validation Error',
+          description: `${day.dayName}: Close time must be after open time.`,
+          variant: 'error',
+        });
         setIsLoading(false);
         return;
       }
@@ -83,7 +102,11 @@ export default function OperatingHoursPage() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     setIsLoading(false);
-    alert('Operating hours saved successfully!');
+    showToast({
+      title: 'Success',
+      description: 'Operating hours saved successfully!',
+      variant: 'success',
+    });
   };
 
   return (

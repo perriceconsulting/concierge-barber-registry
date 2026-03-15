@@ -50,6 +50,7 @@ const getProfileHandler = async (request: { userId?: string }) => {
       data: { barberProfile },
     });
   } catch (error) {
+    console.error('[PROFILE] GET error:', error);
     return handleApiError(error);
   }
 };

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/config';
 import { cn } from '@/lib/utils';
+import { ToastProvider } from '@/components/ui/toast';
+import { ModalProvider } from '@/components/ui/modal';
 
 const navigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: '📊' },
@@ -24,7 +26,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <ToastProvider>
+      <ModalProvider>
+        <div className="flex min-h-[calc(100vh-4rem)]">
       {/* Sidebar */}
       <aside className="w-64 border-r bg-muted/10">
         <div className="p-6">
@@ -57,5 +61,7 @@ export default function DashboardLayout({
         {children}
       </main>
     </div>
+      </ModalProvider>
+    </ToastProvider>
   );
 }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { ImageUploader } from '@/components/portfolio/image-uploader';
 import { useToast } from '@/components/ui/toast';
+import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
 
 interface PortfolioImage {
@@ -18,6 +19,7 @@ interface PortfolioImage {
 
 export default function PortfolioPage() {
   const { showToast } = useToast();
+  const { showConfirm } = useModal();
   const [images, setImages] = useState<PortfolioImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,6 +40,14 @@ export default function PortfolioPage() {
 
       if (response.ok && data.success) {
         setImages(data.data.images);
+      } else if (response.status === 404) {
+        // Barber profile doesn't exist yet - show helpful message
+        setImages([]);
+        showToast({
+          title: 'Complete Your Profile',
+          description: 'Please complete your barber profile before uploading portfolio images.',
+          variant: 'warning',
+        });
       } else {
         showToast({
           title: 'Error',
@@ -95,37 +105,44 @@ export default function PortfolioPage() {
   };
 
   const handleDeleteImage = async (id: string) => {
-    if (confirm('Are you sure you want to delete this image?')) {
-      try {
-        const response = await secureFetch(`/api/barbers/portfolio/${id}`, {
-          method: 'DELETE',
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          showToast({
-            title: 'Success!',
-            description: 'Image deleted successfully!',
-            variant: 'success',
+    showConfirm({
+      title: 'Delete Image',
+      description: 'Are you sure you want to delete this image? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          const response = await secureFetch(`/api/barbers/portfolio/${id}`, {
+            method: 'DELETE',
           });
-          await fetchPortfolio();
-        } else {
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showToast({
+              title: 'Success!',
+              description: 'Image deleted successfully!',
+              variant: 'success',
+            });
+            await fetchPortfolio();
+          } else {
+            showToast({
+              title: 'Error',
+              description: data.message || 'Failed to delete image',
+              variant: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Failed to delete image:', error);
           showToast({
             title: 'Error',
-            description: data.message || 'Failed to delete image',
+            description: 'Failed to delete image. Please try again.',
             variant: 'error',
           });
         }
-      } catch (error) {
-        console.error('Failed to delete image:', error);
-        showToast({
-          title: 'Error',
-          description: 'Failed to delete image. Please try again.',
-          variant: 'error',
-        });
-      }
-    }
+      },
+    });
   };
 
   const handleUpdateCaption = async (id: string) => {
