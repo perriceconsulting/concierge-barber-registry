@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,13 +12,15 @@ import { secureFetch } from '@/lib/csrf-client';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultRole = searchParams.get('role') === 'barber' ? 'barber' : 'client';
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: 'client' as 'client' | 'barber',
+    role: defaultRole as 'client' | 'barber',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);

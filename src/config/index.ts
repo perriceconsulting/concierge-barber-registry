@@ -19,7 +19,7 @@ export const ROUTES = {
   // Auth routes
   LOGIN: '/login',
   REGISTER: '/register',
-  REGISTER_BARBER: '/register/barber',
+  REGISTER_BARBER: '/register?role=barber',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   VERIFY_EMAIL: '/verify-email',
