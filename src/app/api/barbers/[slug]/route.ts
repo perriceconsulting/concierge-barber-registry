@@ -8,6 +8,21 @@ interface RouteParams {
   }>;
 }
 
+/**
+ * Get KV client for view deduplication
+ */
+async function getKVClient() {
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    try {
+      const { kv } = await import('@vercel/kv');
+      return kv;
+    } catch (error) {
+      return null;
+    }
+  }
+  return null;
+}
+
 // GET /api/barbers/:slug - Get single barber profile by slug
 export async function GET(
   request: NextRequest,
@@ -65,14 +80,43 @@ export async function GET(
       throw new ApiError(404, 'NOT_FOUND', 'Barber not found');
     }
 
-    // Increment profile views (fire and forget)
-    prisma.barberProfile.update({
-      where: { id: barberProfile.id },
-      data: { profileViews: { increment: 1 } },
-    }).catch((error) => {
-      // Log error but don't fail request
-      console.error('[PROFILE VIEWS] Failed to increment view counter:', error);
-    });
+    // Increment profile views with deduplication (fire and forget)
+    (async () => {
+      try {
+        const kv = await getKVClient();
+
+        if (kv) {
+          // Use KV for distributed deduplication (production)
+          const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+                     request.headers.get('x-real-ip') ||
+                     'unknown';
+          const userAgent = request.headers.get('user-agent') || 'unknown';
+          const viewKey = `view:${barberProfile.id}:${ip}:${userAgent.substring(0, 100)}`;
+
+          // Check if already viewed in last 24 hours
+          const alreadyViewed = await kv.get(viewKey);
+
+          if (!alreadyViewed) {
+            // Mark as viewed for 24 hours
+            await kv.setex(viewKey, 86400, '1');
+
+            // Increment counter
+            await prisma.barberProfile.update({
+              where: { id: barberProfile.id },
+              data: { profileViews: { increment: 1 } },
+            });
+          }
+        } else {
+          // Development: increment without deduplication
+          await prisma.barberProfile.update({
+            where: { id: barberProfile.id },
+            data: { profileViews: { increment: 1 } },
+          });
+        }
+      } catch (error) {
+        console.error('[PROFILE VIEWS] Failed to increment view counter:', error);
+      }
+    })();
 
     return NextResponse.json({
       success: true,

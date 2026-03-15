@@ -6,18 +6,20 @@ interface RateLimitRecord {
   resetAt: number;
 }
 
-// In-memory store (use Redis in production for distributed systems)
+// In-memory fallback for local development (when KV not available)
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
 // Cleanup old entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (record.resetAt < now) {
-      rateLimitStore.delete(key);
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, record] of rateLimitStore.entries()) {
+      if (record.resetAt < now) {
+        rateLimitStore.delete(key);
+      }
     }
-  }
-}, 10 * 60 * 1000);
+  }, 10 * 60 * 1000);
+}
 
 export interface RateLimitConfig {
   /**
@@ -35,24 +37,52 @@ export interface RateLimitConfig {
 }
 
 /**
- * Rate limit middleware for API routes
- *
- * @example
- * ```ts
- * export async function POST(request: NextRequest) {
- *   await rateLimit(request, { limit: 5, windowMs: 15 * 60 * 1000 }); // 5 requests per 15 minutes
- *   // ... rest of handler
- * }
- * ```
+ * Get KV client with fallback to in-memory for development
  */
-export async function rateLimit(
-  request: NextRequest,
+async function getKVClient() {
+  // Only use Vercel KV in production/preview with proper env vars
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    try {
+      const { kv } = await import('@vercel/kv');
+      return kv;
+    } catch (error) {
+      console.warn('[RATE LIMIT] Vercel KV unavailable, falling back to in-memory:', error);
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Rate limit using Vercel KV (distributed)
+ */
+async function rateLimitWithKV(
+  kv: any,
+  key: string,
   config: RateLimitConfig
 ): Promise<void> {
-  const key = config.keyGenerator
-    ? config.keyGenerator(request)
-    : getClientIdentifier(request);
+  const now = Date.now();
+  const windowSeconds = Math.ceil(config.windowMs / 1000);
 
+  // Use Redis INCR for atomic increment
+  const count = await kv.incr(key);
+
+  // Set expiry on first request
+  if (count === 1) {
+    await kv.expire(key, windowSeconds);
+  }
+
+  if (count > config.limit) {
+    // Get TTL to calculate retry-after
+    const ttl = await kv.ttl(key);
+    throw new RateLimitError();
+  }
+}
+
+/**
+ * Rate limit using in-memory Map (fallback for development)
+ */
+function rateLimitInMemory(key: string, config: RateLimitConfig): void {
   const now = Date.now();
   const record = rateLimitStore.get(key);
 
@@ -76,6 +106,38 @@ export async function rateLimit(
 }
 
 /**
+ * Rate limit middleware for API routes
+ * Uses Vercel KV in production (distributed) or in-memory Map in development
+ *
+ * @example
+ * ```ts
+ * export async function POST(request: NextRequest) {
+ *   await rateLimit(request, { limit: 5, windowMs: 15 * 60 * 1000 }); // 5 requests per 15 minutes
+ *   // ... rest of handler
+ * }
+ * ```
+ */
+export async function rateLimit(
+  request: NextRequest,
+  config: RateLimitConfig
+): Promise<void> {
+  const identifier = config.keyGenerator
+    ? config.keyGenerator(request)
+    : getClientIdentifier(request);
+
+  const key = `rate-limit:${identifier}`;
+
+  // Try to use KV, fallback to in-memory
+  const kv = await getKVClient();
+
+  if (kv) {
+    await rateLimitWithKV(kv, key, config);
+  } else {
+    rateLimitInMemory(key, config);
+  }
+}
+
+/**
  * Get client identifier for rate limiting
  * Uses IP address, or fallback to user agent
  */
@@ -91,7 +153,7 @@ function getClientIdentifier(request: NextRequest): string {
     forwarded?.split(',')[0].trim() ||
     'unknown';
 
-  return `rate-limit:${ip}`;
+  return ip;
 }
 
 /**
