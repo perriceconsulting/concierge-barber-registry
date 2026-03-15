@@ -81,10 +81,13 @@ export async function POST(request: NextRequest) {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Store verification token in database
+    // Hash the token before storing in database
+    const hashedToken = await hashToken(verificationToken);
+
+    // Store hashed verification token in database
     await prisma.verificationToken.create({
       data: {
-        token: verificationToken,
+        token: hashedToken,
         userId: user.id,
         type: 'email_verification',
         expiresAt: verificationExpiresAt,

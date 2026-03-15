@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { forgotPasswordSchema } from '@/lib/validations/auth';
-import { generateToken } from '@/lib/auth/password';
+import { generateToken, hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ResourceErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 
@@ -39,10 +39,13 @@ export async function POST(request: NextRequest) {
     const resetToken = generateToken(32);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // Store reset token
+    // Hash token before storing
+    const hashedToken = await hashToken(resetToken);
+
+    // Store hashed reset token
     await prisma.verificationToken.create({
       data: {
-        token: resetToken,
+        token: hashedToken,
         userId: user.id,
         type: 'password_reset',
         expiresAt,

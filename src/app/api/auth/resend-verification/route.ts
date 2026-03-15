@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
+import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
 import { sendVerificationEmail } from '@/lib/email';
 import crypto from 'crypto';
@@ -45,10 +46,13 @@ const resendVerificationHandler = async (request: any) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Store token in database
+    // Hash token before storing
+    const hashedToken = await hashToken(token);
+
+    // Store hashed token in database
     await prisma.verificationToken.create({
       data: {
-        token,
+        token: hashedToken,
         userId: user.id,
         type: 'email_verification',
         expiresAt,
