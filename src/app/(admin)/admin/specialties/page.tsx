@@ -68,7 +68,7 @@ export default function AdminSpecialtiesPage() {
     setFormData({
       name: specialty.name,
       slug: specialty.slug,
-      icon: specialty.icon,
+      icon: specialty.icon || '',
     });
     setShowForm(true);
   };
@@ -76,51 +76,33 @@ export default function AdminSpecialtiesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const isEdit = !!editingSpecialty;
+    const url = isEdit
+      ? `/api/admin/specialties/${editingSpecialty!.id}`
+      : '/api/admin/specialties';
+    const method = isEdit ? 'PATCH' : 'POST';
+
     try {
-      if (editingSpecialty) {
-        const response = await secureFetch(`/api/admin/specialties/${editingSpecialty.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(formData),
-        });
-        const data = await response.json();
+      const response = await secureFetch(url, {
+        method,
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
 
-        if (!data.success) {
-          showToast({
-            title: 'Error',
-            description: data.error?.message || 'Failed to update specialty',
-            variant: 'error',
-          });
-          return;
-        }
-
+      if (!data.success) {
         showToast({
-          title: 'Success',
-          description: 'Specialty updated successfully',
-          variant: 'success',
+          title: 'Error',
+          description: data.error?.message || `Failed to ${isEdit ? 'update' : 'create'} specialty`,
+          variant: 'error',
         });
-      } else {
-        const response = await secureFetch('/api/admin/specialties', {
-          method: 'POST',
-          body: JSON.stringify(formData),
-        });
-        const data = await response.json();
-
-        if (!data.success) {
-          showToast({
-            title: 'Error',
-            description: data.error?.message || 'Failed to create specialty',
-            variant: 'error',
-          });
-          return;
-        }
-
-        showToast({
-          title: 'Success',
-          description: 'Specialty created successfully',
-          variant: 'success',
-        });
+        return;
       }
 
+      showToast({
+        title: 'Success',
+        description: `Specialty ${isEdit ? 'updated' : 'created'} successfully`,
+        variant: 'success',
+      });
       setShowForm(false);
       setFormData({ name: '', slug: '', icon: '' });
       await fetchSpecialties();
