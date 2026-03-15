@@ -41,15 +41,6 @@ export function generateSlug(text: string): string {
 }
 
 /**
- * Generate a unique slug with a random suffix
- */
-export function generateUniqueSlug(text: string): string {
-  const baseSlug = generateSlug(text);
-  const randomSuffix = Math.random().toString(36).substring(2, 8);
-  return `${baseSlug}-${randomSuffix}`;
-}
-
-/**
  * Hash a refresh token using bcrypt (for secure storage)
  */
 export async function hashToken(token: string): Promise<string> {

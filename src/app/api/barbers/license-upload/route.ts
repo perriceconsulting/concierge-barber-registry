@@ -72,7 +72,11 @@ const uploadLicenseHandler = async (request: { userId?: string; formData: () => 
       },
     });
   } catch (error) {
-    console.error('License upload error:', error);
+    // Log sanitized error without potentially sensitive details
+    console.error('[LICENSE UPLOAD] Upload failed:', {
+      errorType: error instanceof Error ? error.name : 'Unknown',
+      timestamp: new Date().toISOString(),
+    });
     return handleApiError(error);
   }
 };
