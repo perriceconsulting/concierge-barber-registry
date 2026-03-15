@@ -258,17 +258,28 @@ export default function AdminSpecialtiesPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="icon">Icon (Optional)</Label>
-                <Input
-                  id="icon"
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  placeholder="e.g., ✂️"
-                  maxLength={2}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Single emoji character
-                </p>
+                <Label>Icon (Optional)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {['✂️', '💈', '🪒', '💇', '💇‍♂️', '🧔', '🧴', '💆', '💆‍♂️', '🪮', '🎨', '👑', '⭐', '🔥', '💎', '🏆'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className={`text-2xl p-2 rounded-md border transition-colors ${
+                        formData.icon === emoji
+                          ? 'border-primary bg-primary/10 ring-2 ring-primary'
+                          : 'border-muted hover:border-primary/50 hover:bg-muted'
+                      }`}
+                      onClick={() => setFormData({ ...formData, icon: formData.icon === emoji ? '' : emoji })}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                {formData.icon && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {formData.icon}
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-2">
