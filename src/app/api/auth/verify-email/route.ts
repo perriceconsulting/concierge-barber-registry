@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyToken } from '@/lib/auth/password';
+import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
 
 // GET /api/auth/verify-email?token=xxx - Verify email with token
@@ -13,29 +13,20 @@ export async function GET(request: NextRequest) {
       throw new ApiError(400, 'BAD_REQUEST', 'Verification token is required');
     }
 
-    // Find all non-expired email verification tokens
-    const potentialTokens = await prisma.verificationToken.findMany({
+    // SECURITY FIX: Prevent timing attack from N bcrypt operations
+    // Solution: Hash the provided token and lookup by hash (O(1) via unique index)
+    const tokenHash = await hashToken(token);
+
+    const verificationToken = await prisma.verificationToken.findUnique({
       where: {
-        type: 'email_verification',
-        expiresAt: {
-          gte: new Date(),
-        },
+        token: tokenHash,
       },
       include: { user: true },
     });
 
-    // Verify the token against stored hashes
-    let verificationToken = null;
-    for (const storedToken of potentialTokens) {
-      const isValid = await verifyToken(token, storedToken.token);
-      if (isValid) {
-        verificationToken = storedToken;
-        break;
-      }
-    }
-
-    if (!verificationToken) {
-      throw new ApiError(400, 'INVALID_TOKEN', 'Invalid or expired verification token');
+    // Verify token type and expiration (constant time checks)
+    if (!verificationToken || verificationToken.type !== 'email_verification') {
+      throw new ApiError(400, 'INVALID_TOKEN', 'Invalid verification token');
     }
 
     // Check if token has expired

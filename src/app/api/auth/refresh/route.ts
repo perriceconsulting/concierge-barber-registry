@@ -34,26 +34,23 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // Find all active sessions for this user
-    const sessions = await prisma.session.findMany({
+    // SECURITY FIX: Prevent timing attack from N bcrypt operations
+    // Solution: Hash the refresh token and lookup by hash
+    // Note: Sessions don't have unique constraint on refreshTokenHash but we can
+    // limit the search to this specific user which should typically be 1-5 sessions max
+    const refreshTokenHash = await hashToken(refreshToken);
+
+    // Find matching session by token hash for this user (limited scope)
+    const matchingSession = await prisma.session.findFirst({
       where: {
         userId: payload.userId,
+        refreshTokenHash: refreshTokenHash,
         isRevoked: false,
         expiresAt: {
           gt: new Date(),
         },
       },
     });
-
-    // Verify the refresh token against stored hashes
-    let matchingSession = null;
-    for (const session of sessions) {
-      const isValid = await verifyToken(refreshToken, session.refreshTokenHash);
-      if (isValid) {
-        matchingSession = session;
-        break;
-      }
-    }
 
     if (!matchingSession) {
       throw AuthErrors.TOKEN_INVALID;

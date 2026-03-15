@@ -3,6 +3,13 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 
+/**
+ * Escape special characters in LIKE patterns to prevent SQL injection
+ */
+function escapeLikePattern(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&');
+}
+
 // GET /api/admin/barbers - List all barbers with filters (admin only)
 const listBarbersHandler = async (request: NextRequest, context: any) => {
   try {
@@ -23,11 +30,13 @@ const listBarbersHandler = async (request: NextRequest, context: any) => {
     const where: any = {};
 
     if (query) {
+      // SECURITY FIX: Escape LIKE pattern special characters to prevent SQL injection
+      const escapedQuery = escapeLikePattern(query);
       where.OR = [
-        { displayName: { contains: query, mode: 'insensitive' } },
-        { shopName: { contains: query, mode: 'insensitive' } },
-        { city: { contains: query, mode: 'insensitive' } },
-        { user: { email: { contains: query, mode: 'insensitive' } } },
+        { displayName: { contains: escapedQuery, mode: 'insensitive' } },
+        { shopName: { contains: escapedQuery, mode: 'insensitive' } },
+        { city: { contains: escapedQuery, mode: 'insensitive' } },
+        { user: { email: { contains: escapedQuery, mode: 'insensitive' } } },
       ];
     }
 
