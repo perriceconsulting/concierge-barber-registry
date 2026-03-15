@@ -26,24 +26,20 @@ const deletePortfolioImageHandler = async (
       );
     }
 
-    // Verify image belongs to this barber
-    const image = await prisma.portfolioImage.findFirst({
+    // Delete with atomic ownership check to prevent IDOR/race conditions
+    const deletedImage = await prisma.portfolioImage.deleteMany({
       where: {
         id: imageId,
-        barberProfileId: barberProfile.id,
+        barberProfileId: barberProfile.id,  // Ownership check in deletion itself
       },
     });
 
-    if (!image) {
+    if (deletedImage.count === 0) {
       return NextResponse.json(
-        { success: false, message: 'Image not found' },
+        { success: false, message: 'Image not found or access denied' },
         { status: 404 }
       );
     }
-
-    await prisma.portfolioImage.delete({
-      where: { id: imageId },
-    });
 
     return NextResponse.json({
       success: true,

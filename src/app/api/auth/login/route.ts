@@ -26,20 +26,25 @@ export async function POST(request: NextRequest) {
       where: { email: validatedData.email },
     });
 
-    if (!user || !user.passwordHash) {
+    // SECURITY: Always perform password verification even if user doesn't exist
+    // This prevents timing attacks that could enumerate valid emails
+    // Use a dummy hash if user not found to maintain consistent timing
+    const dummyHash = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyWK.HnK.oo.';
+    const hashToVerify = user?.passwordHash || dummyHash;
+
+    const isValidPassword = await verifyPassword(
+      validatedData.password,
+      hashToVerify
+    );
+
+    // Check all conditions and return same error message
+    if (!user || !user.passwordHash || !isValidPassword) {
       throw AuthErrors.INVALID_CREDENTIALS;
     }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(validatedData.password, user.passwordHash);
-
-    if (!isValidPassword) {
-      throw AuthErrors.INVALID_CREDENTIALS;
-    }
-
-    // Check if account is active
+    // Check if account is active (return generic error to prevent enumeration)
     if (!user.isActive) {
-      throw AuthErrors.ACCOUNT_DEACTIVATED;
+      throw AuthErrors.INVALID_CREDENTIALS;  // Generic error instead of ACCOUNT_DEACTIVATED
     }
 
     // Check if email is verified (optional: can be disabled for development)
