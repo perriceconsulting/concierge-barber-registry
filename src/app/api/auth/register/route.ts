@@ -7,6 +7,7 @@ import { handleApiError, successResponse, ValidationErrors } from '@/lib/api/err
 import { sendWelcomeEmail, sendVerificationEmail } from '@/lib/email';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
+import { auditAuthEvent } from '@/lib/audit';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -143,6 +144,12 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
+
+    // Audit log for successful registration (fire and forget)
+    auditAuthEvent('user.register', user.id, request, {
+      email: user.email,
+      role: user.role,
+    }).catch((error) => console.error('[AUDIT] Failed to log registration event:', error));
 
     return response;
   } catch (error) {

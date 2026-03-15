@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { sendLicenseApprovedEmail, sendLicenseRejectedEmail } from '@/lib/email';
+import { auditVerificationEvent } from '@/lib/audit';
 import { z } from 'zod';
 
 const verifyBarberSchema = z.object({
@@ -64,20 +65,25 @@ const verifyBarberHandler = async (
       },
     });
 
-    // Log the verification action
-    await prisma.auditLog.create({
-      data: {
-        actorUserId: adminUserId,
-        action: 'barber_verification',
-        entityType: 'barber_profile',
-        entityId: barberId,
-        details: {
-          status,
-          notes,
-          barberEmail: barberProfile.user.email,
-        },
-      },
-    });
+    // Audit log for verification action
+    const actionMap = {
+      approved: 'barber.verification_approve',
+      rejected: 'barber.verification_reject',
+      suspended: 'barber.verification_suspend',
+    } as const;
+
+    await auditVerificationEvent(
+      actionMap[status],
+      adminUserId,
+      barberId,
+      request,
+      {
+        status,
+        notes,
+        barberEmail: barberProfile.user.email,
+        licenseNumber: barberProfile.licenseNumber,
+      }
+    );
 
     // Send email notification to barber
     if (status === 'approved') {

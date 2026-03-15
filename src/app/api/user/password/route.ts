@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { handleApiError, ApiError } from '@/lib/api/errors';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
+import { auditAuthEvent } from '@/lib/audit';
 import { z } from 'zod';
 import { passwordSchema } from '@/lib/validations/auth';
 
@@ -60,6 +61,10 @@ const changePasswordHandler = async (request: any) => {
       },
       data: { isRevoked: true },
     });
+
+    // Audit log for password change (fire and forget)
+    auditAuthEvent('user.password_change', userId, request)
+      .catch((error) => console.error('[AUDIT] Failed to log password change:', error));
 
     return NextResponse.json({
       success: true,

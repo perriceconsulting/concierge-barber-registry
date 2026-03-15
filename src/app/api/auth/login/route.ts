@@ -6,6 +6,7 @@ import { loginSchema } from '@/lib/validations/auth';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
+import { auditAuthEvent } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -126,6 +127,12 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
+
+    // Audit log for successful login (fire and forget)
+    auditAuthEvent('user.login', user.id, request, {
+      email: user.email,
+      role: user.role,
+    }).catch((error) => console.error('[AUDIT] Failed to log login event:', error));
 
     return response;
   } catch (error) {
