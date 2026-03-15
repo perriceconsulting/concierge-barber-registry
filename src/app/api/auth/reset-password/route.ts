@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { resetPasswordSchema } from '@/lib/validations/auth';
-import { hashPassword } from '@/lib/auth/password';
+import { hashPassword, verifyToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 
 export async function POST(request: NextRequest) {
@@ -11,22 +11,29 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = resetPasswordSchema.parse(body);
 
-    // Find valid reset token
-    const tokenRecord = await prisma.verificationToken.findFirst({
+    // Find all non-expired password reset tokens
+    const potentialTokens = await prisma.verificationToken.findMany({
       where: {
-        token: validatedData.token,
         type: 'password_reset',
         expiresAt: {
-          gt: new Date(),
+          gte: new Date(),
         },
       },
-      include: {
-        user: true,
-      },
+      include: { user: true },
     });
 
+    // Verify the token against stored hashes
+    let tokenRecord = null;
+    for (const storedToken of potentialTokens) {
+      const isValid = await verifyToken(validatedData.token, storedToken.token);
+      if (isValid) {
+        tokenRecord = storedToken;
+        break;
+      }
+    }
+
     if (!tokenRecord) {
-      throw new AuthErrors.TOKEN_INVALID;
+      throw AuthErrors.TOKEN_INVALID;
     }
 
     // Hash new password
