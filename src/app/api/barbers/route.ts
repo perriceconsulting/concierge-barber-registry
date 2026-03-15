@@ -3,25 +3,40 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
 import { createBarberProfileSchema } from '@/lib/validations/barber';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { z } from 'zod';
+
+// Schema for validating search parameters
+const searchParamsSchema = z.object({
+  q: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().length(2).regex(/^[A-Z]{2}$/).optional(),
+  specialty: z.string().max(100).optional(),
+  min_rating: z.coerce.number().min(0).max(5).optional().default(0),
+  page: z.coerce.number().int().min(1).max(10000).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+});
 
 // GET /api/barbers - Search and list barbers
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get('q') || '';
-    const city = searchParams.get('city') || '';
-    const state = searchParams.get('state') || '';
-    const specialty = searchParams.get('specialty') || '';
 
-    // Validate and sanitize pagination parameters
-    const minRatingParam = parseFloat(searchParams.get('min_rating') || '0');
-    const minRating = isNaN(minRatingParam) || minRatingParam < 0 ? 0 : Math.min(minRatingParam, 5);
+    // Validate search parameters
+    const validationResult = searchParamsSchema.safeParse({
+      q: searchParams.get('q') || undefined,
+      city: searchParams.get('city') || undefined,
+      state: searchParams.get('state')?.toUpperCase() || undefined,
+      specialty: searchParams.get('specialty') || undefined,
+      min_rating: searchParams.get('min_rating') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+    });
 
-    const pageParam = parseInt(searchParams.get('page') || '1');
-    const page = isNaN(pageParam) || pageParam < 1 ? 1 : Math.min(pageParam, 10000);
+    if (!validationResult.success) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid search parameters', validationResult.error.issues);
+    }
 
-    const limitParam = parseInt(searchParams.get('limit') || '20');
-    const limit = isNaN(limitParam) || limitParam < 1 ? 20 : Math.min(limitParam, 100);
+    const { q: query, city, state, specialty, min_rating: minRating, page, limit } = validationResult.data;
 
     const offset = (page - 1) * limit;
 
@@ -43,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (state) {
-      where.state = state.toUpperCase();
+      where.state = state;
     }
 
     if (minRating > 0) {
