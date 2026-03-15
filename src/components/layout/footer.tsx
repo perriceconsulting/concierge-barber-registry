@@ -118,7 +118,7 @@ export function Footer() {
             © {currentYear} {APP_CONFIG.name}. All rights reserved.
           </p>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <span>Built with Next.js & TypeScript</span>
+            <a href="https://perrisoft.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Built by Perrisoft</a>
           </div>
         </div>
       </div>

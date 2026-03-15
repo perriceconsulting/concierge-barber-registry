@@ -1,4 +1,11 @@
+import { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'Privacy policy for Concierge Barber Registry. Learn how we collect, use, and protect your personal information.',
+  robots: { index: true, follow: true },
+};
 
 export default function PrivacyPolicyPage() {
   return (
@@ -17,7 +24,7 @@ export default function PrivacyPolicyPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
-              Welcome to Concierge Barber Registry ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website conciergebarberregistry.online.
+              Welcome to Concierge Barber Registry (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website conciergebarberregistry.online.
             </p>
             <p>
               Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
@@ -149,7 +156,7 @@ export default function PrivacyPolicyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>8. Children's Privacy</CardTitle>
+            <CardTitle>8. Children&apos;s Privacy</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
@@ -175,7 +182,7 @@ export default function PrivacyPolicyPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
-              We may update this privacy policy from time to time. We will notify you of any changes by posting the new privacy policy on this page and updating the "Last updated" date. You are advised to review this privacy policy periodically for any changes.
+              We may update this privacy policy from time to time. We will notify you of any changes by posting the new privacy policy on this page and updating the &quot;Last updated&quot; date. You are advised to review this privacy policy periodically for any changes.
             </p>
           </CardContent>
         </Card>
