@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api/middleware';
+import { ApiError, handleApiError } from '@/lib/api/errors';
 
 // Validation schema for operating hours
 const operatingHoursSchema = z.object({
@@ -17,21 +18,17 @@ const operatingHoursSchema = z.object({
 
 // GET /api/operating-hours - Get barber's operating hours
 async function getOperatingHoursHandler(req: any) {
-  try {
-    const userId = req.userId!;
+  const userId = req.userId!;
 
-    // Get the barber profile
-    const barber = await prisma.barberProfile.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
+  // Get the barber profile
+  const barber = await prisma.barberProfile.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
 
-    if (!barber) {
-      return NextResponse.json(
-        { error: 'Barber profile not found' },
-        { status: 404 }
-      );
-    }
+  if (!barber) {
+    throw new ApiError(404, 'NOT_FOUND', 'Barber profile not found');
+  }
 
     // Get operating hours
     const hours = await prisma.operatingHours.findMany({
@@ -61,62 +58,42 @@ async function getOperatingHoursHandler(req: any) {
     }));
 
     return NextResponse.json({ hours: hoursWithNames });
-  } catch (error) {
-    console.error('Error fetching operating hours:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch operating hours' },
-      { status: 500 }
-    );
-  }
 }
 
 // PUT /api/operating-hours - Update barber's operating hours
 async function updateOperatingHoursHandler(req: any) {
-  try {
-    const userId = req.userId!;
-    const body = await req.json();
+  const userId = req.userId!;
+  const body = await req.json();
 
-    // Validate input
-    const validationResult = operatingHoursSchema.safeParse(body);
-    if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.issues },
-        { status: 400 }
-      );
-    }
+  // Validate input
+  const validationResult = operatingHoursSchema.safeParse(body);
+  if (!validationResult.success) {
+    throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid input', validationResult.error.issues);
+  }
 
-    const { hours } = validationResult.data;
+  const { hours } = validationResult.data;
 
-    // Validate that open days have both open and close times
-    for (const day of hours) {
-      if (!day.isClosed) {
-        if (!day.openTime || !day.closeTime) {
-          return NextResponse.json(
-            { error: `Day ${day.dayOfWeek} must have both open and close times` },
-            { status: 400 }
-          );
-        }
-        if (day.openTime >= day.closeTime) {
-          return NextResponse.json(
-            { error: `Day ${day.dayOfWeek}: Close time must be after open time` },
-            { status: 400 }
-          );
-        }
+  // Validate that open days have both open and close times
+  for (const day of hours) {
+    if (!day.isClosed) {
+      if (!day.openTime || !day.closeTime) {
+        throw new ApiError(400, 'VALIDATION_ERROR', `Day ${day.dayOfWeek} must have both open and close times`);
+      }
+      if (day.openTime >= day.closeTime) {
+        throw new ApiError(400, 'VALIDATION_ERROR', `Day ${day.dayOfWeek}: Close time must be after open time`);
       }
     }
+  }
 
-    // Get the barber profile
-    const barber = await prisma.barberProfile.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
+  // Get the barber profile
+  const barber = await prisma.barberProfile.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
 
-    if (!barber) {
-      return NextResponse.json(
-        { error: 'Barber profile not found' },
-        { status: 404 }
-      );
-    }
+  if (!barber) {
+    throw new ApiError(404, 'NOT_FOUND', 'Barber profile not found');
+  }
 
     // Delete existing hours and create new ones in a transaction
     await prisma.$transaction(async (tx) => {
@@ -153,14 +130,20 @@ async function updateOperatingHoursHandler(req: any) {
       message: 'Operating hours updated successfully',
       hours: hoursWithNames,
     });
-  } catch (error) {
-    console.error('Error updating operating hours:', error);
-    return NextResponse.json(
-      { error: 'Failed to update operating hours' },
-      { status: 500 }
-    );
-  }
 }
 
-export const GET = withAuth(getOperatingHoursHandler, { requiredRole: 'barber' });
-export const PUT = withAuth(updateOperatingHoursHandler, { requiredRole: 'barber' });
+export const GET = withAuth(async (req: any) => {
+  try {
+    return await getOperatingHoursHandler(req);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}, { requiredRole: 'barber' });
+
+export const PUT = withAuth(async (req: any) => {
+  try {
+    return await updateOperatingHoursHandler(req);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}, { requiredRole: 'barber' });

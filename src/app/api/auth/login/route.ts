@@ -56,6 +56,31 @@ export async function POST(request: NextRequest) {
     // Hash the refresh token before storing
     const refreshTokenHash = await hashToken(refreshToken);
 
+    // Enforce maximum sessions per user
+    const MAX_SESSIONS_PER_USER = 5;
+    const activeSessions = await prisma.session.count({
+      where: {
+        userId: user.id,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (activeSessions >= MAX_SESSIONS_PER_USER) {
+      // Delete oldest session to make room
+      const oldestSession = await prisma.session.findFirst({
+        where: {
+          userId: user.id,
+          isRevoked: false,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (oldestSession) {
+        await prisma.session.delete({ where: { id: oldestSession.id } });
+      }
+    }
+
     // Store hashed refresh token in database
     await prisma.session.create({
       data: {
