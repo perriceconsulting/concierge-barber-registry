@@ -26,13 +26,15 @@ export type AuditAction =
   | 'review.delete'
   | 'review.visibility_change'
   | 'session.revoke'
-  | 'session.cleanup';
+  | 'session.cleanup'
+  | 'support.request';
 
 export type AuditEntityType =
   | 'user'
   | 'barber_profile'
   | 'review'
-  | 'session';
+  | 'session'
+  | 'support';
 
 interface CreateAuditLogParams {
   actorUserId?: string | null;

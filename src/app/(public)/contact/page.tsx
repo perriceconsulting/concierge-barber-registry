@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
+import { secureFetch } from '@/lib/csrf-client';
 
 export default function ContactPage() {
   const { showToast } = useToast();
@@ -23,9 +24,8 @@ export default function ContactPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await secureFetch('/api/support', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
