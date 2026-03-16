@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,21 +8,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
+import { secureFetch } from '@/lib/csrf-client';
 import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 
 interface Service {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   priceCents: number;
   durationMinutes: number;
   isActive: boolean;
+  sortOrder: number;
 }
 
 export default function ServicesPage() {
   const { showConfirm } = useModal();
+  const { showToast } = useToast();
   const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [serviceLimit, setServiceLimit] = useState<number | null>(null);
+
+  const fetchServices = useCallback(async () => {
+    try {
+      const res = await secureFetch('/api/barbers/services');
+      const data = await res.json();
+      if (data.success) {
+        setServices(data.data.services);
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to load services', variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,33 +89,62 @@ export default function ServicesPage() {
     setEditingService(service);
     setFormData({
       name: service.name,
-      description: service.description,
+      description: service.description || '',
       price: (service.priceCents / 100).toString(),
       duration: service.durationMinutes.toString(),
     });
     setShowForm(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
 
-    const newService: Service = {
-      id: editingService?.id || Date.now().toString(),
+    const serviceData = {
       name: formData.name,
-      description: formData.description,
+      description: formData.description || undefined,
       priceCents: Math.round(parseFloat(formData.price) * 100),
       durationMinutes: parseInt(formData.duration),
       isActive: true,
     };
 
-    if (editingService) {
-      setServices(services.map(s => s.id === editingService.id ? newService : s));
-    } else {
-      setServices([...services, newService]);
-    }
+    try {
+      let res;
+      if (editingService) {
+        res = await secureFetch(`/api/barbers/services/${editingService.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(serviceData),
+        });
+      } else {
+        res = await secureFetch('/api/barbers/services', {
+          method: 'POST',
+          body: JSON.stringify(serviceData),
+        });
+      }
 
-    setShowForm(false);
-    setFormData({ name: '', description: '', price: '', duration: '' });
+      const data = await res.json();
+      if (data.success) {
+        showToast({
+          title: 'Success',
+          description: editingService ? 'Service updated' : 'Service added',
+          variant: 'success',
+        });
+        setShowForm(false);
+        setEditingService(null);
+        setFormData({ name: '', description: '', price: '', duration: '' });
+        fetchServices();
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.error?.message || 'Failed to save service',
+          variant: 'error',
+        });
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to save service', variant: 'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -101,15 +154,52 @@ export default function ServicesPage() {
       confirmText: 'Delete',
       cancelText: 'Cancel',
       variant: 'destructive',
-      onConfirm: () => {
-        setServices(services.filter(s => s.id !== id));
+      onConfirm: async () => {
+        try {
+          const res = await secureFetch(`/api/barbers/services/${id}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast({ title: 'Deleted', description: 'Service removed', variant: 'success' });
+            fetchServices();
+          } else {
+            showToast({ title: 'Error', description: data.error?.message || 'Failed to delete', variant: 'error' });
+          }
+        } catch {
+          showToast({ title: 'Error', description: 'Failed to delete service', variant: 'error' });
+        }
       },
     });
+  };
+
+  const handleToggleActive = async (service: Service) => {
+    try {
+      const res = await secureFetch(`/api/barbers/services/${service.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: !service.isActive }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchServices();
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to update service', variant: 'error' });
+    }
   };
 
   const formatPrice = (cents: number) => {
     return `$${(cents / 100).toFixed(2)}`;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-primary">Services</h1>
+        <p className="text-muted-foreground">Loading services...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -125,7 +215,6 @@ export default function ServicesPage() {
         )}
       </div>
 
-      {/* Upgrade Banner */}
       {isAtLimit && (
         <UpgradeBanner
           feature="services"
@@ -195,8 +284,8 @@ export default function ServicesPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit">
-                  {editingService ? 'Update Service' : 'Add Service'}
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Saving...' : editingService ? 'Update Service' : 'Add Service'}
                 </Button>
                 <Button
                   type="button"
@@ -218,19 +307,31 @@ export default function ServicesPage() {
       {/* Services List */}
       <div className="space-y-4">
         {services.map((service) => (
-          <Card key={service.id}>
+          <Card key={service.id} className={!service.isActive ? 'opacity-60' : ''}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {service.name}
-                    {service.isActive && <Badge variant="secondary">Active</Badge>}
+                    {service.isActive
+                      ? <Badge variant="secondary">Active</Badge>
+                      : <Badge variant="outline">Inactive</Badge>
+                    }
                   </CardTitle>
-                  <CardDescription className="mt-1">
-                    {service.description}
-                  </CardDescription>
+                  {service.description && (
+                    <CardDescription className="mt-1">
+                      {service.description}
+                    </CardDescription>
+                  )}
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleActive(service)}
+                  >
+                    {service.isActive ? 'Deactivate' : 'Activate'}
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
