@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 export interface ToastProps {
   title?: string;
-  description?: string;
+  description?: string | Record<string, unknown>;
   variant?: 'default' | 'success' | 'error' | 'warning';
   onClose?: () => void;
 }
@@ -42,7 +42,7 @@ export function Toast({ title, description, variant = 'default', onClose }: Toas
                     {title}
                   </div>
                 )}
-                {description && <div className="text-sm text-muted-foreground">{description}</div>}
+                {description && <div className="text-sm text-muted-foreground">{typeof description === 'string' ? description : JSON.stringify(description)}</div>}
               </div>
               {onClose && (
                 <button
