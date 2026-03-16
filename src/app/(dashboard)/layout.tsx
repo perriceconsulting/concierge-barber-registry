@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/config';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { ToastProvider } from '@/components/ui/toast';
 import { ModalProvider } from '@/components/ui/modal';
 
-const navigation = [
+const fullNavigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: '📊' },
   { name: 'Profile', href: ROUTES.DASHBOARD_PROFILE, icon: '👤' },
   { name: 'Services', href: ROUTES.DASHBOARD_SERVICES, icon: '✂️' },
@@ -20,6 +22,11 @@ const navigation = [
   { name: 'Help', href: ROUTES.DASHBOARD_HELP, icon: '❓' },
 ];
 
+const onboardingNavigation = [
+  { name: 'Profile', href: ROUTES.DASHBOARD_PROFILE, icon: '👤' },
+  { name: 'Help', href: ROUTES.DASHBOARD_HELP, icon: '❓' },
+];
+
 export default function DashboardLayout({
   children,
 }: {
@@ -27,6 +34,28 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<'loading' | 'complete' | 'incomplete'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkProfile() {
+      try {
+        const res = await fetch('/api/barbers/profile', { credentials: 'include' });
+        if (cancelled) return;
+        setProfileStatus(res.ok ? 'complete' : 'incomplete');
+      } catch {
+        if (!cancelled) setProfileStatus('incomplete');
+      }
+    }
+    checkProfile();
+    return () => { cancelled = true; };
+  }, []);
+
+  const isOnboarding = profileStatus === 'incomplete';
+  const isProfilePage = pathname === ROUTES.DASHBOARD_PROFILE;
+  const isHelpPage = pathname === ROUTES.DASHBOARD_HELP;
+  const navigation = isOnboarding ? onboardingNavigation : fullNavigation;
+  const showOnboardingPrompt = isOnboarding && !isProfilePage && !isHelpPage;
 
   return (
     <ToastProvider>
@@ -65,7 +94,9 @@ export default function DashboardLayout({
             )}
           >
             <div className="p-6 h-full overflow-y-auto">
-              <h2 className="text-lg font-semibold text-primary mb-4">Barber Dashboard</h2>
+              <h2 className="text-lg font-semibold text-primary mb-4">
+                {isOnboarding ? 'Getting Started' : 'Barber Dashboard'}
+              </h2>
               <nav className="space-y-1">
                 {navigation.map((item) => {
                   const isActive = pathname === item.href;
@@ -92,7 +123,24 @@ export default function DashboardLayout({
 
           {/* Main Content */}
           <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
-            {children}
+            {showOnboardingPrompt ? (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <Card className="max-w-lg w-full">
+                  <CardContent className="py-12 text-center">
+                    <div className="text-5xl mb-4">👋</div>
+                    <h1 className="text-2xl font-bold text-primary mb-2">Welcome! Let&apos;s set up your profile</h1>
+                    <p className="text-muted-foreground mb-6">
+                      Complete your barber profile to unlock the full dashboard — add services, upload portfolio photos, manage subscriptions, and more.
+                    </p>
+                    <Link href={ROUTES.DASHBOARD_PROFILE}>
+                      <Button size="lg">Set Up Profile</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              children
+            )}
           </main>
         </div>
       </ModalProvider>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ interface SubscriptionData {
 export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasProfile, setHasProfile] = useState(true);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
 
@@ -31,9 +33,12 @@ export default function SubscriptionPage() {
     async function fetchSubscription() {
       try {
         const response = await fetch('/api/barbers/subscription');
-        if (response.ok && !cancelled) {
+        if (cancelled) return;
+        if (response.ok) {
           const data = await response.json();
           setSubscription(data.data);
+        } else if (response.status === 404) {
+          setHasProfile(false);
         }
       } catch {
         // Will show starter state
@@ -46,6 +51,10 @@ export default function SubscriptionPage() {
   }, []);
 
   const handleCheckout = async (priceKey: 'professional' | 'elite', interval: 'monthly' | 'annual') => {
+    if (!hasProfile) {
+      window.location.href = '/dashboard/profile';
+      return;
+    }
     setIsCheckoutLoading(`${priceKey}-${interval}`);
     try {
       const response = await secureFetch('/api/stripe/checkout', {
@@ -100,6 +109,25 @@ export default function SubscriptionPage() {
           Manage your plan and billing
         </p>
       </div>
+
+      {/* Profile Required Banner */}
+      {!hasProfile && (
+        <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="font-medium text-amber-800 dark:text-amber-200">Complete your profile first</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  You need to set up your barber profile before you can subscribe to a plan. Add your name, bio, and location to get started.
+                </p>
+              </div>
+              <Link href="/dashboard/profile">
+                <Button>Set Up Profile</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current Plan */}
       <Card>

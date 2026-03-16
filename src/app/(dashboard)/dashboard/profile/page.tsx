@@ -43,6 +43,7 @@ export default function ProfilePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [isNewProfile, setIsNewProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch existing profile on mount
@@ -88,7 +89,7 @@ export default function ProfilePage() {
         }
       } else if (response.status === 404) {
         // Profile doesn't exist yet - this is normal for new barbers
-        // Leave form with default empty values
+        setIsNewProfile(true);
         setError(null);
       } else {
         setError('Failed to load profile');
@@ -115,6 +116,16 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (response.ok) {
+        if (isNewProfile) {
+          showToast({
+            title: 'Profile created!',
+            description: 'Your dashboard is now unlocked.',
+            variant: 'success',
+          });
+          // Full reload so the layout re-checks profile status
+          window.location.href = '/dashboard';
+          return;
+        }
         showToast({
           title: 'Success!',
           description: data.message || 'Profile updated successfully!',
@@ -150,9 +161,11 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Edit Profile</h1>
+        <h1 className="text-3xl font-bold text-primary">{isNewProfile ? 'Set Up Your Profile' : 'Edit Profile'}</h1>
         <p className="text-muted-foreground mt-2">
-          Update your professional information and business details
+          {isNewProfile
+            ? 'Fill in your details to get started — fields marked * are required'
+            : 'Update your professional information and business details'}
         </p>
         {isIndependent && !isMobileOnly && (
           <div className="mt-3 flex items-center gap-2">
