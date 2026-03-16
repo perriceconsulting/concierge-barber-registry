@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,29 @@ export default function LoginPage() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect already-authenticated users to their dashboard
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          const role = data.data?.user?.role;
+          if (role === 'admin') {
+            window.location.href = ROUTES.ADMIN;
+          } else if (role === 'barber') {
+            window.location.href = ROUTES.DASHBOARD;
+          } else {
+            window.location.href = ROUTES.HOME;
+          }
+        }
+      } catch {
+        // Not authenticated — stay on login page
+      }
+    }
+    checkAuth();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

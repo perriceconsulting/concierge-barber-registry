@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyAccessToken, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
+import { verifyAccessToken, verifyRefreshToken, generateAccessToken, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -47,7 +47,44 @@ async function handleProtectedRoutes(request: NextRequest): Promise<NextResponse
       // Token valid - allow request
       return NextResponse.next();
     } catch (error) {
-      // Token expired or invalid - redirect to login with appropriate message
+      // Access token expired — try to refresh using the refresh token
+      if (error instanceof TokenExpiredError) {
+        const refreshToken = request.cookies.get('refreshToken')?.value;
+
+        if (refreshToken) {
+          try {
+            const refreshPayload = await verifyRefreshToken(refreshToken);
+            const newAccessToken = await generateAccessToken({
+              userId: refreshPayload.userId,
+              email: refreshPayload.email,
+              role: refreshPayload.role,
+            });
+
+            // Check role-based access with refreshed payload
+            if (pathname.startsWith('/admin') && refreshPayload.role !== 'admin') {
+              return NextResponse.redirect(new URL('/dashboard', request.url));
+            }
+            if (pathname.startsWith('/dashboard') && refreshPayload.role !== 'barber') {
+              return NextResponse.redirect(new URL('/', request.url));
+            }
+
+            // Allow request and set new access token cookie
+            const response = NextResponse.next();
+            response.cookies.set('accessToken', newAccessToken, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict',
+              maxAge: 15 * 60,
+              path: '/',
+            });
+            return response;
+          } catch {
+            // Refresh token also invalid — fall through to login redirect
+          }
+        }
+      }
+
+      // No valid tokens — redirect to login
       const url = new URL('/login', request.url);
       url.searchParams.set('redirect', pathname);
 
