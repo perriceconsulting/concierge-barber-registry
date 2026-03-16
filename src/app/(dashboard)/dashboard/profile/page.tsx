@@ -87,16 +87,17 @@ export default function ProfilePage() {
           setVerificationStatus(profile.verificationStatus || 'pending');
           setLicenseDocumentUrl(profile.licenseDocumentUrl || '');
         }
-      } else if (response.status === 404) {
-        // Profile doesn't exist yet - this is normal for new barbers
+      } else {
+        // Profile doesn't exist yet (404) or another client error —
+        // treat as new profile since the layout already guards authentication
         setIsNewProfile(true);
         setError(null);
-      } else {
-        setError('Failed to load profile');
       }
     } catch (err) {
       logger.error('Failed to fetch profile:', err);
-      setError('Failed to load profile');
+      // Default to new profile experience rather than showing an error
+      setIsNewProfile(true);
+      setError(null);
     } finally {
       setIsFetching(false);
     }
