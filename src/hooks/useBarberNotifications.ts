@@ -47,9 +47,9 @@ function deriveNotifications(user: UserData | null, profile: ProfileData | null)
       id: 'profile-suspended',
       severity: 'error',
       title: 'Account suspended',
-      description: 'Your barber profile has been suspended. Your profile is no longer visible to clients.',
-      actionLabel: 'Contact Support',
-      actionHref: ROUTES.CONTACT,
+      description: 'Your barber profile has been suspended. Your profile is no longer visible to clients. You may be eligible to submit an appeal.',
+      actionLabel: 'View Appeal Options',
+      actionHref: ROUTES.DASHBOARD_APPEAL,
       dismissible: false,
     });
   }
