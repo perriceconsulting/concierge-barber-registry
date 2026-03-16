@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { secureFetch } from '@/lib/csrf-client';
 import { SUSPENSION_REASONS, isAppealable } from '@/lib/suspension';
+import { LicenseUploader } from '@/components/barber/license-uploader';
 import type { SuspensionReason, AppealStatus } from '@prisma/client';
 
 interface Appeal {
@@ -34,6 +36,7 @@ export default function AppealPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [appealText, setAppealText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [licenseUploaded, setLicenseUploaded] = useState(false);
 
   useEffect(() => {
     fetchAppeals();
@@ -75,7 +78,11 @@ export default function AppealPage() {
         setAppealText('');
         fetchAppeals();
       } else {
-        showToast({ title: 'Error', description: result.message || 'Failed to submit appeal', variant: 'error' });
+        showToast({
+          title: 'Error',
+          description: result.error?.message || result.message || 'Failed to submit appeal',
+          variant: 'error',
+        });
       }
     } catch {
       showToast({ title: 'Error', description: 'Failed to submit appeal. Please try again.', variant: 'error' });
@@ -110,6 +117,7 @@ export default function AppealPage() {
   const reasonMeta = reason ? SUSPENSION_REASONS[reason] : null;
   const canAppeal = reason && isAppealable(reason);
   const hasPendingAppeal = data.appeals.some((a) => a.status === 'pending');
+  const resolution = reasonMeta?.resolution;
 
   const getStatusBadge = (status: AppealStatus) => {
     switch (status) {
@@ -119,19 +127,33 @@ export default function AppealPage() {
     }
   };
 
+  const getAppealPlaceholder = () => {
+    if (!reason) return 'Explain your situation...';
+    switch (reason) {
+      case 'expired_license':
+        return 'I have renewed my barber license and uploaded the updated document above. My new license number is...';
+      case 'policy_violation':
+        return 'I have reviewed and updated my profile to comply with the terms of service. The specific changes I made include...';
+      case 'client_complaints':
+        return 'I have reviewed the client feedback and taken the following steps to improve...';
+      default:
+        return 'Explain your situation and why the suspension should be reconsidered...';
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-3xl font-bold">Appeal Suspension</h1>
         <p className="text-muted-foreground mt-2">
-          Submit an appeal if you believe your suspension was made in error.
+          Review the details of your suspension and take the necessary steps to resolve it.
         </p>
       </div>
 
       {/* Suspension Details */}
-      <Card>
+      <Card className="border-destructive/30 bg-destructive/5">
         <CardHeader>
-          <CardTitle>Suspension Details</CardTitle>
+          <CardTitle className="text-destructive">Suspension Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {reasonMeta && (
@@ -147,46 +169,115 @@ export default function AppealPage() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Eligible for Appeal</Label>
-                <p>{canAppeal ? 'Yes' : 'No — this type of suspension is not eligible for appeal'}</p>
+                <p className={canAppeal ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
+                  {canAppeal ? 'Yes — follow the steps below to resolve this' : 'No — this type of suspension is not eligible for appeal'}
+                </p>
               </div>
             </>
           )}
         </CardContent>
       </Card>
 
-      {/* Appeal Form */}
-      {canAppeal && !hasPendingAppeal && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Submit an Appeal</CardTitle>
-            <CardDescription>
-              Explain why you believe the suspension should be lifted. Provide any supporting details or context. Our team will review your appeal within 5 business days.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="appeal-text">Your Appeal</Label>
-              <Textarea
-                id="appeal-text"
-                placeholder="Explain your situation and why the suspension should be reconsidered..."
-                value={appealText}
-                onChange={(e) => setAppealText(e.target.value)}
-                rows={6}
-                maxLength={2000}
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {appealText.length}/2000 characters
-              </p>
-            </div>
-            <Button onClick={handleSubmit} disabled={isSubmitting || appealText.length < 20}>
-              {isSubmitting ? 'Submitting...' : 'Submit Appeal'}
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Resolution Steps — only show if not already pending */}
+      {canAppeal && !hasPendingAppeal && resolution && (
+        <>
+          {/* Step 1: Reason-specific action */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">1</span>
+                <div>
+                  <CardTitle>{resolution.heading}</CardTitle>
+                  <CardDescription>{resolution.description}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Expired License: Show file uploader */}
+              {resolution.type === 'license_upload' && (
+                <div className="space-y-3">
+                  <LicenseUploader
+                    verificationStatus="suspended"
+                    allowWhenSuspended={true}
+                    onUploadSuccess={() => {
+                      setLicenseUploaded(true);
+                      showToast({
+                        title: 'License Uploaded',
+                        description: 'Your new license has been uploaded. Now submit your appeal below.',
+                        variant: 'success',
+                      });
+                    }}
+                    onUploadError={(error) => {
+                      showToast({ title: 'Upload Error', description: error, variant: 'error' });
+                    }}
+                  />
+                  {licenseUploaded && (
+                    <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      New license uploaded successfully
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Profile/Review navigation */}
+              {(resolution.type === 'profile_update' || resolution.type === 'review_response') && resolution.actionHref && (
+                <Link href={resolution.actionHref}>
+                  <Button variant="outline">
+                    {resolution.actionLabel}
+                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Step 2: Appeal form */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">2</span>
+                <div>
+                  <CardTitle>Submit Your Appeal</CardTitle>
+                  <CardDescription>
+                    Explain the steps you&apos;ve taken to resolve the issue. Our team will review your appeal within 5 business days.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="appeal-text">Your Appeal</Label>
+                <Textarea
+                  id="appeal-text"
+                  placeholder={getAppealPlaceholder()}
+                  value={appealText}
+                  onChange={(e) => setAppealText(e.target.value)}
+                  rows={6}
+                  maxLength={2000}
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {appealText.length}/2000 characters (minimum 20)
+                </p>
+              </div>
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting || appealText.length < 20}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Appeal'}
+              </Button>
+            </CardContent>
+          </Card>
+        </>
       )}
 
+      {/* Pending appeal message */}
       {hasPendingAppeal && (
-        <Card>
+        <Card className="border-amber-300 bg-amber-50/50">
           <CardContent className="py-8 text-center">
             <p className="font-medium">Your appeal is currently under review.</p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -196,13 +287,17 @@ export default function AppealPage() {
         </Card>
       )}
 
-      {!canAppeal && (
+      {/* Non-appealable suspension */}
+      {!canAppeal && resolution && (
         <Card>
-          <CardContent className="py-8 text-center">
-            <p className="font-medium text-destructive">This suspension is not eligible for appeal.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              If you have questions, please use the <a href="/contact" className="underline text-primary">contact form</a> to reach our support team.
-            </p>
+          <CardContent className="py-8 space-y-4 text-center">
+            <p className="font-medium text-destructive">{resolution.heading}</p>
+            <p className="text-sm text-muted-foreground">{resolution.description}</p>
+            {resolution.actionHref && (
+              <Link href={resolution.actionHref}>
+                <Button variant="outline">{resolution.actionLabel}</Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       )}

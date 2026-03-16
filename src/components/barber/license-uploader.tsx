@@ -13,13 +13,15 @@ interface LicenseUploaderProps {
   verificationStatus?: string;
   onUploadSuccess?: (url: string) => void;
   onUploadError?: (error: string) => void;
+  allowWhenSuspended?: boolean;
 }
 
 export function LicenseUploader({
   currentDocumentUrl,
   verificationStatus,
   onUploadSuccess,
-  onUploadError
+  onUploadError,
+  allowWhenSuspended = false,
 }: LicenseUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentDocumentUrl || null);
@@ -29,7 +31,8 @@ export function LicenseUploader({
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-  const isLocked = verificationStatus === 'pending' || verificationStatus === 'approved';
+  const isLocked = (verificationStatus === 'pending' || verificationStatus === 'approved')
+    || (verificationStatus === 'suspended' && !allowWhenSuspended);
 
   const validateFile = (file: File): string | null => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
