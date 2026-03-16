@@ -37,10 +37,10 @@ export default function ContactPage() {
         });
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        const error = await response.json();
+        const data = await response.json();
         showToast({
           title: 'Error',
-          description: error.error || 'Failed to send message. Please try again.',
+          description: data.error?.message || 'Failed to send message. Please try again.',
           variant: 'error',
         });
       }
