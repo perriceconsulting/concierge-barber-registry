@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { prisma } from '@/lib/db';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('EMAIL'); // [EMAIL] tag for log messages
@@ -432,6 +433,34 @@ export async function sendLicenseSubmittedAdminEmail(adminEmail: string, barberN
   const html = getLicenseSubmittedAdminEmailHtml(barberName, barberEmail, licenseNumber, licenseState, verificationUrl);
 
   return sendEmail({ to: adminEmail, subject, html });
+}
+
+/**
+ * Notify all admins that a barber has submitted a license for verification.
+ * Used by both the profile update and license-upload routes.
+ */
+export async function notifyAdminsLicenseSubmitted(barber: {
+  name: string;
+  email: string;
+  licenseNumber: string;
+  licenseState: string;
+  profileId: string;
+}) {
+  const adminUsers = await prisma.user.findMany({
+    where: { role: 'admin' },
+    select: { email: true },
+  });
+
+  for (const admin of adminUsers) {
+    sendLicenseSubmittedAdminEmail(
+      admin.email,
+      barber.name,
+      barber.email,
+      barber.licenseNumber,
+      barber.licenseState,
+      barber.profileId
+    ).catch((err) => logger.error('Failed to send admin notification:', err));
+  }
 }
 
 // Password reset email templates

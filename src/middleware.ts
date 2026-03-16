@@ -108,8 +108,15 @@ function addSecurityHeaders(response: NextResponse): void {
   // Prevent clickjacking attacks
   response.headers.set('X-Frame-Options', 'DENY');
 
-  // Alternative to X-Frame-Options with more control
-  response.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+  // Content Security Policy
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "frame-ancestors 'none'",
+      "connect-src 'self' https://*.blob.vercel-storage.com",
+      "img-src 'self' data: blob: https://*.blob.vercel-storage.com",
+    ].join('; ')
+  );
 
   // Prevent MIME type sniffing
   response.headers.set('X-Content-Type-Options', 'nosniff');

@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
+import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
 import { LicenseUploader } from '@/components/barber/license-uploader';
 import { createLogger } from '@/lib/logger';
@@ -16,6 +17,7 @@ const logger = createLogger('PROFILE');
 
 export default function ProfilePage() {
   const { showToast } = useToast();
+  const { showConfirm } = useModal();
   const [formData, setFormData] = useState({
     displayName: '',
     bio: '',
@@ -42,6 +44,7 @@ export default function ProfilePage() {
   const [licenseDocumentUrl, setLicenseDocumentUrl] = useState<string>('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmittingLicense, setIsSubmittingLicense] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,6 +159,47 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmitLicense = () => {
+    showConfirm({
+      title: 'Submit License for Review',
+      description: 'Once submitted, you won\'t be able to replace the document until the review is complete. Are you sure you want to submit?',
+      confirmText: 'Submit',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsSubmittingLicense(true);
+        try {
+          const response = await secureFetch('/api/barbers/license-submit', {
+            method: 'POST',
+          });
+          const data = await response.json();
+          if (response.ok) {
+            setVerificationStatus('pending');
+            showToast({
+              title: 'Success!',
+              description: 'License submitted for review',
+              variant: 'success',
+            });
+          } else {
+            showToast({
+              title: 'Error',
+              description: data.message || 'Failed to submit license',
+              variant: 'error',
+            });
+          }
+        } catch (err) {
+          logger.error('Failed to submit license:', err);
+          showToast({
+            title: 'Error',
+            description: 'Failed to submit license. Please try again.',
+            variant: 'error',
+          });
+        } finally {
+          setIsSubmittingLicense(false);
+        }
+      },
+    });
   };
 
   if (isFetching) {
@@ -327,11 +371,12 @@ export default function ProfilePage() {
               <Label>License Document *</Label>
               <LicenseUploader
                 currentDocumentUrl={licenseDocumentUrl}
+                verificationStatus={verificationStatus}
                 onUploadSuccess={(url) => {
                   setLicenseDocumentUrl(url);
                   showToast({
                     title: 'Success!',
-                    description: 'License document uploaded successfully',
+                    description: 'License document uploaded',
                     variant: 'success',
                   });
                 }}
@@ -355,6 +400,16 @@ export default function ProfilePage() {
                 </a>{' '}
                 for details.
               </p>
+              {licenseDocumentUrl && verificationStatus !== 'pending' && verificationStatus !== 'approved' && (
+                <Button
+                  type="button"
+                  onClick={handleSubmitLicense}
+                  disabled={isSubmittingLicense}
+                  className="mt-2"
+                >
+                  {isSubmittingLicense ? 'Submitting...' : 'Submit for Review'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

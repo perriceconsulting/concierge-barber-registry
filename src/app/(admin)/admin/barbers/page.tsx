@@ -15,6 +15,7 @@ const logger = createLogger('ADMIN_BARBERS');
 interface BarberResponse {
   id: string;
   displayName: string;
+  slug: string;
   city: string;
   state: string;
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -22,6 +23,7 @@ interface BarberResponse {
   licenseState?: string;
   licenseExpirationDate?: string;
   licenseDocumentUrl?: string;
+  submittedForVerificationAt?: string;
   createdAt: string;
   user?: {
     email: string;
@@ -33,6 +35,7 @@ interface BarberResponse {
 interface Barber {
   id: string;
   displayName: string;
+  slug: string;
   email: string;
   city: string;
   state: string;
@@ -57,6 +60,7 @@ export default function AdminBarbersPage() {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewingLicense, setViewingLicense] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBarbers();
@@ -81,6 +85,7 @@ export default function AdminBarbersPage() {
         setBarbers(data.data.barbers.map((b: BarberResponse) => ({
           id: b.id,
           displayName: b.displayName,
+          slug: b.slug,
           email: b.user?.email || '',
           city: b.city,
           state: b.state,
@@ -89,7 +94,7 @@ export default function AdminBarbersPage() {
           licenseState: b.licenseState,
           licenseExpirationDate: b.licenseExpirationDate,
           licenseDocumentUrl: b.licenseDocumentUrl,
-          submittedAt: new Date(b.createdAt).toLocaleDateString(),
+          submittedAt: new Date(b.submittedForVerificationAt || b.createdAt).toLocaleDateString(),
           user: b.user,
         })));
       } else {
@@ -252,11 +257,16 @@ export default function AdminBarbersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-destructive">Manage Barbers</h1>
-        <p className="text-muted-foreground mt-2">
-          Review and manage barber profiles
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-destructive">Manage Barbers</h1>
+          <p className="text-muted-foreground mt-2">
+            Review and manage barber profiles
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => fetchBarbers()} disabled={isLoading}>
+          {isLoading ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
 
       {error && (
@@ -372,36 +382,9 @@ export default function AdminBarbersPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* License Document Viewer */}
-                  {barber.licenseDocumentUrl && (
-                    <div className="border rounded-lg p-4">
-                      <p className="text-sm font-medium mb-2">License Document:</p>
-                      {barber.licenseDocumentUrl.match(/\.(jpg|jpeg|png)$/i) ? (
-                        <img
-                          src={barber.licenseDocumentUrl}
-                          alt="License document"
-                          className="max-w-full h-auto rounded border"
-                          style={{ maxHeight: '300px' }}
-                        />
-                      ) : (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
-                          <div>
-                            <p className="font-medium">PDF Document</p>
-                            <a
-                              href={barber.licenseDocumentUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline"
-                            >
-                              View Document
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  {/* License Document Status */}
+                  {!barber.licenseDocumentUrl && (
+                    <p className="text-sm text-muted-foreground italic">No license document uploaded</p>
                   )}
 
                   {/* Action Buttons */}
@@ -437,9 +420,15 @@ export default function AdminBarbersPage() {
                       Suspend
                     </Button>
                   )}
-                  <Button size="sm" variant="outline">
-                    View Profile
-                  </Button>
+                  {barber.licenseDocumentUrl && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setViewingLicense(barber.licenseDocumentUrl!)}
+                    >
+                      View License
+                    </Button>
+                  )}
                   </div>
                 </div>
               </CardContent>
@@ -455,6 +444,40 @@ export default function AdminBarbersPage() {
           )}
         </div>
       </div>
+
+      {/* License Document Modal */}
+      {viewingLicense && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setViewingLicense(null)}
+        >
+          <div
+            className="relative bg-background rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b shrink-0">
+              <h3 className="font-semibold">License Document</h3>
+              <div className="flex gap-2">
+                <a href={`${viewingLicense}?download=1`} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" variant="outline">
+                    Download
+                  </Button>
+                </a>
+                <Button size="sm" variant="outline" onClick={() => setViewingLicense(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center" style={{ minHeight: '60vh' }}>
+              <img
+                src={viewingLicense}
+                alt="License document"
+                className="max-w-full max-h-[75vh] object-contain rounded"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

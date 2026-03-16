@@ -6,7 +6,6 @@ import { updateBarberProfileSchema } from '@/lib/validations/barber';
 import { handleApiError } from '@/lib/api/errors';
 import { sanitizeBio, sanitizeText, sanitizeUrl } from '@/lib/sanitize';
 import { generateUniqueBarberSlug } from '@/lib/slug';
-import { sendLicenseSubmittedAdminEmail } from '@/lib/email';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('PROFILE');
@@ -84,10 +83,6 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
       ...(profileData.licenseExpirationDate && { licenseExpirationDate: new Date(profileData.licenseExpirationDate) }),
     };
 
-    // Check if license info is being submitted for the first time
-    const hasLicenseData = profileData.licenseNumber && profileData.licenseState && profileData.licenseExpirationDate;
-    const shouldSubmitForVerification = hasLicenseData && existingProfile && !existingProfile.submittedForVerificationAt;
-
     let updatedProfile;
 
     if (existingProfile) {
@@ -96,10 +91,6 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
         where: { userId },
         data: {
           ...sanitizedProfileData,
-          // Set submittedForVerificationAt timestamp if license data is being submitted
-          ...(shouldSubmitForVerification && {
-            submittedForVerificationAt: new Date(),
-          }),
           // Update specialties if provided
           ...(specialtyIds && {
             specialties: {
@@ -170,25 +161,6 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
           },
         },
       });
-    }
-
-    // Notify admin when barber submits license for verification
-    if (shouldSubmitForVerification && updatedProfile.user) {
-      const adminUsers = await prisma.user.findMany({
-        where: { role: 'admin' },
-        select: { email: true },
-      });
-      const barberName = `${updatedProfile.user.firstName} ${updatedProfile.user.lastName}`;
-      for (const admin of adminUsers) {
-        sendLicenseSubmittedAdminEmail(
-          admin.email,
-          barberName,
-          updatedProfile.user.email,
-          profileData.licenseNumber || '',
-          profileData.licenseState || '',
-          updatedProfile.id
-        ).catch((err) => logger.error('Failed to send admin notification:', err));
-      }
     }
 
     return NextResponse.json({

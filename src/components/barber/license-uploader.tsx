@@ -10,12 +10,14 @@ const logger = createLogger('LICENSE');
 
 interface LicenseUploaderProps {
   currentDocumentUrl?: string;
+  verificationStatus?: string;
   onUploadSuccess?: (url: string) => void;
   onUploadError?: (error: string) => void;
 }
 
 export function LicenseUploader({
   currentDocumentUrl,
+  verificationStatus,
   onUploadSuccess,
   onUploadError
 }: LicenseUploaderProps) {
@@ -27,6 +29,7 @@ export function LicenseUploader({
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  const isLocked = verificationStatus === 'pending' || verificationStatus === 'approved';
 
   const validateFile = (file: File): string | null => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -117,14 +120,6 @@ export function LicenseUploader({
     fileInputRef.current?.click();
   };
 
-  const handleDelete = () => {
-    setPreviewUrl(null);
-    setFileName('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   return (
     <div className="space-y-4">
       <Label>License Document</Label>
@@ -133,7 +128,7 @@ export function LicenseUploader({
       <div
         className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
           dragActive ? 'border-primary bg-primary/5' : 'border-border'
-        } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+        } ${uploading || isLocked ? 'opacity-50 pointer-events-none' : ''}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -145,7 +140,7 @@ export function LicenseUploader({
           className="hidden"
           accept=".jpg,.jpeg,.png,.pdf"
           onChange={handleChange}
-          disabled={uploading}
+          disabled={uploading || isLocked}
         />
 
         {previewUrl ? (
@@ -181,25 +176,15 @@ export function LicenseUploader({
               </div>
             )}
 
-            {/* Delete Button */}
-            <div className="flex gap-2 justify-center">
+            <div className="flex justify-center">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleButtonClick}
-                disabled={uploading}
+                disabled={uploading || isLocked}
               >
                 Replace
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={uploading}
-              >
-                Delete
               </Button>
             </div>
           </div>
