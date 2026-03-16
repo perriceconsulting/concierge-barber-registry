@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TIER_LIMITS, type TierName } from '@/lib/subscription';
+import { secureFetch } from '@/lib/csrf-client';
 
 interface SubscriptionData {
   tier: TierName;
@@ -47,9 +48,8 @@ export default function SubscriptionPage() {
   const handleCheckout = async (priceKey: 'professional' | 'elite', interval: 'monthly' | 'annual') => {
     setIsCheckoutLoading(`${priceKey}-${interval}`);
     try {
-      const response = await fetch('/api/stripe/checkout', {
+      const response = await secureFetch('/api/stripe/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceKey, interval }),
       });
       const data = await response.json();
@@ -65,7 +65,7 @@ export default function SubscriptionPage() {
 
   const handleManageBilling = async () => {
     try {
-      const response = await fetch('/api/stripe/portal', { method: 'POST' });
+      const response = await secureFetch('/api/stripe/portal', { method: 'POST' });
       const data = await response.json();
       if (data.success && data.data.url) {
         window.location.href = data.data.url;
