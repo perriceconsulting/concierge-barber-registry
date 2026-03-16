@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ToastProvider } from '@/components/ui/toast';
 import { ModalProvider } from '@/components/ui/modal';
+import { useBarberNotifications } from '@/hooks/useBarberNotifications';
 
 const fullNavigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: '📊' },
@@ -35,14 +36,31 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'loading' | 'complete' | 'incomplete'>('loading');
+  const [userData, setUserData] = useState<{ emailVerified?: boolean } | null>(null);
+  const [profileData, setProfileData] = useState<{ verificationStatus?: string; licenseDocumentUrl?: string | null; verificationNotes?: string | null } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function checkProfile() {
       try {
-        const res = await fetch('/api/barbers/profile', { credentials: 'include' });
+        const [profileRes, meRes] = await Promise.all([
+          fetch('/api/barbers/profile', { credentials: 'include' }),
+          fetch('/api/auth/me', { credentials: 'include' }),
+        ]);
         if (cancelled) return;
-        setProfileStatus(res.ok ? 'complete' : 'incomplete');
+
+        if (profileRes.ok) {
+          const profData = await profileRes.json();
+          setProfileData(profData.data?.barberProfile || profData.barberProfile || null);
+          setProfileStatus('complete');
+        } else {
+          setProfileStatus('incomplete');
+        }
+
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setUserData(meData.data?.user || meData.user || null);
+        }
       } catch {
         if (!cancelled) setProfileStatus('incomplete');
       }
@@ -50,6 +68,8 @@ export default function DashboardLayout({
     checkProfile();
     return () => { cancelled = true; };
   }, []);
+
+  const { hasActionRequired } = useBarberNotifications(userData, profileData);
 
   const isOnboarding = profileStatus === 'incomplete';
   const isProfilePage = pathname === ROUTES.DASHBOARD_PROFILE;
@@ -114,6 +134,9 @@ export default function DashboardLayout({
                     >
                       <span className="text-lg">{item.icon}</span>
                       {item.name}
+                      {item.href === ROUTES.DASHBOARD && hasActionRequired && (
+                        <span className="ml-auto w-2 h-2 rounded-full bg-destructive shrink-0" />
+                      )}
                     </Link>
                   );
                 })}

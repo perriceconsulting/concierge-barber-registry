@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import NotificationBanners from '@/components/dashboard/notification-banners';
 
 interface ContactRequestItem {
   id: string;
@@ -20,6 +21,16 @@ interface ReviewItem {
   date: string;
 }
 
+interface UserData {
+  emailVerified?: boolean;
+}
+
+interface ProfileData {
+  verificationStatus?: string;
+  licenseDocumentUrl?: string | null;
+  verificationNotes?: string | null;
+}
+
 export default function DashboardPage() {
   const [stats] = useState({
     profileViews: 0,
@@ -29,7 +40,39 @@ export default function DashboardPage() {
   });
   const [recentRequests] = useState<ContactRequestItem[]>([]);
   const [recentReviews] = useState<ReviewItem[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const isLoading = false;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchData() {
+      try {
+        const [meRes, profileRes] = await Promise.all([
+          fetch('/api/auth/me', { credentials: 'include' }),
+          fetch('/api/barbers/profile', { credentials: 'include' }),
+        ]);
+
+        if (cancelled) return;
+
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setUserData(meData.data?.user || meData.user || null);
+        }
+
+        if (profileRes.ok) {
+          const profData = await profileRes.json();
+          setProfileData(profData.data?.barberProfile || profData.barberProfile || null);
+        }
+      } catch {
+        // Silently handle fetch errors
+      }
+    }
+
+    fetchData();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -39,6 +82,9 @@ export default function DashboardPage() {
           Welcome back! Here&apos;s an overview of your profile activity.
         </p>
       </div>
+
+      {/* Notification Banners */}
+      <NotificationBanners user={userData} profile={profileData} />
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
