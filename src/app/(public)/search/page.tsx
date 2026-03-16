@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
+import Link from 'next/link';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('SEARCH');
@@ -203,7 +204,8 @@ export default function SearchPage() {
             ) : (
               <div className="grid gap-4">
                 {filteredBarbers.map((barber) => (
-                  <Card key={barber.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <Link key={barber.id} href={`/barbers/${barber.slug}`}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -248,6 +250,7 @@ export default function SearchPage() {
                       )}
                     </CardContent>
                   </Card>
+                  </Link>
                 ))}
               </div>
             )}
