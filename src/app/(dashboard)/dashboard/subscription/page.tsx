@@ -27,18 +27,29 @@ export default function SubscriptionPage() {
   const [hasProfile, setHasProfile] = useState(true);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchSubscription() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/barbers/subscription');
+        const [subRes, profileRes] = await Promise.all([
+          fetch('/api/barbers/subscription'),
+          fetch('/api/barbers/profile', { credentials: 'include' }),
+        ]);
         if (cancelled) return;
-        if (response.ok) {
-          const data = await response.json();
+
+        if (subRes.ok) {
+          const data = await subRes.json();
           setSubscription(data.data);
-        } else if (response.status === 404) {
+        } else if (subRes.status === 404) {
           setHasProfile(false);
+        }
+
+        if (profileRes.ok) {
+          const profData = await profileRes.json();
+          const profile = profData.data?.barberProfile || profData.barberProfile;
+          setVerificationStatus(profile?.verificationStatus || null);
         }
       } catch {
         // Will show starter state
@@ -46,7 +57,7 @@ export default function SubscriptionPage() {
         if (!cancelled) setIsLoading(false);
       }
     }
-    fetchSubscription();
+    fetchData();
     return () => { cancelled = true; };
   }, []);
 
@@ -109,6 +120,25 @@ export default function SubscriptionPage() {
           Manage your plan and billing
         </p>
       </div>
+
+      {/* Verification Required Banner */}
+      {hasProfile && verificationStatus && verificationStatus !== 'approved' && (
+        <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="font-medium text-amber-800 dark:text-amber-200">License verification required</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  Your profile must be verified before you can upgrade your plan. Complete your license verification to unlock paid plans.
+                </p>
+              </div>
+              <Link href="/dashboard/profile">
+                <Button>Complete Verification</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile Required Banner */}
       {!hasProfile && (
@@ -262,7 +292,7 @@ export default function SubscriptionPage() {
             highlighted
             onSelect={() => handleCheckout('professional', billingInterval)}
             isLoading={isCheckoutLoading?.startsWith('professional') || false}
-            canUpgrade={currentTier === 'starter'}
+            canUpgrade={currentTier === 'starter' && verificationStatus === 'approved'}
           />
 
           {/* Elite */}
@@ -283,7 +313,7 @@ export default function SubscriptionPage() {
             isCurrent={currentTier === 'elite'}
             onSelect={() => handleCheckout('elite', billingInterval)}
             isLoading={isCheckoutLoading?.startsWith('elite') || false}
-            canUpgrade={currentTier !== 'elite'}
+            canUpgrade={currentTier !== 'elite' && verificationStatus === 'approved'}
           />
         </div>
         <p className="text-xs text-muted-foreground mt-4 text-center">

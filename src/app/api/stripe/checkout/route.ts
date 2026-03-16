@@ -44,6 +44,14 @@ async function createCheckoutHandler(request: AuthRequest) {
       );
     }
 
+    // Block checkout if profile is not approved
+    if (barberProfile.verificationStatus !== 'approved') {
+      return NextResponse.json(
+        { success: false, error: { code: 'VERIFICATION_REQUIRED', message: 'Your profile must be verified before upgrading. Complete license verification first.' } },
+        { status: 403 }
+      );
+    }
+
     // If barber already has a Stripe customer, reuse it
     let customerId = barberProfile.subscription?.stripeCustomerId;
 
