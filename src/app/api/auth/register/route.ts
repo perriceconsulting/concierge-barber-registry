@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
         phone: validatedData.phone,
         role: validatedData.role,
         emailVerified: false,
+        agreedToTermsAt: new Date(),
       },
       select: {
         id: true,

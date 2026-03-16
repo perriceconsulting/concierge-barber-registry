@@ -405,12 +405,20 @@ export default function AdminBarbersPage() {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap items-center">
                   {barber.verificationStatus === 'pending' && (
                     <>
-                      <Button size="sm" onClick={() => handleApprove(barber.id)}>
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(barber.id)}
+                        disabled={!barber.licenseDocumentUrl}
+                        title={!barber.licenseDocumentUrl ? 'License document required before approval' : undefined}
+                      >
                         Approve
                       </Button>
+                      {!barber.licenseDocumentUrl && (
+                        <span className="text-xs text-destructive">License document required</span>
+                      )}
                       <Button
                         size="sm"
                         variant="destructive"

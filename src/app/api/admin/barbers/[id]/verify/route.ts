@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
-import { sendLicenseApprovedEmail, sendLicenseRejectedEmail } from '@/lib/email';
+import { sendLicenseApprovedEmail, sendLicenseRejectedEmail, sendLicenseSuspendedEmail } from '@/lib/email';
 import { auditVerificationEvent } from '@/lib/audit';
 import { z } from 'zod';
 
@@ -42,6 +42,11 @@ const verifyBarberHandler = async (
 
     const body = await request.json();
     const { status, notes } = verifyBarberSchema.parse(body);
+
+    // Block approval if no license document on file
+    if (status === 'approved' && !barberProfile.licenseDocumentUrl) {
+      throw new ApiError(400, 'MISSING_LICENSE_DOCUMENT', 'Cannot approve barber without a license document on file');
+    }
 
     // Update barber verification status
     const updatedProfile = await prisma.barberProfile.update({
@@ -96,6 +101,11 @@ const verifyBarberHandler = async (
         barberProfile.user.email,
         barberProfile.user.firstName,
         notes || 'License information could not be verified'
+      );
+    } else if (status === 'suspended') {
+      await sendLicenseSuspendedEmail(
+        barberProfile.user.email,
+        barberProfile.user.firstName
       );
     }
 

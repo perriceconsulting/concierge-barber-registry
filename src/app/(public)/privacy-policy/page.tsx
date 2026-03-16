@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-primary">Privacy Policy</h1>
           <p className="text-muted-foreground">
-            Last updated: March 13, 2026
+            Last updated: March 16, 2026
           </p>
         </div>
 
@@ -136,7 +136,25 @@ export default function PrivacyPolicyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>7. Your Privacy Rights</CardTitle>
+            <CardTitle>7. License Document Handling</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-muted-foreground">
+            <p>
+              As part of the barber verification process, we collect professional license documents (photos or scans of barber licenses). These documents are handled with the following safeguards:
+            </p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li><strong>Purpose:</strong> License documents are collected solely for identity and credential verification to ensure barbers on our platform are licensed professionals.</li>
+              <li><strong>Confidentiality:</strong> License documents are never displayed publicly on barber profiles or anywhere on the website. They are only accessible to authorized administrators during the verification process.</li>
+              <li><strong>Secure Storage:</strong> Documents are stored securely using encrypted cloud storage with access controls limiting visibility to authorized personnel only.</li>
+              <li><strong>Retention:</strong> License documents are retained for the duration of your active account plus 30 days after account deletion, after which they are permanently removed.</li>
+              <li><strong>Deletion Requests:</strong> Barbers may request early deletion of their license documents by contacting our support team at privacy@conciergebarberregistry.online. Please note that deleting your license document may affect your verification status.</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>8. Your Privacy Rights</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-muted-foreground">
             <p>Depending on your location, you may have the following rights:</p>
@@ -156,7 +174,7 @@ export default function PrivacyPolicyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>8. Children&apos;s Privacy</CardTitle>
+            <CardTitle>9. Children&apos;s Privacy</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
@@ -167,7 +185,7 @@ export default function PrivacyPolicyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>9. Third-Party Links</CardTitle>
+            <CardTitle>10. Third-Party Links</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
@@ -178,7 +196,7 @@ export default function PrivacyPolicyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>10. Changes to This Privacy Policy</CardTitle>
+            <CardTitle>11. Changes to This Privacy Policy</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
@@ -189,7 +207,7 @@ export default function PrivacyPolicyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>11. Contact Us</CardTitle>
+            <CardTitle>12. Contact Us</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>

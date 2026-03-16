@@ -19,6 +19,9 @@ export const registerSchema = z.object({
     required_error: 'Role is required',
   }),
   phone: z.string().optional(),
+  agreedToTerms: z.literal(true, {
+    errorMap: () => ({ message: 'You must agree to the Terms of Service and Privacy Policy' }),
+  }),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

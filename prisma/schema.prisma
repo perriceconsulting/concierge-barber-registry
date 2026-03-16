@@ -22,6 +22,7 @@ model User {
   notifyContactRequests Boolean             @default(true) @map("notify_contact_requests")
   notifyNewReviews      Boolean             @default(true) @map("notify_new_reviews")
   notifyMarketingEmails Boolean             @default(false) @map("notify_marketing_emails")
+  agreedToTermsAt       DateTime?           @map("agreed_to_terms_at")
   createdAt             DateTime            @default(now()) @map("created_at")
   updatedAt             DateTime            @updatedAt @map("updated_at")
   auditLogs             AuditLog[]

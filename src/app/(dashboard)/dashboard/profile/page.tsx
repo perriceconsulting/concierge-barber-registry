@@ -323,24 +323,39 @@ export default function ProfilePage() {
               />
             </div>
 
-            <LicenseUploader
-              currentDocumentUrl={licenseDocumentUrl}
-              onUploadSuccess={(url) => {
-                setLicenseDocumentUrl(url);
-                showToast({
-                  title: 'Success!',
-                  description: 'License document uploaded successfully',
-                  variant: 'success',
-                });
-              }}
-              onUploadError={(errorMsg) => {
-                showToast({
-                  title: 'Upload Failed',
-                  description: errorMsg,
-                  variant: 'error',
-                });
-              }}
-            />
+            <div className="space-y-2">
+              <Label>License Document *</Label>
+              <LicenseUploader
+                currentDocumentUrl={licenseDocumentUrl}
+                onUploadSuccess={(url) => {
+                  setLicenseDocumentUrl(url);
+                  showToast({
+                    title: 'Success!',
+                    description: 'License document uploaded successfully',
+                    variant: 'success',
+                  });
+                }}
+                onUploadError={(errorMsg) => {
+                  showToast({
+                    title: 'Upload Failed',
+                    description: errorMsg,
+                    variant: 'error',
+                  });
+                }}
+              />
+              {!licenseDocumentUrl && (
+                <p className="text-xs text-destructive">
+                  A license document is required for your profile to be approved.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Your license document is used for verification only and will not be displayed publicly. See our{' '}
+                <a href="/privacy-policy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                  Privacy Policy
+                </a>{' '}
+                for details.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

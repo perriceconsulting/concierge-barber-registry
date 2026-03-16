@@ -21,6 +21,7 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     role: defaultRole as 'client' | 'barber',
+    agreedToTerms: false,
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +48,7 @@ export default function RegisterPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           role: formData.role,
+          agreedToTerms: formData.agreedToTerms,
         }),
       });
 
@@ -223,10 +225,32 @@ export default function RegisterPage() {
               />
             </div>
 
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="agreedToTerms"
+                checked={formData.agreedToTerms}
+                onChange={(e) => setFormData({ ...formData, agreedToTerms: e.target.checked })}
+                className="rounded border-input mt-1"
+                disabled={isLoading}
+                required
+              />
+              <Label htmlFor="agreedToTerms" className="text-xs text-muted-foreground font-normal leading-relaxed">
+                I agree to the{' '}
+                <Link href={ROUTES.TERMS} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link href={ROUTES.PRIVACY} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                  Privacy Policy
+                </Link>
+              </Label>
+            </div>
+
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || !formData.agreedToTerms}
             >
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
@@ -237,16 +261,6 @@ export default function RegisterPage() {
             Already have an account?{' '}
             <Link href={ROUTES.LOGIN} className="text-primary hover:underline font-medium">
               Sign in
-            </Link>
-          </div>
-          <div className="text-xs text-center text-muted-foreground">
-            By creating an account, you agree to our{' '}
-            <Link href={ROUTES.TERMS} className="text-primary hover:underline">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link href={ROUTES.PRIVACY} className="text-primary hover:underline">
-              Privacy Policy
             </Link>
           </div>
         </CardFooter>
