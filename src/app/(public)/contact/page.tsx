@@ -44,7 +44,7 @@ export default function ContactPage() {
           variant: 'error',
         });
       }
-    } catch (error) {
+    } catch (_error) {
       showToast({
         title: 'Error',
         description: 'An error occurred. Please try again later.',
@@ -76,11 +76,6 @@ export default function ContactPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Email</h3>
-                  <p className="text-muted-foreground">support@conciergebarberregistry.com</p>
-                </div>
-
                 <div>
                   <h3 className="font-semibold mb-2">Business Hours</h3>
                   <p className="text-muted-foreground">

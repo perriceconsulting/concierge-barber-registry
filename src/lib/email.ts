@@ -371,8 +371,28 @@ export async function sendLicenseRejectedEmail(email: string, firstName: string,
   return sendEmail({ to: email, subject, html });
 }
 
-export function getLicenseSuspendedEmailHtml(firstName: string) {
+export function getLicenseSuspendedEmailHtml(firstName: string, reasonLabel: string, reasonDescription: string, appealable: boolean) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  const appealSection = appealable
+    ? `
+          <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold; color: #1e40af;">You may appeal this suspension</p>
+            <p style="margin: 10px 0 0 0;">You can submit an appeal through your dashboard. Our team will review your case and respond within 5 business days.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${appUrl}/dashboard/appeal" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">Submit an Appeal</a>
+          </div>`
+    : `
+          <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold; color: #991b1b;">This suspension is not eligible for appeal.</p>
+            <p style="margin: 10px 0 0 0;">If you have questions, please contact our support team.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${appUrl}/contact" style="display: inline-block; background-color: #ea580c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">Contact Support</a>
+          </div>`;
 
   return `
     <!DOCTYPE html>
@@ -390,21 +410,81 @@ export function getLicenseSuspendedEmailHtml(firstName: string) {
         <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
           <p style="font-size: 18px; margin-bottom: 20px;">Hi ${firstName},</p>
 
-          <p>We regret to inform you that your barber profile on Concierge Barber Registry has been suspended. Your profile is no longer visible to clients.</p>
+          <p>We regret to inform you that your barber profile on Concierge Barber Registry has been suspended.</p>
 
           <div style="background-color: #fff7ed; border-left: 4px solid #ea580c; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold;">Reason: ${reasonLabel}</p>
+            <p style="margin: 10px 0 0 0;">${reasonDescription}</p>
+          </div>
+
+          <div style="background-color: #f3f4f6; padding: 15px; margin: 20px 0; border-radius: 6px;">
             <p style="margin: 0; font-weight: bold;">What this means:</p>
             <ul style="margin: 10px 0 0 0; padding-left: 20px;">
               <li>Your profile is hidden from search results</li>
               <li>Clients cannot view your profile or contact you through the platform</li>
+              <li>Any active subscription has been canceled with a prorated refund</li>
               <li>Your account data remains intact</li>
             </ul>
           </div>
 
-          <p>If you believe this was done in error or would like to discuss the suspension, please contact our support team.</p>
+          ${appealSection}
+
+          <p style="margin-top: 30px;">Best regards,<br><strong>The Concierge Barber Registry Team</strong></p>
+        </div>
+
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">
+          <p>&copy; ${new Date().getFullYear()} Concierge Barber Registry. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendLicenseSuspendedEmail(email: string, firstName: string, reason: string, appealable: boolean) {
+  // Import dynamically to avoid circular deps — reason metadata lives in suspension.ts
+  const { SUSPENSION_REASONS } = await import('@/lib/suspension');
+  const meta = SUSPENSION_REASONS[reason as keyof typeof SUSPENSION_REASONS];
+  const reasonLabel = meta?.label || reason;
+  const reasonDescription = meta?.description || '';
+
+  const subject = 'Your Concierge Barber Registry Account Has Been Suspended';
+  const html = getLicenseSuspendedEmailHtml(firstName, reasonLabel, reasonDescription, appealable);
+
+  return sendEmail({ to: email, subject, html });
+}
+
+export function getReinstatedEmailHtml(firstName: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Account Reinstated</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #16a34a; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 28px;">Your Account Has Been Reinstated!</h1>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+          <p style="font-size: 18px; margin-bottom: 20px;">Hi ${firstName},</p>
+
+          <p><strong>Good news!</strong> Your barber profile on Concierge Barber Registry has been reinstated. Your suspension has been lifted and your profile is now visible to clients again.</p>
+
+          <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold;">What to do next:</p>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+              <li>Review and update your profile information</li>
+              <li>Re-subscribe to a plan if your previous subscription was canceled</li>
+              <li>Ensure your license information is current</li>
+            </ul>
+          </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/contact" style="display: inline-block; background-color: #ea580c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">Contact Support</a>
+            <a href="${appUrl}/dashboard/profile" style="display: inline-block; background-color: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to Dashboard</a>
           </div>
 
           <p style="margin-top: 30px;">Best regards,<br><strong>The Concierge Barber Registry Team</strong></p>
@@ -418,14 +498,14 @@ export function getLicenseSuspendedEmailHtml(firstName: string) {
   `;
 }
 
-export async function sendLicenseSuspendedEmail(email: string, firstName: string) {
-  const subject = '⚠️ Your Concierge Barber Registry Account Has Been Suspended';
-  const html = getLicenseSuspendedEmailHtml(firstName);
+export async function sendReinstatedEmail(email: string, firstName: string) {
+  const subject = 'Your Concierge Barber Registry Account Has Been Reinstated';
+  const html = getReinstatedEmailHtml(firstName);
 
   return sendEmail({ to: email, subject, html });
 }
 
-export async function sendLicenseSubmittedAdminEmail(adminEmail: string, barberName: string, barberEmail: string, licenseNumber: string, licenseState: string, barberProfileId: string) {
+export async function sendLicenseSubmittedAdminEmail(adminEmail: string, barberName: string, barberEmail: string, licenseNumber: string, licenseState: string, _barberProfileId: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const verificationUrl = `${appUrl}/admin/barbers`;
 

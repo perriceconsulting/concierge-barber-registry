@@ -64,6 +64,17 @@ const listBarbersHandler = async (request: NextRequest) => {
               specialty: true,
             },
           },
+          appeals: {
+            where: { status: 'pending' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: {
+              id: true,
+              appealText: true,
+              status: true,
+              createdAt: true,
+            },
+          },
           _count: {
             select: {
               reviews: true,

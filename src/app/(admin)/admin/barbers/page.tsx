@@ -7,10 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
+import { Label } from '@/components/ui/label';
 import { secureFetch } from '@/lib/csrf-client';
+import { SUSPENSION_REASONS } from '@/lib/suspension';
+import type { SuspensionReason } from '@prisma/client';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('ADMIN_BARBERS');
+
+interface PendingAppeal {
+  id: string;
+  appealText: string;
+  status: string;
+  createdAt: string;
+}
 
 interface BarberResponse {
   id: string;
@@ -19,12 +29,14 @@ interface BarberResponse {
   city: string;
   state: string;
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
+  suspensionReason?: SuspensionReason | null;
   licenseNumber?: string;
   licenseState?: string;
   licenseExpirationDate?: string;
   licenseDocumentUrl?: string;
   submittedForVerificationAt?: string;
   createdAt: string;
+  appeals?: PendingAppeal[];
   user?: {
     email: string;
     firstName: string;
@@ -40,6 +52,8 @@ interface Barber {
   city: string;
   state: string;
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
+  suspensionReason?: SuspensionReason | null;
+  pendingAppeal?: PendingAppeal | null;
   licenseNumber?: string;
   licenseState?: string;
   licenseExpirationDate?: string;
@@ -55,12 +69,15 @@ interface Barber {
 export default function AdminBarbersPage() {
   const { showToast } = useToast();
   const { showConfirm, showPrompt } = useModal();
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'suspended'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'suspended' | 'appeals'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewingLicense, setViewingLicense] = useState<string | null>(null);
+  const [suspendDialog, setSuspendDialog] = useState<{ barberId: string; barberName: string } | null>(null);
+  const [selectedReason, setSelectedReason] = useState<SuspensionReason | ''>('');
+  const [suspendNotes, setSuspendNotes] = useState('');
 
   useEffect(() => {
     fetchBarbers();
@@ -90,6 +107,8 @@ export default function AdminBarbersPage() {
           city: b.city,
           state: b.state,
           verificationStatus: b.verificationStatus,
+          suspensionReason: b.suspensionReason,
+          pendingAppeal: b.appeals?.[0] || null,
           licenseNumber: b.licenseNumber,
           licenseState: b.licenseState,
           licenseExpirationDate: b.licenseExpirationDate,
@@ -108,8 +127,11 @@ export default function AdminBarbersPage() {
     }
   };
 
+  const appealsCount = barbers.filter(b => b.pendingAppeal).length;
+
   const filteredBarbers = barbers.filter(barber => {
-    const matchesFilter = filter === 'all' || barber.verificationStatus === filter;
+    const matchesFilter = filter === 'all'
+      || (filter === 'appeals' ? !!barber.pendingAppeal : barber.verificationStatus === filter);
     const matchesSearch = searchQuery === '' ||
       barber.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       barber.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -202,45 +224,134 @@ export default function AdminBarbersPage() {
     });
   };
 
-  const handleSuspend = async (id: string) => {
+  const handleSuspend = (id: string, name: string) => {
+    setSelectedReason('');
+    setSuspendNotes('');
+    setSuspendDialog({ barberId: id, barberName: name });
+  };
+
+  const confirmSuspend = async () => {
+    if (!suspendDialog || !selectedReason) return;
+
+    try {
+      const response = await secureFetch(`/api/admin/barbers/${suspendDialog.barberId}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'suspended',
+          suspensionReason: selectedReason,
+          notes: suspendNotes || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast({
+          title: 'Success!',
+          description: data.message || 'Barber suspended successfully!',
+          variant: 'success',
+        });
+        setSuspendDialog(null);
+        fetchBarbers();
+      } else {
+        showToast({
+          title: 'Error',
+          description: data.message || 'Failed to suspend barber',
+          variant: 'error',
+        });
+      }
+    } catch (err) {
+      logger.error('Failed to suspend barber:', err);
+      showToast({
+        title: 'Error',
+        description: 'Failed to suspend barber. Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleReinstate = async (id: string) => {
     showConfirm({
-      title: 'Suspend Barber',
-      description: 'Are you sure you want to suspend this barber? They will no longer be visible to clients.',
-      confirmText: 'Suspend',
+      title: 'Reinstate Barber',
+      description: 'This will reinstate the barber\'s profile, making it visible to clients again. They will need to re-subscribe separately.',
+      confirmText: 'Reinstate',
       cancelText: 'Cancel',
-      variant: 'destructive',
       onConfirm: async () => {
         try {
-          const response = await secureFetch(`/api/admin/barbers/${id}/verify`, {
+          const response = await secureFetch(`/api/admin/barbers/${id}/reinstate`, {
             method: 'PATCH',
-            body: JSON.stringify({ status: 'suspended' }),
+            body: JSON.stringify({}),
           });
 
           const data = await response.json();
 
-        if (response.ok) {
-          showToast({
-            title: 'Success!',
-            description: data.message || 'Barber suspended successfully!',
-            variant: 'success',
-          });
-          fetchBarbers();
-        } else {
+          if (response.ok) {
+            showToast({
+              title: 'Success!',
+              description: data.message || 'Barber reinstated successfully!',
+              variant: 'success',
+            });
+            fetchBarbers();
+          } else {
+            showToast({
+              title: 'Error',
+              description: data.message || 'Failed to reinstate barber',
+              variant: 'error',
+            });
+          }
+        } catch (err) {
+          logger.error('Failed to reinstate barber:', err);
           showToast({
             title: 'Error',
-            description: data.message || 'Failed to suspend barber',
+            description: 'Failed to reinstate barber. Please try again.',
             variant: 'error',
           });
         }
-      } catch (err) {
-        logger.error('Failed to suspend barber:', err);
-        showToast({
-          title: 'Error',
-          description: 'Failed to suspend barber. Please try again.',
-          variant: 'error',
-        });
-      }
-    },
+      },
+    });
+  };
+
+  const handleAppealReview = async (appealId: string, status: 'approved' | 'denied') => {
+    const action = status === 'approved' ? 'approve' : 'deny';
+    showPrompt({
+      title: `${status === 'approved' ? 'Approve' : 'Deny'} Appeal`,
+      description: `Enter notes for the barber (optional):`,
+      placeholder: 'Admin notes...',
+      confirmText: status === 'approved' ? 'Approve & Reinstate' : 'Deny Appeal',
+      cancelText: 'Cancel',
+      variant: status === 'denied' ? 'destructive' : undefined,
+      onConfirm: async (notes: string) => {
+        try {
+          const response = await secureFetch(`/api/admin/appeals/${appealId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, adminNotes: notes || undefined }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showToast({
+              title: 'Success!',
+              description: data.message,
+              variant: 'success',
+            });
+            fetchBarbers();
+          } else {
+            showToast({
+              title: 'Error',
+              description: data.message || `Failed to ${action} appeal`,
+              variant: 'error',
+            });
+          }
+        } catch (err) {
+          logger.error(`Failed to ${action} appeal:`, err);
+          showToast({
+            title: 'Error',
+            description: `Failed to ${action} appeal. Please try again.`,
+            variant: 'error',
+          });
+        }
+      },
     });
   };
 
@@ -327,6 +438,17 @@ export default function AdminBarbersPage() {
                 onClick={() => setFilter('suspended')}
               >
                 Suspended
+              </Button>
+              <Button
+                variant={filter === 'appeals' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('appeals')}
+              >
+                Appeals {appealsCount > 0 && (
+                  <span className="ml-1 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                    {appealsCount}
+                  </span>
+                )}
               </Button>
             </div>
           </div>
@@ -415,10 +537,52 @@ export default function AdminBarbersPage() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleSuspend(barber.id)}
+                      onClick={() => handleSuspend(barber.id, barber.displayName)}
                     >
                       Suspend
                     </Button>
+                  )}
+                  {barber.verificationStatus === 'suspended' && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => handleReinstate(barber.id)}
+                      >
+                        Reinstate
+                      </Button>
+                      {barber.suspensionReason && (
+                        <span className="text-xs text-destructive">
+                          Reason: {SUSPENSION_REASONS[barber.suspensionReason].label}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {/* Pending Appeal */}
+                  {barber.pendingAppeal && (
+                    <div className="w-full mt-3 border rounded-lg p-3 bg-amber-50 dark:bg-amber-950/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Appeal Pending</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Submitted {new Date(barber.pendingAppeal.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm">{barber.pendingAppeal.appealText}</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAppealReview(barber.pendingAppeal!.id, 'approved')}
+                        >
+                          Approve Appeal
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleAppealReview(barber.pendingAppeal!.id, 'denied')}
+                        >
+                          Deny Appeal
+                        </Button>
+                      </div>
+                    </div>
                   )}
                   {barber.licenseDocumentUrl && (
                     <Button
@@ -444,6 +608,71 @@ export default function AdminBarbersPage() {
           )}
         </div>
       </div>
+
+      {/* Suspension Reason Dialog */}
+      {suspendDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSuspendDialog(null)}
+        >
+          <div
+            className="bg-background rounded-lg shadow-lg w-full max-w-md p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-destructive">Suspend {suspendDialog.barberName}</h3>
+            <p className="text-sm text-muted-foreground">
+              This will hide the barber&apos;s profile from clients and cancel any active Stripe subscription with a prorated refund.
+            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="suspension-reason">Suspension Reason *</Label>
+              <select
+                id="suspension-reason"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedReason}
+                onChange={(e) => setSelectedReason(e.target.value as SuspensionReason)}
+              >
+                <option value="">Select a reason...</option>
+                {(Object.keys(SUSPENSION_REASONS) as SuspensionReason[]).map((key) => (
+                  <option key={key} value={key}>
+                    {SUSPENSION_REASONS[key].label} {SUSPENSION_REASONS[key].appealable ? '(appealable)' : '(non-appealable)'}
+                  </option>
+                ))}
+              </select>
+              {selectedReason && (
+                <p className="text-xs text-muted-foreground">
+                  {SUSPENSION_REASONS[selectedReason].description}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="suspend-notes">Notes (optional)</Label>
+              <textarea
+                id="suspend-notes"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]"
+                placeholder="Additional details..."
+                value={suspendNotes}
+                onChange={(e) => setSuspendNotes(e.target.value)}
+                maxLength={1000}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setSuspendDialog(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmSuspend}
+                disabled={!selectedReason}
+              >
+                Suspend Barber
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* License Document Modal */}
       {viewingLicense && (

@@ -71,10 +71,14 @@ export default function DashboardLayout({
 
   const { hasActionRequired } = useBarberNotifications(userData, profileData);
 
+  const isSuspended = profileData?.verificationStatus === 'suspended';
   const isOnboarding = profileStatus === 'incomplete';
   const isProfilePage = pathname === ROUTES.DASHBOARD_PROFILE;
   const isHelpPage = pathname === ROUTES.DASHBOARD_HELP;
-  const navigation = isOnboarding ? onboardingNavigation : fullNavigation;
+  const baseNavigation = isOnboarding ? onboardingNavigation : fullNavigation;
+  const navigation = isSuspended
+    ? [...baseNavigation, { name: 'Appeal', href: ROUTES.DASHBOARD_APPEAL, icon: '📋' }]
+    : baseNavigation;
   const showOnboardingPrompt = isOnboarding && !isProfilePage && !isHelpPage;
 
   return (

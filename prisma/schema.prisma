@@ -28,6 +28,8 @@ model User {
   auditLogs             AuditLog[]
   barberProfile         BarberProfile?      @relation("BarberToUser")
   verifiedProfiles      BarberProfile[]     @relation("VerifiedBy")
+  suspendedProfiles     BarberProfile[]     @relation("SuspendedBy")
+  reviewedAppeals       SuspensionAppeal[]  @relation("AppealReviewedBy")
   contactRequests       ContactRequest[]
   favorites             Favorite[]
   reviews               Review[]
@@ -120,7 +122,12 @@ model BarberProfile {
   portfolioImages            PortfolioImage[]
   reviews                    Review[]
   services                   Service[]
+  suspensionReason           SuspensionReason?  @map("suspension_reason")
+  suspendedAt                DateTime?          @map("suspended_at")
+  suspendedByUserId          String?            @map("suspended_by_user_id") @db.Uuid
   subscription               Subscription?
+  suspendedBy                User?              @relation("SuspendedBy", fields: [suspendedByUserId], references: [id])
+  appeals                    SuspensionAppeal[]
 
   @@index([userId])
   @@index([slug])
@@ -291,6 +298,25 @@ model Subscription {
   @@map("subscriptions")
 }
 
+model SuspensionAppeal {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId  String           @map("barber_profile_id") @db.Uuid
+  reason           SuspensionReason
+  appealText       String           @map("appeal_text")
+  status           AppealStatus     @default(pending)
+  adminNotes       String?          @map("admin_notes")
+  reviewedByUserId String?          @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt       DateTime?        @map("reviewed_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  barberProfile    BarberProfile    @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+  reviewedBy       User?            @relation("AppealReviewedBy", fields: [reviewedByUserId], references: [id])
+
+  @@index([barberProfileId])
+  @@index([status])
+  @@map("suspension_appeals")
+}
+
 enum UserRole {
   barber
   client
@@ -323,4 +349,19 @@ enum SubscriptionStatus {
   past_due
   canceled
   unpaid
+}
+
+enum SuspensionReason {
+  fraudulent_documentation
+  expired_license
+  policy_violation
+  client_complaints
+  payment_fraud
+  legal_regulatory
+}
+
+enum AppealStatus {
+  pending
+  approved
+  denied
 }

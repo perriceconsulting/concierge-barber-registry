@@ -20,6 +20,7 @@ export type AuditAction =
   | 'barber.verification_approve'
   | 'barber.verification_reject'
   | 'barber.verification_suspend'
+  | 'barber.reinstate'
   | 'review.create'
   | 'review.update'
   | 'review.delete'
@@ -113,7 +114,7 @@ export async function auditAuthEvent(
  * Create audit log for barber verification events
  */
 export async function auditVerificationEvent(
-  action: Extract<AuditAction, 'barber.verification_submit' | 'barber.verification_approve' | 'barber.verification_reject' | 'barber.verification_suspend'>,
+  action: Extract<AuditAction, 'barber.verification_submit' | 'barber.verification_approve' | 'barber.verification_reject' | 'barber.verification_suspend' | 'barber.reinstate'>,
   adminUserId: string,
   barberProfileId: string,
   request: Request,

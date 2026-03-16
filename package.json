@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "predev": "node scripts/predev.js",
+    "dev": "concurrently --names studio,next \"prisma studio\" \"next dev --turbopack\"",
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
@@ -57,6 +58,7 @@
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.0",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "husky": "^9.1.7",
