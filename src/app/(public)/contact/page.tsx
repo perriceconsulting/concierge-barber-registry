@@ -78,7 +78,7 @@ export default function ContactPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-2">Email</h3>
-                  <p className="text-muted-foreground">support@conciergebarberregistry.online</p>
+                  <p className="text-muted-foreground">support@conciergebarberregistry.com</p>
                 </div>
 
                 <div>

@@ -261,8 +261,8 @@ export default function TermsOfServicePage() {
               If you have questions about these Terms, please contact us at:
             </p>
             <div className="ml-4">
-              <p>Email: legal@conciergebarberregistry.online</p>
-              <p>Website: conciergebarberregistry.online/contact</p>
+              <p>Email: legal@conciergebarberregistry.com</p>
+              <p>Website: conciergebarberregistry.com/contact</p>
             </div>
           </CardContent>
         </Card>

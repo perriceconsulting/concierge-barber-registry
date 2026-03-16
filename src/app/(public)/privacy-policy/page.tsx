@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
-              Welcome to Concierge Barber Registry (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website conciergebarberregistry.online.
+              Welcome to Concierge Barber Registry (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website conciergebarberregistry.com.
             </p>
             <p>
               Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
@@ -147,7 +147,7 @@ export default function PrivacyPolicyPage() {
               <li><strong>Confidentiality:</strong> License documents are never displayed publicly on barber profiles or anywhere on the website. They are only accessible to authorized administrators during the verification process.</li>
               <li><strong>Secure Storage:</strong> Documents are stored securely using encrypted cloud storage with access controls limiting visibility to authorized personnel only.</li>
               <li><strong>Retention:</strong> License documents are retained for the duration of your active account plus 30 days after account deletion, after which they are permanently removed.</li>
-              <li><strong>Deletion Requests:</strong> Barbers may request early deletion of their license documents by contacting our support team at privacy@conciergebarberregistry.online. Please note that deleting your license document may affect your verification status.</li>
+              <li><strong>Deletion Requests:</strong> Barbers may request early deletion of their license documents by contacting our support team at privacy@conciergebarberregistry.com. Please note that deleting your license document may affect your verification status.</li>
             </ul>
           </CardContent>
         </Card>
@@ -167,7 +167,7 @@ export default function PrivacyPolicyPage() {
               <li>Withdraw consent</li>
             </ul>
             <p className="mt-3">
-              To exercise these rights, please contact us at privacy@conciergebarberregistry.online
+              To exercise these rights, please contact us at privacy@conciergebarberregistry.com
             </p>
           </CardContent>
         </Card>
@@ -214,8 +214,8 @@ export default function PrivacyPolicyPage() {
               If you have questions or concerns about this privacy policy, please contact us at:
             </p>
             <div className="ml-4">
-              <p>Email: privacy@conciergebarberregistry.online</p>
-              <p>Website: conciergebarberregistry.online/contact</p>
+              <p>Email: privacy@conciergebarberregistry.com</p>
+              <p>Website: conciergebarberregistry.com/contact</p>
             </div>
           </CardContent>
         </Card>
