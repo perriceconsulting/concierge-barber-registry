@@ -58,7 +58,6 @@ async function createResponseHandler(
     const { comment } = responseSchema.parse(body);
 
     // Upsert — allow editing existing response
-    // @ts-expect-error - reviewResponse model exists in schema but Prisma client not yet regenerated
     const reviewResponse = await prisma.reviewResponse.upsert({
       where: { reviewId },
       create: { reviewId, comment },
@@ -101,7 +100,6 @@ async function deleteResponseHandler(
       throw new ApiError(404, 'NOT_FOUND', 'Review not found');
     }
 
-    // @ts-expect-error - reviewResponse model exists in schema but Prisma client not yet regenerated
     await prisma.reviewResponse.deleteMany({
       where: { reviewId },
     });

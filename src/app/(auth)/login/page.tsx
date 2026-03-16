@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +10,6 @@ import { ROUTES } from '@/config';
 import { secureFetch } from '@/lib/csrf-client';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -120,6 +118,30 @@ export default function LoginPage() {
             <Link href={ROUTES.REGISTER} className="text-primary hover:underline font-medium">
               Sign up
             </Link>
+          </div>
+          <div className="w-full border-t pt-4">
+            <p className="text-xs font-medium text-center text-muted-foreground mb-2">Having trouble signing in?</p>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>
+                <Link href={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline">
+                  Reset your password
+                </Link>
+                {' '}if you&apos;ve forgotten it
+              </li>
+              <li>
+                Check your email for a{' '}
+                <Link href={ROUTES.REGISTER} className="text-primary hover:underline">
+                  verification link
+                </Link>
+                {' '}if you just registered
+              </li>
+              <li>
+                <Link href={ROUTES.FAQ} className="text-primary hover:underline">
+                  Visit our FAQ
+                </Link>
+                {' '}for more help
+              </li>
+            </ul>
           </div>
         </CardFooter>
       </Card>

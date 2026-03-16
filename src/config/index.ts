@@ -33,6 +33,7 @@ export const ROUTES = {
   DASHBOARD_REQUESTS: '/dashboard/requests',
   DASHBOARD_SETTINGS: '/dashboard/settings',
   DASHBOARD_SUBSCRIPTION: '/dashboard/subscription',
+  DASHBOARD_HELP: '/dashboard/help',
 
   // Admin routes
   ADMIN: '/admin',

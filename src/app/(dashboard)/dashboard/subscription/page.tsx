@@ -23,6 +23,7 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
 
   useEffect(() => {
     let cancelled = false;
@@ -172,11 +173,40 @@ export default function SubscriptionPage() {
         <h2 className="text-xl font-semibold mb-4">
           {currentTier === 'starter' ? 'Upgrade Your Plan' : 'Available Plans'}
         </h2>
-        <div className="grid gap-6 md:grid-cols-3">
+
+        <div className="flex justify-center mb-6">
+          {/* Billing toggle */}
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+            <button
+              onClick={() => setBillingInterval('monthly')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                billingInterval === 'monthly'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval('annual')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                billingInterval === 'annual'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+            >
+              Annual
+              <span className="ml-1 text-xs text-green-600 font-semibold">Save ~17%</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2 items-stretch">
           {/* Starter */}
           <PlanCard
             name="Starter"
             price="Free"
+            priceSubtext="forever"
             description="Get started with the basics"
             features={[
               '5 portfolio images',
@@ -189,8 +219,8 @@ export default function SubscriptionPage() {
           {/* Professional */}
           <PlanCard
             name="Professional"
-            price="$29/mo"
-            annualPrice="$290/yr"
+            price={billingInterval === 'monthly' ? '$29' : '$290'}
+            priceSubtext={billingInterval === 'monthly' ? '/month' : '/year'}
             description="Everything you need to grow"
             features={[
               '20 portfolio images',
@@ -202,8 +232,7 @@ export default function SubscriptionPage() {
             ]}
             isCurrent={currentTier === 'professional'}
             highlighted
-            onSelectMonthly={() => handleCheckout('professional', 'monthly')}
-            onSelectAnnual={() => handleCheckout('professional', 'annual')}
+            onSelect={() => handleCheckout('professional', billingInterval)}
             isLoading={isCheckoutLoading?.startsWith('professional') || false}
             canUpgrade={currentTier === 'starter'}
           />
@@ -211,8 +240,8 @@ export default function SubscriptionPage() {
           {/* Elite */}
           <PlanCard
             name="Elite"
-            price="$59/mo"
-            annualPrice="$590/yr"
+            price={billingInterval === 'monthly' ? '$59' : '$590'}
+            priceSubtext={billingInterval === 'monthly' ? '/month' : '/year'}
             description="Maximum visibility and features"
             features={[
               '100 portfolio images',
@@ -224,14 +253,13 @@ export default function SubscriptionPage() {
               '"Elite" profile badge',
             ]}
             isCurrent={currentTier === 'elite'}
-            onSelectMonthly={() => handleCheckout('elite', 'monthly')}
-            onSelectAnnual={() => handleCheckout('elite', 'annual')}
+            onSelect={() => handleCheckout('elite', billingInterval)}
             isLoading={isCheckoutLoading?.startsWith('elite') || false}
             canUpgrade={currentTier !== 'elite'}
           />
         </div>
         <p className="text-xs text-muted-foreground mt-4 text-center">
-          All paid plans include a {14}-day free trial. Cancel anytime.
+          All paid plans include a 14-day free trial. Cancel anytime.
         </p>
       </div>
     </div>
@@ -267,45 +295,41 @@ function UsageRow({ label, current, limit }: { label: string; current: number; l
 function PlanCard({
   name,
   price,
-  annualPrice,
+  priceSubtext,
   description,
   features,
   isCurrent,
   highlighted,
-  onSelectMonthly,
-  onSelectAnnual,
+  onSelect,
   isLoading,
   canUpgrade,
 }: {
   name: string;
   price: string;
-  annualPrice?: string;
+  priceSubtext: string;
   description: string;
   features: string[];
   isCurrent: boolean;
   highlighted?: boolean;
-  onSelectMonthly?: () => void;
-  onSelectAnnual?: () => void;
+  onSelect?: () => void;
   isLoading?: boolean;
   canUpgrade?: boolean;
 }) {
   return (
-    <Card className={highlighted ? 'border-primary shadow-md' : ''}>
+    <Card className={`flex flex-col ${highlighted ? 'border-primary shadow-md' : ''}`}>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           {name}
           {isCurrent && <Badge>Current</Badge>}
         </CardTitle>
-        <div>
-          <span className="text-2xl font-bold">{price}</span>
-          {annualPrice && (
-            <span className="text-sm text-muted-foreground ml-2">or {annualPrice}</span>
-          )}
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold">{price}</span>
+          <span className="text-sm text-muted-foreground">{priceSubtext}</span>
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ul className="space-y-2 mb-6">
+      <CardContent className="flex flex-col flex-1">
+        <ul className="space-y-2 flex-1">
           {features.map((feature) => (
             <li key={feature} className="text-sm flex items-start gap-2">
               <span className="text-primary mt-0.5">&#10003;</span>
@@ -313,30 +337,20 @@ function PlanCard({
             </li>
           ))}
         </ul>
-        {!isCurrent && canUpgrade && onSelectMonthly && (
-          <div className="space-y-2">
+        <div className="mt-6">
+          {!isCurrent && canUpgrade && onSelect && (
             <Button
               className="w-full"
-              onClick={onSelectMonthly}
+              onClick={onSelect}
               disabled={isLoading}
             >
-              {isLoading ? 'Redirecting...' : `Start Free Trial — ${price}`}
+              {isLoading ? 'Redirecting...' : 'Start Free Trial'}
             </Button>
-            {onSelectAnnual && annualPrice && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={onSelectAnnual}
-                disabled={isLoading}
-              >
-                Annual — {annualPrice} (save ~17%)
-              </Button>
-            )}
-          </div>
-        )}
-        {isCurrent && name !== 'Starter' && (
-          <p className="text-sm text-muted-foreground text-center">Your current plan</p>
-        )}
+          )}
+          {isCurrent && name !== 'Starter' && (
+            <p className="text-sm text-muted-foreground text-center">Your current plan</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
