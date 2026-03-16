@@ -109,9 +109,16 @@ export default function ProfilePage() {
     setError(null);
 
     try {
+      // Strip empty strings so Zod .partial() treats them as absent (optional)
+      const cleaned: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(formData)) {
+        if (value === '' || value === null || value === undefined) continue;
+        cleaned[key] = value;
+      }
+
       const response = await secureFetch('/api/barbers/profile', {
         method: 'PUT',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(cleaned),
       });
 
       const data = await response.json();
@@ -133,7 +140,15 @@ export default function ProfilePage() {
           variant: 'success',
         });
       } else {
-        setError(data.message || 'Failed to update profile');
+        // API error responses nest the message under data.error
+        const msg = data.error?.message || data.message || 'Failed to update profile';
+        // If there are validation details, show the first one
+        const details = data.error?.details;
+        if (Array.isArray(details) && details.length > 0) {
+          setError(`${details[0].field}: ${details[0].message}`);
+        } else {
+          setError(msg);
+        }
       }
     } catch (err) {
       logger.error('Failed to update profile:', err);
