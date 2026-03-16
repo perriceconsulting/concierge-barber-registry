@@ -72,7 +72,11 @@ async function verifyFileType(file: File, expectedType: string): Promise<boolean
  * @param folder - Optional folder path (e.g., 'licenses', 'portfolio')
  * @returns URL of the uploaded file
  */
-export async function uploadFile(file: File, folder?: string): Promise<string> {
+export async function uploadFile(
+  file: File,
+  folder?: string,
+  options?: { access?: 'public' | 'private' }
+): Promise<string> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error('BLOB_READ_WRITE_TOKEN is not configured');
   }
@@ -86,7 +90,7 @@ export async function uploadFile(file: File, folder?: string): Promise<string> {
 
   // Upload to Vercel Blob
   const blob = await put(filename, file, {
-    access: 'public',
+    access: options?.access || 'public',
     token: process.env.BLOB_READ_WRITE_TOKEN,
   });
 

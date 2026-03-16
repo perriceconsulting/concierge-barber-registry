@@ -57,7 +57,7 @@ const uploadLicenseHandler = async (request: { userId?: string; formData: () => 
     }
 
     // Upload to Vercel Blob storage
-    const documentUrl = await uploadFile(file, 'licenses');
+    const documentUrl = await uploadFile(file, 'licenses', { access: 'private' });
 
     // Update barber profile with document URL
     await prisma.barberProfile.update({

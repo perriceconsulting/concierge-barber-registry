@@ -63,8 +63,8 @@ export async function secureFetch(
     headers.set('x-csrf-token', token);
   }
 
-  // Add Content-Type if not set and body exists
-  if (options.body && !headers.has('Content-Type')) {
+  // Add Content-Type if not set and body exists (skip FormData — browser sets it with boundary)
+  if (options.body && !headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
