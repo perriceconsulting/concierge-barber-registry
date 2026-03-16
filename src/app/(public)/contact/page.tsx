@@ -38,9 +38,13 @@ export default function ContactPage() {
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
         const data = await response.json();
+        const details = data.error?.details;
+        const fieldErrors = Array.isArray(details)
+          ? details.map((d: { field: string; message: string }) => `${d.field}: ${d.message}`).join('. ')
+          : null;
         showToast({
           title: 'Error',
-          description: data.error?.message || 'Failed to send message. Please try again.',
+          description: fieldErrors || data.error?.message || 'Failed to send message. Please try again.',
           variant: 'error',
         });
       }
