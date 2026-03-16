@@ -1,14 +1,13 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitize from 'sanitize-html';
 
 /**
  * Sanitize HTML content to prevent XSS attacks
  * Use this for any user-generated content that may contain HTML
  */
 export function sanitizeHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
-    ALLOWED_ATTR: ['href', 'target', 'rel'],
-    ALLOW_DATA_ATTR: false,
+  return sanitize(dirty, {
+    allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+    allowedAttributes: { a: ['href', 'target', 'rel'] },
   });
 }
 
@@ -17,9 +16,9 @@ export function sanitizeHtml(dirty: string): string {
  * Use this for content that should never contain HTML
  */
 export function sanitizeText(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
+  return sanitize(dirty, {
+    allowedTags: [],
+    allowedAttributes: {},
   });
 }
 
@@ -28,9 +27,9 @@ export function sanitizeText(dirty: string): string {
  * Allows basic formatting like bold, italic, and links
  */
 export function sanitizeBio(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
-    ALLOWED_ATTR: [],
+  return sanitize(dirty, {
+    allowedTags: ['b', 'i', 'em', 'strong', 'p', 'br'],
+    allowedAttributes: {},
   });
 }
 
@@ -46,17 +45,18 @@ export function sanitizeUrl(url: string): string {
     return 'about:blank';
   }
 
-  const sanitized = DOMPurify.sanitize(url, {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
+  // Strip any HTML tags from the URL
+  const cleaned = sanitize(url, {
+    allowedTags: [],
+    allowedAttributes: {},
   });
 
   // Ensure the URL starts with http:// or https://
-  if (sanitized && !sanitized.match(/^https?:\/\//i)) {
-    return `https://${sanitized}`;
+  if (cleaned && !cleaned.match(/^https?:\/\//i)) {
+    return `https://${cleaned}`;
   }
 
-  return sanitized;
+  return cleaned;
 }
 
 /**

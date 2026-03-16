@@ -39,7 +39,7 @@ describe('Input Sanitization', () => {
       const input = 'Line 1<br>Line 2';
       const output = sanitizeBio(input);
 
-      expect(output).toBe('Line 1<br>Line 2');
+      expect(output).toBe('Line 1<br />Line 2');
     });
 
     it('should remove dangerous tags', () => {
