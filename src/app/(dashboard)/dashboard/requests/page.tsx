@@ -1,34 +1,65 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
+import { secureFetch } from '@/lib/csrf-client';
 import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 
 interface ContactRequest {
   id: string;
   clientName: string;
   clientEmail: string;
-  clientPhone: string;
+  clientPhone: string | null;
   message: string;
-  serviceInterested: string;
-  preferredDate: string;
-  preferredTime: string;
+  serviceInterested: string | null;
+  preferredDate: string | null;
+  preferredTime: string | null;
   status: 'new' | 'read' | 'responded' | 'archived';
   createdAt: string;
 }
 
+interface Stats {
+  total: number;
+  new: number;
+  read: number;
+  responded: number;
+  archived: number;
+}
+
+type FilterStatus = 'all' | 'new' | 'read' | 'responded' | 'archived';
+
 export default function RequestsPage() {
   const { showToast } = useToast();
-  const [filter, setFilter] = useState<'all' | 'new' | 'read' | 'responded' | 'archived'>('all');
-  const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
-  const [responseMessage, setResponseMessage] = useState('');
+  const [filter, setFilter] = useState<FilterStatus>('all');
   const [requests, setRequests] = useState<ContactRequest[]>([]);
+  const [stats, setStats] = useState<Stats>({ total: 0, new: 0, read: 0, responded: 0, archived: 0 });
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState<string | null>(null);
   const [contactLimit, setContactLimit] = useState<number | null>(null);
   const [contactUsage, setContactUsage] = useState(0);
+
+  const fetchRequests = useCallback(async () => {
+    try {
+      const res = await secureFetch(`/api/barbers/requests?status=${filter}`);
+      const data = await res.json();
+      if (data.success) {
+        setRequests(data.data.requests);
+        setStats(data.data.stats);
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to load requests', variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, showToast]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchRequests();
+  }, [fetchRequests]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,58 +81,44 @@ export default function RequestsPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const filteredRequests = filter === 'all'
-    ? requests
-    : requests.filter(r => r.status === filter);
-
-  const stats = {
-    total: requests.length,
-    new: requests.filter(r => r.status === 'new').length,
-    read: requests.filter(r => r.status === 'read').length,
-    responded: requests.filter(r => r.status === 'responded').length,
-    archived: requests.filter(r => r.status === 'archived').length,
-  };
-
-  const handleMarkAsRead = (id: string) => {
-    setRequests(requests.map(r =>
-      r.id === id && r.status === 'new' ? { ...r, status: 'read' } : r
-    ));
-  };
-
-  const handleRespond = (id: string) => {
-    // TODO: Implement actual email/notification sending
-    showToast({
-      title: 'Response Sent',
-      description: 'Your response has been sent to the client.',
-      variant: 'success',
-    });
-    setRequests(requests.map(r =>
-      r.id === id ? { ...r, status: 'responded' } : r
-    ));
-    setExpandedRequest(null);
-    setResponseMessage('');
-  };
-
-  const handleArchive = (id: string) => {
-    setRequests(requests.map(r =>
-      r.id === id ? { ...r, status: 'archived' } : r
-    ));
+  const updateStatus = async (id: string, status: 'read' | 'responded' | 'archived') => {
+    setProcessing(id);
+    try {
+      const res = await secureFetch(`/api/barbers/requests/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchRequests();
+      } else {
+        showToast({ title: 'Error', description: data.error?.message || 'Update failed', variant: 'error' });
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to update request', variant: 'error' });
+    } finally {
+      setProcessing(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-      new: 'default',
-      read: 'secondary',
-      responded: 'outline',
-      archived: 'outline',
+    const config: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning'; label: string }> = {
+      new: { variant: 'warning', label: 'New' },
+      read: { variant: 'secondary', label: 'Read' },
+      responded: { variant: 'success', label: 'Responded' },
+      archived: { variant: 'outline', label: 'Archived' },
     };
-
-    return (
-      <Badge variant={variants[status]}>
-        {status}
-      </Badge>
-    );
+    const c = config[status] || { variant: 'outline' as const, label: status };
+    return <Badge variant={c.variant}>{c.label}</Badge>;
   };
+
+  const filters: { label: string; value: FilterStatus; count: number }[] = [
+    { label: 'All', value: 'all', count: stats.total },
+    { label: 'New', value: 'new', count: stats.new },
+    { label: 'Read', value: 'read', count: stats.read },
+    { label: 'Responded', value: 'responded', count: stats.responded },
+    { label: 'Archived', value: 'archived', count: stats.archived },
+  ];
 
   return (
     <div className="space-y-6">
@@ -112,7 +129,6 @@ export default function RequestsPage() {
         </p>
       </div>
 
-      {/* Upgrade Banner */}
       {contactLimit !== null && contactUsage >= contactLimit && (
         <UpgradeBanner
           feature="contact requests this month"
@@ -126,7 +142,7 @@ export default function RequestsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>New</CardDescription>
-            <CardTitle className="text-3xl">{stats.new}</CardTitle>
+            <CardTitle className="text-3xl text-amber-600">{stats.new}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -138,7 +154,7 @@ export default function RequestsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Responded</CardDescription>
-            <CardTitle className="text-3xl">{stats.responded}</CardTitle>
+            <CardTitle className="text-3xl text-green-600">{stats.responded}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -149,157 +165,132 @@ export default function RequestsPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Requests</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('all')}
-            >
-              All ({stats.total})
-            </Button>
-            <Button
-              variant={filter === 'new' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('new')}
-            >
-              New ({stats.new})
-            </Button>
-            <Button
-              variant={filter === 'read' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('read')}
-            >
-              Read ({stats.read})
-            </Button>
-            <Button
-              variant={filter === 'responded' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('responded')}
-            >
-              Responded ({stats.responded})
-            </Button>
-            <Button
-              variant={filter === 'archived' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('archived')}
-            >
-              Archived ({stats.archived})
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filter tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {filters.map((f) => (
+          <Button
+            key={f.value}
+            variant={filter === f.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter(f.value)}
+          >
+            {f.label} ({f.count})
+          </Button>
+        ))}
+      </div>
 
       {/* Requests List */}
-      <div className="space-y-4">
-        {filteredRequests.map((request) => (
-          <Card key={request.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="text-lg">{request.clientName}</CardTitle>
-                    {getStatusBadge(request.status)}
-                  </div>
-                  <CardDescription>
-                    {request.clientEmail} • {request.clientPhone}
-                  </CardDescription>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Received: {request.createdAt}
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Service:</span>{' '}
-                  <span className="font-medium">{request.serviceInterested}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Preferred Date:</span>{' '}
-                  <span className="font-medium">{request.preferredDate}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Preferred Time:</span>{' '}
-                  <span className="font-medium">{request.preferredTime}</span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted rounded-md">
-                <p className="text-sm">{request.message}</p>
-              </div>
-
-              {expandedRequest === request.id ? (
-                <div className="space-y-3 p-4 border rounded-md">
-                  <Textarea
-                    placeholder="Type your response..."
-                    value={responseMessage}
-                    onChange={(e) => setResponseMessage(e.target.value)}
-                    rows={4}
-                  />
-                  <div className="flex gap-2">
-                    <Button onClick={() => handleRespond(request.id)}>
-                      Send Response
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setExpandedRequest(null);
-                        setResponseMessage('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading requests...</p>
+        </div>
+      ) : requests.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">
+              {filter === 'all'
+                ? 'No contact requests yet. They will appear here when clients reach out through your profile.'
+                : `No ${filter} requests`}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {requests.map((req) => (
+            <Card key={req.id} className={req.status === 'new' ? 'border-amber-300' : ''}>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CardTitle className="text-lg">{req.clientName}</CardTitle>
+                      {getStatusBadge(req.status)}
+                    </div>
+                    <CardDescription>
+                      {req.clientEmail}
+                      {req.clientPhone && ` \u2022 ${req.clientPhone}`}
+                    </CardDescription>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(req.createdAt).toLocaleDateString()} at {new Date(req.createdAt).toLocaleTimeString()}
+                    </p>
                   </div>
                 </div>
-              ) : (
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Details */}
+                {(req.serviceInterested || req.preferredDate || req.preferredTime) && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {req.serviceInterested && (
+                      <div>
+                        <span className="text-muted-foreground">Service:</span>{' '}
+                        <span className="font-medium">{req.serviceInterested}</span>
+                      </div>
+                    )}
+                    {req.preferredDate && (
+                      <div>
+                        <span className="text-muted-foreground">Preferred Date:</span>{' '}
+                        <span className="font-medium">{new Date(req.preferredDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {req.preferredTime && (
+                      <div>
+                        <span className="text-muted-foreground">Preferred Time:</span>{' '}
+                        <span className="font-medium">{req.preferredTime}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Message */}
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm whitespace-pre-wrap">{req.message}</p>
+                </div>
+
+                {/* Actions */}
                 <div className="flex gap-2">
-                  {request.status === 'new' && (
+                  {req.status === 'new' && (
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleMarkAsRead(request.id)}
+                      onClick={() => updateStatus(req.id, 'read')}
+                      disabled={processing === req.id}
                     >
                       Mark as Read
                     </Button>
                   )}
-                  {(request.status === 'new' || request.status === 'read') && (
+                  {(req.status === 'new' || req.status === 'read') && (
                     <Button
                       size="sm"
-                      onClick={() => setExpandedRequest(request.id)}
+                      onClick={() => updateStatus(req.id, 'responded')}
+                      disabled={processing === req.id}
                     >
-                      Respond
+                      Mark as Responded
                     </Button>
                   )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleArchive(request.id)}
+                  {req.status !== 'archived' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateStatus(req.id, 'archived')}
+                      disabled={processing === req.id}
+                    >
+                      Archive
+                    </Button>
+                  )}
+                  {/* Reply via email link */}
+                  <a
+                    href={`mailto:${req.clientEmail}?subject=Re: Your inquiry on Concierge Barber Registry`}
+                    className="inline-flex items-center gap-1"
                   >
-                    Archive
-                  </Button>
+                    <Button size="sm" variant="outline">
+                      Reply via Email
+                    </Button>
+                  </a>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-
-        {filteredRequests.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                No requests found for this filter
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
