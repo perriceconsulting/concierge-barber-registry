@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
 import { SUBSCRIPTION_PRICES, TRIAL_DAYS, getBarberWithSubscription } from '@/lib/subscription';
 
@@ -53,7 +53,7 @@ async function createCheckoutHandler(request: AuthRequest) {
         select: { email: true, firstName: true, lastName: true },
       });
 
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: user!.email,
         name: `${user!.firstName} ${user!.lastName}`,
         metadata: { barberProfileId: barberProfile.id, userId },
@@ -64,7 +64,7 @@ async function createCheckoutHandler(request: AuthRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],

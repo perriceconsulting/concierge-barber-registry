@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
 import { getTierFromPriceId } from '@/lib/subscription';
 import { createLogger } from '@/lib/logger';
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -116,7 +116,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customerId = session.customer as string;
 
   // Fetch the full subscription to get price/tier info
-  const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
   const priceId = stripeSubscription.items.data[0]?.price.id;
   const tier = getTierFromPriceId(priceId);
   const { periodStart, periodEnd } = getPeriodDates(stripeSubscription);

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { getBarberWithSubscription } from '@/lib/subscription';
 
 async function createPortalHandler(request: AuthRequest) {
@@ -18,7 +18,7 @@ async function createPortalHandler(request: AuthRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: barberProfile.subscription.stripeCustomerId,
       return_url: `${appUrl}/dashboard/subscription`,
     });
