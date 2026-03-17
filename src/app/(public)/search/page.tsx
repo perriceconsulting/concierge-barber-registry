@@ -27,8 +27,12 @@ interface SearchBarber {
   yearsExperience: number | null;
   licenseVerified: boolean;
   verificationStatus: string;
+  offersMobileService?: boolean;
+  mobileServiceRadiusMiles?: number | null;
   specialties: SpecialtyItem[];
   portfolioImages: Array<{ imageUrl: string }>;
+  serviceAreas?: Array<{ city: string; state: string }>;
+  travelDates?: Array<{ city: string; state: string; startDate: string; endDate: string }>;
 }
 
 export default function SearchPage() {
@@ -39,6 +43,7 @@ export default function SearchPage() {
     specialty: '',
     minRating: 0,
     verifiedOnly: false,
+    mobileService: false,
   });
   const [barbers, setBarbers] = useState<SearchBarber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +63,7 @@ export default function SearchPage() {
       if (filters.city) params.append('city', filters.city);
       if (filters.state) params.append('state', filters.state);
       if (filters.minRating > 0) params.append('min_rating', filters.minRating.toString());
+      if (filters.mobileService) params.append('mobile_service', 'true');
       // Note: specialty filter would need the specialty slug, not name
       // We'll filter specialties client-side for now
 
@@ -172,10 +178,23 @@ export default function SearchPage() {
                   </label>
                 </div>
 
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="mobileService"
+                    checked={filters.mobileService}
+                    onChange={(e) => setFilters({ ...filters, mobileService: e.target.checked })}
+                    className="rounded border-input"
+                  />
+                  <label htmlFor="mobileService" className="text-sm font-medium cursor-pointer">
+                    Offers mobile/house calls
+                  </label>
+                </div>
+
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => setFilters({ city: '', state: '', specialty: '', minRating: 0, verifiedOnly: false })}
+                  onClick={() => setFilters({ city: '', state: '', specialty: '', minRating: 0, verifiedOnly: false, mobileService: false })}
                 >
                   Clear Filters
                 </Button>
@@ -248,6 +267,22 @@ export default function SearchPage() {
                           {barber.yearsExperience}+ years experience
                         </p>
                       )}
+                      {/* Contextual badges */}
+                      <div className="flex gap-2 flex-wrap mt-2">
+                        {barber.offersMobileService && (
+                          <Badge variant="outline" className="text-xs">Mobile Service</Badge>
+                        )}
+                        {barber.serviceAreas && barber.serviceAreas.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            Serves {barber.serviceAreas.length} area{barber.serviceAreas.length > 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                        {barber.travelDates && barber.travelDates.length > 0 && (
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
+                            Visiting {barber.travelDates[0].city} soon
+                          </Badge>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                   </Link>
@@ -266,7 +301,7 @@ export default function SearchPage() {
                   className="mt-4"
                   onClick={() => {
                     setSearchQuery('');
-                    setFilters({ city: '', state: '', specialty: '', minRating: 0, verifiedOnly: false });
+                    setFilters({ city: '', state: '', specialty: '', minRating: 0, verifiedOnly: false, mobileService: false });
                   }}
                 >
                   Clear Filters

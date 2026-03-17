@@ -56,6 +56,13 @@ export async function GET(
           where: { isActive: true },
           orderBy: { sortOrder: 'asc' },
         },
+        serviceAreas: {
+          orderBy: [{ state: 'asc' }, { city: 'asc' }],
+        },
+        travelDates: {
+          where: { endDate: { gte: new Date() }, isActive: true },
+          orderBy: { startDate: 'asc' },
+        },
         portfolioImages: {
           orderBy: { sortOrder: 'asc' },
         },

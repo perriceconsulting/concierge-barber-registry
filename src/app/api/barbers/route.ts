@@ -21,6 +21,7 @@ const searchParamsSchema = z.object({
   state: z.string().length(2).regex(/^[A-Z]{2}$/).optional(),
   specialty: z.string().max(100).optional(),
   min_rating: z.coerce.number().min(0).max(5).optional().default(0),
+  mobile_service: z.coerce.boolean().optional(),
   page: z.coerce.number().int().min(1).max(10000).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
       state: searchParams.get('state')?.toUpperCase() || undefined,
       specialty: searchParams.get('specialty') || undefined,
       min_rating: searchParams.get('min_rating') || undefined,
+      mobile_service: searchParams.get('mobile_service') || undefined,
       page: searchParams.get('page') || undefined,
       limit: searchParams.get('limit') || undefined,
     });
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid search parameters', validationResult.error.issues);
     }
 
-    const { q: query, city, state, specialty, min_rating: minRating, page, limit } = validationResult.data;
+    const { q: query, city, state, specialty, min_rating: minRating, mobile_service: mobileService, page, limit } = validationResult.data;
 
     const offset = (page - 1) * limit;
 
@@ -65,15 +67,33 @@ export async function GET(request: NextRequest) {
 
     if (city) {
       const escapedCity = escapeLikePattern(city);
-      where.city = { contains: escapedCity, mode: 'insensitive' };
+      const now = new Date();
+      const cityConditions: Prisma.BarberProfileWhereInput[] = [
+        { city: { contains: escapedCity, mode: 'insensitive' } },
+        { serviceAreas: { some: { city: { contains: escapedCity, mode: 'insensitive' } } } },
+        { travelDates: { some: { city: { contains: escapedCity, mode: 'insensitive' }, startDate: { lte: now }, endDate: { gte: now }, isActive: true } } },
+      ];
+      // If state is also provided, scope service areas and travel dates to that state
+      if (state) {
+        cityConditions[1] = { serviceAreas: { some: { city: { contains: escapedCity, mode: 'insensitive' }, state } } };
+        cityConditions[2] = { travelDates: { some: { city: { contains: escapedCity, mode: 'insensitive' }, state, startDate: { lte: now }, endDate: { gte: now }, isActive: true } } };
+      }
+      where.AND = [
+        ...(where.AND as Prisma.BarberProfileWhereInput[] || []),
+        { OR: cityConditions },
+      ];
     }
 
-    if (state) {
+    if (state && !city) {
       where.state = state;
     }
 
     if (minRating > 0) {
       where.averageRating = { gte: minRating };
+    }
+
+    if (mobileService) {
+      where.offersMobileService = true;
     }
 
     if (specialty) {
@@ -107,6 +127,12 @@ export async function GET(request: NextRequest) {
           },
           subscription: {
             select: { tier: true, status: true },
+          },
+          serviceAreas: true,
+          travelDates: {
+            where: { endDate: { gte: new Date() }, isActive: true },
+            orderBy: { startDate: 'asc' },
+            take: 3,
           },
         },
         skip: offset,

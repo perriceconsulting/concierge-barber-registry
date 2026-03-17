@@ -15,6 +15,7 @@ const fullNavigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: '📊' },
   { name: 'Profile', href: ROUTES.DASHBOARD_PROFILE, icon: '👤' },
   { name: 'Services', href: ROUTES.DASHBOARD_SERVICES, icon: '✂️' },
+  { name: 'Service Areas', href: ROUTES.DASHBOARD_SERVICE_AREAS, icon: '📍' },
   { name: 'Portfolio', href: ROUTES.DASHBOARD_PORTFOLIO, icon: '📸' },
   { name: 'Reviews', href: ROUTES.DASHBOARD_REVIEWS, icon: '⭐' },
   { name: 'Requests', href: ROUTES.DASHBOARD_REQUESTS, icon: '📬' },

@@ -68,12 +68,16 @@ interface BarberProfile {
   shopAddressLine1: string | null;
   acceptsWalkIns: boolean;
   acceptsAppointments: boolean;
+  offersMobileService?: boolean;
+  mobileServiceRadiusMiles?: number | null;
   websiteUrl: string | null;
   instagramHandle: string | null;
   specialties: BarberSpecialtyItem[];
   portfolioImages: PortfolioImageItem[];
   services: ServiceItem[];
   reviews: ReviewItem[];
+  serviceAreas?: Array<{ id: string; city: string; state: string; notes: string | null }>;
+  travelDates?: Array<{ id: string; city: string; state: string; startDate: string; endDate: string; notes: string | null }>;
   user?: { phone: string | null; email: string };
 }
 
@@ -290,6 +294,11 @@ export default function BarberProfilePage() {
           <div className="flex gap-2 flex-wrap">
             {barber.acceptsWalkIns && <Badge variant="secondary">Walk-ins Welcome</Badge>}
             {barber.acceptsAppointments && <Badge variant="secondary">By Appointment</Badge>}
+            {barber.offersMobileService && (
+              <Badge variant="secondary">
+                Mobile Service{barber.mobileServiceRadiusMiles ? ` (${barber.mobileServiceRadiusMiles} mi)` : ''}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -441,6 +450,57 @@ export default function BarberProfilePage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Also Serves */}
+            {barber.serviceAreas && barber.serviceAreas.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Also Serves</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {barber.serviceAreas.map((area) => (
+                      <div key={area.id} className="flex items-start gap-2">
+                        <span className="text-muted-foreground shrink-0">📍</span>
+                        <div>
+                          <p className="font-medium text-sm">{area.city}, {area.state}</p>
+                          {area.notes && <p className="text-xs text-muted-foreground">{area.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Visiting Soon */}
+            {barber.travelDates && barber.travelDates.length > 0 && (
+              <Card className="border-amber-200 bg-amber-50/30">
+                <CardHeader>
+                  <CardTitle>Visiting Soon</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {barber.travelDates.map((trip) => {
+                      const start = new Date(trip.startDate);
+                      const end = new Date(trip.endDate);
+                      const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+                      const dateRange = `${start.toLocaleDateString('en-US', opts)} - ${end.toLocaleDateString('en-US', opts)}`;
+                      return (
+                        <div key={trip.id} className="flex items-start gap-2">
+                          <span className="text-muted-foreground shrink-0">✈️</span>
+                          <div>
+                            <p className="font-medium text-sm">{trip.city}, {trip.state}</p>
+                            <p className="text-xs text-amber-700">{dateRange}</p>
+                            {trip.notes && <p className="text-xs text-muted-foreground">{trip.notes}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
           </div>
         </div>

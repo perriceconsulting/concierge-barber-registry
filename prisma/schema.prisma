@@ -128,6 +128,8 @@ model BarberProfile {
   subscription               Subscription?
   suspendedBy                User?              @relation("SuspendedBy", fields: [suspendedByUserId], references: [id])
   appeals                    SuspensionAppeal[]
+  serviceAreas               ServiceArea[]
+  travelDates                TravelDate[]
 
   @@index([userId])
   @@index([slug])
@@ -349,6 +351,40 @@ enum SubscriptionStatus {
   past_due
   canceled
   unpaid
+}
+
+model ServiceArea {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  city            String        @db.VarChar(100)
+  state           String        @db.VarChar(2)
+  notes           String?       @db.VarChar(255)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([barberProfileId, city, state])
+  @@index([city, state])
+  @@index([barberProfileId])
+  @@map("service_areas")
+}
+
+model TravelDate {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  city            String        @db.VarChar(100)
+  state           String        @db.VarChar(2)
+  startDate       DateTime      @map("start_date") @db.Date
+  endDate         DateTime      @map("end_date") @db.Date
+  notes           String?       @db.VarChar(500)
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+
+  @@index([city, state, startDate, endDate])
+  @@index([barberProfileId])
+  @@index([endDate])
+  @@map("travel_dates")
 }
 
 enum SuspensionReason {

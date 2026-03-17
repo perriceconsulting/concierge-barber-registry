@@ -62,6 +62,40 @@ export type CreatePortfolioImageInput = z.infer<typeof createPortfolioImageSchem
 
 
 
+// Service area schema
+export const serviceAreaSchema = z.object({
+  city: z.string().min(1, 'City is required').max(100),
+  state: z.string().length(2, 'State must be 2 letters').regex(/^[A-Z]{2}$/, 'State must be uppercase'),
+  notes: z.string().max(255).optional(),
+});
+
+export type ServiceAreaInput = z.infer<typeof serviceAreaSchema>;
+
+// Travel date schema
+export const travelDateSchema = z.object({
+  city: z.string().min(1, 'City is required').max(100),
+  state: z.string().length(2, 'State must be 2 letters').regex(/^[A-Z]{2}$/, 'State must be uppercase'),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+  notes: z.string().max(500).optional(),
+}).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+  message: 'End date must be on or after start date',
+  path: ['endDate'],
+});
+
+export type TravelDateInput = z.infer<typeof travelDateSchema>;
+
+export const updateTravelDateSchema = z.object({
+  city: z.string().min(1).max(100).optional(),
+  state: z.string().length(2).regex(/^[A-Z]{2}$/).optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  notes: z.string().max(500).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export type UpdateTravelDateInput = z.infer<typeof updateTravelDateSchema>;
+
 // Barber search/filter schema
 export const barberSearchSchema = z.object({
   q: z.string().optional(),
