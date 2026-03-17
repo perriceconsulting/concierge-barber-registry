@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { checkFeatureAccess } from '@/lib/subscription';
 import { serviceAreaSchema } from '@/lib/validations/barber';
 import { z } from 'zod';
 
@@ -35,9 +36,9 @@ const addHandler = async (request: AuthRequest) => {
   try {
     const barberProfileId = await getBarberProfileId(request.userId!);
 
-    const count = await prisma.serviceArea.count({ where: { barberProfileId } });
-    if (count >= 20) {
-      throw new ApiError(400, 'LIMIT_REACHED', 'Maximum of 20 service areas allowed');
+    const access = await checkFeatureAccess(barberProfileId, 'serviceAreas');
+    if (!access.allowed) {
+      throw new ApiError(403, 'LIMIT_REACHED', `You've reached your ${access.currentTier} plan limit of ${access.limit} service areas. Upgrade to add more.`);
     }
 
     const body = await request.json();
@@ -61,9 +62,12 @@ const bulkHandler = async (request: AuthRequest) => {
   try {
     const barberProfileId = await getBarberProfileId(request.userId!);
 
+    const access = await checkFeatureAccess(barberProfileId, 'serviceAreas');
+    const maxAreas = access.limit ?? 20;
+
     const body = await request.json();
     const { serviceAreas } = z.object({
-      serviceAreas: z.array(serviceAreaSchema).max(20),
+      serviceAreas: z.array(serviceAreaSchema).max(maxAreas),
     }).parse(body);
 
     const result = await prisma.$transaction(async (tx) => {

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
+import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 import { US_STATES, ROUTES } from '@/config';
 
 interface ServiceArea {
@@ -57,6 +58,10 @@ export default function ServiceAreasPage() {
   // Profile info
   const [profileInfo, setProfileInfo] = useState<ProfileInfo | null>(null);
 
+  // Subscription limits
+  const [areaLimit, setAreaLimit] = useState<number>(2);
+  const [tripLimit, setTripLimit] = useState<number>(1);
+
   const fetchAreas = useCallback(async () => {
     try {
       const res = await secureFetch('/api/barbers/service-areas');
@@ -85,12 +90,15 @@ export default function ServiceAreasPage() {
     fetchAreas();
     fetchTrips();
 
-    // Fetch mobile service info from profile
-    async function fetchProfile() {
+    // Fetch mobile service info + subscription limits
+    async function fetchProfileAndLimits() {
       try {
-        const res = await fetch('/api/barbers/profile', { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
+        const [profileRes, subRes] = await Promise.all([
+          fetch('/api/barbers/profile', { credentials: 'include' }),
+          fetch('/api/barbers/subscription', { credentials: 'include' }),
+        ]);
+        if (profileRes.ok) {
+          const data = await profileRes.json();
           const profile = data.data?.barberProfile || data.barberProfile;
           if (profile) {
             setProfileInfo({
@@ -99,9 +107,17 @@ export default function ServiceAreasPage() {
             });
           }
         }
+        if (subRes.ok) {
+          const data = await subRes.json();
+          if (data.success) {
+            const usage = data.data.usage;
+            if (usage.serviceAreas?.limit != null) setAreaLimit(usage.serviceAreas.limit);
+            if (usage.travelDates?.limit != null) setTripLimit(usage.travelDates.limit);
+          }
+        }
       } catch { /* ignore */ }
     }
-    fetchProfile();
+    fetchProfileAndLimits();
   }, [fetchAreas, fetchTrips]);
 
   // Service Area handlers
@@ -280,15 +296,20 @@ export default function ServiceAreasPage() {
             <div>
               <CardTitle>Service Areas</CardTitle>
               <CardDescription>
-                Cities you regularly serve beyond your home base ({areas.length}/20)
+                Cities you regularly serve beyond your home base ({areas.length}/{areaLimit})
               </CardDescription>
             </div>
-            {!showAreaForm && areas.length < 20 && (
+            {!showAreaForm && areas.length < areaLimit && (
               <Button onClick={() => setShowAreaForm(true)} size="sm">Add Area</Button>
             )}
           </div>
         </CardHeader>
         <CardContent>
+          {areas.length >= areaLimit && !showAreaForm && (
+            <div className="mb-4">
+              <UpgradeBanner feature="service areas" currentUsage={areas.length} limit={areaLimit} />
+            </div>
+          )}
           {showAreaForm && (
             <form onSubmit={handleAddArea} className="mb-6 p-4 border rounded-lg space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -372,10 +393,10 @@ export default function ServiceAreasPage() {
             <div>
               <CardTitle>Traveling Schedule</CardTitle>
               <CardDescription>
-                Let clients know when you&apos;ll be visiting other cities ({activeTrips.length}/10 upcoming)
+                Let clients know when you&apos;ll be visiting other cities ({activeTrips.length}/{tripLimit} upcoming)
               </CardDescription>
             </div>
-            {!showTripForm && activeTrips.length < 10 && (
+            {!showTripForm && activeTrips.length < tripLimit && (
               <Button onClick={() => { setEditingTrip(null); setTripForm({ city: '', state: '', startDate: '', endDate: '', notes: '' }); setShowTripForm(true); }} size="sm">
                 Add Trip
               </Button>
@@ -454,6 +475,12 @@ export default function ServiceAreasPage() {
                 </Button>
               </div>
             </form>
+          )}
+
+          {activeTrips.length >= tripLimit && !showTripForm && (
+            <div className="mb-4">
+              <UpgradeBanner feature="travel dates" currentUsage={activeTrips.length} limit={tripLimit} />
+            </div>
           )}
 
           {tripsLoading ? (

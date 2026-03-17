@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
+import { checkFeatureAccess } from '@/lib/subscription';
 import { travelDateSchema } from '@/lib/validations/barber';
 
 async function getBarberProfileId(userId: string) {
@@ -45,15 +46,9 @@ const addHandler = async (request: AuthRequest) => {
   try {
     const barberProfileId = await getBarberProfileId(request.userId!);
 
-    const activeCount = await prisma.travelDate.count({
-      where: {
-        barberProfileId,
-        endDate: { gte: new Date() },
-        isActive: true,
-      },
-    });
-    if (activeCount >= 10) {
-      throw new ApiError(400, 'LIMIT_REACHED', 'Maximum of 10 upcoming travel dates allowed');
+    const access = await checkFeatureAccess(barberProfileId, 'travelDates');
+    if (!access.allowed) {
+      throw new ApiError(403, 'LIMIT_REACHED', `You've reached your ${access.currentTier} plan limit of ${access.limit} travel dates. Upgrade to add more.`);
     }
 
     const body = await request.json();

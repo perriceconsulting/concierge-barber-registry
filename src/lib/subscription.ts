@@ -5,6 +5,8 @@ export type TierName = 'starter' | 'professional' | 'elite';
 export type FeatureKey =
   | 'portfolioImages'
   | 'services'
+  | 'serviceAreas'
+  | 'travelDates'
   | 'contactRequestsPerMonth'
   | 'reviewResponses'
   | 'seoStructuredData'
@@ -24,6 +26,8 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
     limits: {
       portfolioImages: 5,
       services: 3,
+      serviceAreas: 2,
+      travelDates: 1,
       contactRequestsPerMonth: 10,
       reviewResponses: false,
       seoStructuredData: false,
@@ -37,6 +41,8 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
     limits: {
       portfolioImages: 20,
       services: 10,
+      serviceAreas: 10,
+      travelDates: 5,
       contactRequestsPerMonth: Infinity,
       reviewResponses: true,
       seoStructuredData: true,
@@ -50,6 +56,8 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
     limits: {
       portfolioImages: 100,
       services: 50,
+      serviceAreas: 20,
+      travelDates: 10,
       contactRequestsPerMonth: Infinity,
       reviewResponses: true,
       seoStructuredData: true,
@@ -143,6 +151,14 @@ export async function checkFeatureAccess(
   } else if (feature === 'services') {
     current = await prisma.service.count({
       where: { barberProfileId, isActive: true },
+    });
+  } else if (feature === 'serviceAreas') {
+    current = await prisma.serviceArea.count({
+      where: { barberProfileId },
+    });
+  } else if (feature === 'travelDates') {
+    current = await prisma.travelDate.count({
+      where: { barberProfileId, endDate: { gte: new Date() }, isActive: true },
     });
   } else if (feature === 'contactRequestsPerMonth') {
     const thirtyDaysAgo = new Date();
