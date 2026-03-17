@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { generatePostImage, downloadImage } from '@/lib/social-image';
+import { STOCK_PHOTOS, type StockPhoto } from '@/lib/stock-photos';
 import {
   PLATFORM_CONFIGS,
   TEMPLATE_CONFIGS,
@@ -24,7 +25,7 @@ import { FindYourBarber } from '@/components/social/templates/find-your-barber';
 import { WhyChooseUs } from '@/components/social/templates/why-choose-us';
 import { CustomAnnouncement } from '@/components/social/templates/custom-announcement';
 
-type Step = 'template' | 'platform' | 'customize' | 'preview';
+type Step = 'template' | 'photo' | 'platform' | 'customize' | 'preview';
 
 export default function AdminSocialPage() {
   const { showToast } = useToast();
@@ -34,25 +35,27 @@ export default function AdminSocialPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [photoFilter, setPhotoFilter] = useState<StockPhoto['category'] | 'all'>('all');
 
   const [postData, setPostData] = useState<MarketingPostData>({
     headline: '',
     subheadline: '',
     ctaText: '',
+    backgroundImageUrl: '',
   });
 
   const getDefaultData = (template: TemplateType): MarketingPostData => {
     switch (template) {
       case 'join-registry':
-        return { headline: 'Grow Your Client Base', subheadline: 'Get verified. Showcase your work. Connect with clients actively looking for skilled barbers.', ctaText: 'JOIN FREE TODAY' };
+        return { headline: 'GROW YOUR CLIENT BASE', subheadline: 'Get verified. Showcase your work. Connect with clients who are looking for you.', ctaText: 'JOIN FREE', backgroundImageUrl: '' };
       case 'barber-features':
-        return { headline: 'Everything You Need to Grow', subheadline: '', ctaText: 'START FREE' };
+        return { headline: 'BUILT FOR BARBERS', subheadline: '', ctaText: 'START FREE', backgroundImageUrl: '' };
       case 'find-your-barber':
-        return { headline: 'Find Your Perfect Barber', subheadline: 'Discover verified, top-rated barbers in your area. Browse portfolios, read reviews, and book with confidence.', ctaText: 'SEARCH NOW — FREE' };
+        return { headline: 'FIND YOUR BARBER', subheadline: 'Verified. Rated. Ready to cut.', ctaText: 'SEARCH FREE', backgroundImageUrl: '' };
       case 'why-choose-us':
-        return { headline: 'Why Clients Choose Us', subheadline: '', ctaText: 'FIND A BARBER' };
+        return { headline: 'TRUSTED BY CLIENTS EVERYWHERE', subheadline: '', ctaText: 'FIND A BARBER', backgroundImageUrl: '' };
       case 'custom-announcement':
-        return { headline: '', subheadline: '', ctaText: '' };
+        return { headline: '', subheadline: '', ctaText: '', backgroundImageUrl: '' };
     }
   };
 
@@ -70,6 +73,11 @@ export default function AdminSocialPage() {
   const handleSelectTemplate = (template: TemplateType) => {
     setSelectedTemplate(template);
     setPostData(getDefaultData(template));
+    setStep('photo');
+  };
+
+  const handleSelectPhoto = (url: string) => {
+    setPostData({ ...postData, backgroundImageUrl: url });
     setStep('platform');
   };
 
@@ -84,40 +92,45 @@ export default function AdminSocialPage() {
       downloadImage(dataUrl, filename);
       showToast({ title: 'Downloaded!', description: `${platformConfig.name} post saved`, variant: 'success' });
     } catch {
-      showToast({ title: 'Error', description: 'Failed to generate image', variant: 'error' });
+      showToast({ title: 'Error', description: 'Failed to generate image. Make sure the background image has loaded.', variant: 'error' });
     } finally {
       setGenerating(false);
     }
   };
 
   const platformConfig = selectedPlatform ? PLATFORM_CONFIGS[selectedPlatform] : null;
-  const previewMaxWidth = 400;
+  const previewMaxWidth = 420;
   const previewScale = platformConfig ? Math.min(previewMaxWidth / platformConfig.width, 1) : 1;
+
+  const filteredPhotos = photoFilter === 'all'
+    ? STOCK_PHOTOS
+    : STOCK_PHOTOS.filter((p) => p.category === photoFilter);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-destructive">Social Media Posts</h1>
         <p className="text-muted-foreground mt-2">
-          Create branded posts to attract barbers and clients to the platform
+          Create scroll-stopping posts to attract barbers and clients
         </p>
       </div>
 
       {/* Step nav */}
       <div className="flex gap-2 flex-wrap">
-        {(['template', 'platform', 'customize', 'preview'] as Step[]).map((s, i) => (
+        {(['template', 'photo', 'platform', 'customize', 'preview'] as Step[]).map((s, i) => (
           <Badge
             key={s}
             variant={step === s ? 'default' : 'outline'}
             className="cursor-pointer"
             onClick={() => {
               if (s === 'template') setStep(s);
-              if (s === 'platform' && selectedTemplate) setStep(s);
+              if (s === 'photo' && selectedTemplate) setStep(s);
+              if (s === 'platform' && postData.backgroundImageUrl) setStep(s);
               if (s === 'customize' && selectedPlatform) setStep(s);
               if (s === 'preview' && selectedPlatform) setStep(s);
             }}
           >
-            {i + 1}. {s.charAt(0).toUpperCase() + s.slice(1)}
+            {i + 1}. {s === 'photo' ? 'Photo' : s.charAt(0).toUpperCase() + s.slice(1)}
           </Badge>
         ))}
       </div>
@@ -125,7 +138,7 @@ export default function AdminSocialPage() {
       {/* Step 1: Template */}
       {step === 'template' && (
         <div>
-          <h3 className="font-medium mb-3 text-muted-foreground">For Barbers</h3>
+          <h3 className="font-medium mb-3 text-muted-foreground">Recruit Barbers</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
             {(Object.entries(TEMPLATE_CONFIGS) as [TemplateType, typeof TEMPLATE_CONFIGS[TemplateType]][])
               .filter(([, c]) => c.audience === 'barbers')
@@ -140,7 +153,7 @@ export default function AdminSocialPage() {
               ))}
           </div>
 
-          <h3 className="font-medium mb-3 text-muted-foreground">For Clients</h3>
+          <h3 className="font-medium mb-3 text-muted-foreground">Attract Clients</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
             {(Object.entries(TEMPLATE_CONFIGS) as [TemplateType, typeof TEMPLATE_CONFIGS[TemplateType]][])
               .filter(([, c]) => c.audience === 'clients')
@@ -172,10 +185,67 @@ export default function AdminSocialPage() {
         </div>
       )}
 
-      {/* Step 2: Platform */}
-      {step === 'platform' && (
+      {/* Step 2: Photo Selection */}
+      {step === 'photo' && (
         <div>
           <Button variant="outline" size="sm" onClick={() => setStep('template')} className="mb-4">← Back</Button>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Choose a Background Photo</CardTitle>
+              <CardDescription>Select from our royalty-free barbershop photo library</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Category filter */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {(['all', 'action', 'tools', 'interior', 'result'] as const).map((cat) => (
+                  <Button
+                    key={cat}
+                    variant={photoFilter === cat ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPhotoFilter(cat)}
+                  >
+                    {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Photo grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {filteredPhotos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 ${postData.backgroundImageUrl === photo.url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'}`}
+                    onClick={() => handleSelectPhoto(photo.url)}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.label}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                      <p className="text-xs text-white truncate">{photo.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Skip photo option */}
+              <div className="mt-4 text-center">
+                <Button variant="outline" size="sm" onClick={() => { setPostData({ ...postData, backgroundImageUrl: '' }); setStep('platform'); }}>
+                  Skip — use solid background
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Step 3: Platform */}
+      {step === 'platform' && (
+        <div>
+          <Button variant="outline" size="sm" onClick={() => setStep('photo')} className="mb-4">← Back</Button>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(Object.entries(PLATFORM_CONFIGS) as [SocialPlatform, PlatformConfig][]).map(([key, config]) => (
               <Card
@@ -194,25 +264,26 @@ export default function AdminSocialPage() {
         </div>
       )}
 
-      {/* Step 3: Customize */}
+      {/* Step 4: Customize */}
       {step === 'customize' && selectedTemplate && (
         <div>
           <Button variant="outline" size="sm" onClick={() => setStep('platform')} className="mb-4">← Back</Button>
           <Card>
             <CardHeader>
               <CardTitle>Customize Text</CardTitle>
-              <CardDescription>Edit the copy for your {TEMPLATE_CONFIGS[selectedTemplate].name} post</CardDescription>
+              <CardDescription>Edit the copy — keep it short and punchy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="headline">Headline</Label>
+                <Label htmlFor="headline">Headline (big text)</Label>
                 <Input
                   id="headline"
                   value={postData.headline}
                   onChange={(e) => setPostData({ ...postData, headline: e.target.value })}
-                  placeholder="Main headline text"
-                  maxLength={60}
+                  placeholder="FIND YOUR BARBER"
+                  maxLength={40}
                 />
+                <p className="text-xs text-muted-foreground">Short and bold. {postData.headline?.length || 0}/40</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subheadline">Subheadline (optional)</Label>
@@ -222,26 +293,26 @@ export default function AdminSocialPage() {
                   onChange={(e) => setPostData({ ...postData, subheadline: e.target.value })}
                   placeholder="Supporting text"
                   rows={2}
-                  maxLength={200}
+                  maxLength={120}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cta">CTA Button Text (optional)</Label>
+                <Label htmlFor="cta">CTA Button (optional)</Label>
                 <Input
                   id="cta"
                   value={postData.ctaText}
                   onChange={(e) => setPostData({ ...postData, ctaText: e.target.value })}
-                  placeholder="e.g., JOIN FREE TODAY"
-                  maxLength={30}
+                  placeholder="JOIN FREE"
+                  maxLength={20}
                 />
               </div>
-              <Button onClick={() => setStep('preview')}>Preview Post →</Button>
+              <Button onClick={() => setStep('preview')}>Preview →</Button>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Step 4: Preview + Download */}
+      {/* Step 5: Preview + Download */}
       {step === 'preview' && selectedTemplate && platformConfig && (
         <div>
           <Button variant="outline" size="sm" onClick={() => setStep('customize')} className="mb-4">← Back</Button>
@@ -252,7 +323,7 @@ export default function AdminSocialPage() {
                 <CardDescription>{platformConfig.name} — {platformConfig.width}x{platformConfig.height}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-hidden rounded-lg border" style={{ maxWidth: previewMaxWidth }}>
+                <div className="overflow-hidden rounded-lg border bg-muted" style={{ maxWidth: previewMaxWidth }}>
                   <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', width: platformConfig.width, height: platformConfig.height }}>
                     {renderTemplate(postData, platformConfig)}
                   </div>
@@ -265,23 +336,14 @@ export default function AdminSocialPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Download</CardTitle>
-                  <CardDescription>Save as {platformConfig.width}x{platformConfig.height} PNG</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button onClick={handleGenerate} disabled={generating} className="w-full" size="lg">
                     {generating ? 'Generating...' : 'Download PNG'}
                   </Button>
                   <Button variant="outline" className="w-full" onClick={() => { setStep('template'); setSelectedTemplate(null); setSelectedPlatform(null); }}>
-                    Create Another Post
+                    Create Another
                   </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6 text-sm text-muted-foreground space-y-1">
-                  <p>• Instagram Stories/Reels/TikTok: 9:16 vertical</p>
-                  <p>• X/Twitter & Facebook: landscape format</p>
-                  <p>• Pinterest: tall 2:3 format</p>
-                  <p>• Instagram Post: 1:1 square</p>
                 </CardContent>
               </Card>
             </div>

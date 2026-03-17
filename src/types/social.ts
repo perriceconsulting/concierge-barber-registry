@@ -32,8 +32,7 @@ export interface MarketingPostData {
   headline?: string;
   subheadline?: string;
   ctaText?: string;
-  statBarbers?: number;
-  statCities?: number;
+  backgroundImageUrl?: string;
 }
 
 export const PLATFORM_CONFIGS: Record<SocialPlatform, PlatformConfig> = {
