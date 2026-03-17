@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { generatePostImage, downloadImage } from '@/lib/social-image';
 import { STOCK_PHOTOS, type StockPhoto } from '@/lib/stock-photos';
+import { generateCaptionData } from '@/lib/social-captions';
 import {
   PLATFORM_CONFIGS,
   TEMPLATE_CONFIGS,
@@ -346,6 +347,78 @@ export default function AdminSocialPage() {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Caption & Hashtags */}
+              {selectedTemplate && selectedPlatform && (() => {
+                const captionData = generateCaptionData(selectedTemplate, selectedPlatform);
+                return (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Caption</CardTitle>
+                        <CardDescription>Copy and paste into your post</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="relative">
+                          <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded-md border max-h-48 overflow-y-auto">{captionData.caption}</pre>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={() => {
+                              navigator.clipboard.writeText(captionData.caption);
+                              showToast({ title: 'Copied!', description: 'Caption copied to clipboard', variant: 'success' });
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Hashtags</CardTitle>
+                        <CardDescription>
+                          {captionData.hashtags.length} tags — click to copy all
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          {captionData.hashtags.map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            navigator.clipboard.writeText(captionData.hashtags.join(' '));
+                            showToast({ title: 'Copied!', description: 'All hashtags copied', variant: 'success' });
+                          }}
+                        >
+                          Copy All Hashtags
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-muted/30">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">💡</span>
+                          <div>
+                            <p className="text-sm font-medium">Platform Tip</p>
+                            <p className="text-sm text-muted-foreground mt-1">{captionData.platformTip}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
