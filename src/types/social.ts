@@ -19,6 +19,8 @@ export interface PlatformConfig {
   width: number;
   height: number;
   aspectRatio: string;
+  captionLimit: number;
+  hashtagTip: string;
 }
 
 export interface TemplateConfig {
@@ -36,13 +38,13 @@ export interface MarketingPostData {
 }
 
 export const PLATFORM_CONFIGS: Record<SocialPlatform, PlatformConfig> = {
-  'instagram-post':  { name: 'Instagram Post',  width: 1080, height: 1080, aspectRatio: '1:1' },
-  'instagram-story': { name: 'Instagram Story', width: 1080, height: 1920, aspectRatio: '9:16' },
-  'tiktok':          { name: 'TikTok',          width: 1080, height: 1920, aspectRatio: '9:16' },
-  'snapchat':        { name: 'Snapchat',        width: 1080, height: 1920, aspectRatio: '9:16' },
-  'x-twitter':       { name: 'X / Twitter',     width: 1200, height: 675,  aspectRatio: '16:9' },
-  'pinterest':       { name: 'Pinterest',       width: 1000, height: 1500, aspectRatio: '2:3' },
-  'facebook':        { name: 'Facebook Post',   width: 1200, height: 630,  aspectRatio: '~1.91:1' },
+  'instagram-post':  { name: 'Instagram Post',  width: 1080, height: 1080, aspectRatio: '1:1',     captionLimit: 2200, hashtagTip: 'Max 30 hashtags, best 3-5 in caption' },
+  'instagram-story': { name: 'Instagram Story', width: 1080, height: 1920, aspectRatio: '9:16',    captionLimit: 2200, hashtagTip: 'Use sticker hashtags instead' },
+  'tiktok':          { name: 'TikTok',          width: 1080, height: 1920, aspectRatio: '9:16',    captionLimit: 4000, hashtagTip: 'Max 5 hashtags for best reach' },
+  'snapchat':        { name: 'Snapchat',        width: 1080, height: 1920, aspectRatio: '9:16',    captionLimit: 250,  hashtagTip: 'Hashtags not used on Snapchat' },
+  'x-twitter':       { name: 'X / Twitter',     width: 1200, height: 675,  aspectRatio: '16:9',    captionLimit: 280,  hashtagTip: 'Max 1-3 hashtags, keep it brief' },
+  'pinterest':       { name: 'Pinterest',       width: 1000, height: 1500, aspectRatio: '2:3',     captionLimit: 500,  hashtagTip: 'Max 20 hashtags in description' },
+  'facebook':        { name: 'Facebook Post',   width: 1200, height: 630,  aspectRatio: '~1.91:1', captionLimit: 63206, hashtagTip: 'Max 3-5 hashtags, less is more' },
 };
 
 export const TEMPLATE_CONFIGS: Record<TemplateType, TemplateConfig> = {

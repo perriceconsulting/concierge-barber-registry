@@ -366,12 +366,42 @@ export default function AdminSocialPage() {
               {/* Caption & Hashtags */}
               {selectedTemplate && selectedPlatform && (() => {
                 const captionData = generateCaptionData(selectedTemplate, selectedPlatform);
+                const pConfig = PLATFORM_CONFIGS[selectedPlatform];
+                const fullText = captionData.caption + '\n\n' + captionData.hashtags.join(' ');
+                const isOverLimit = fullText.length > pConfig.captionLimit;
+                const captionOnlyOver = captionData.caption.length > pConfig.captionLimit;
+
                 return (
                   <>
+                    {/* Character limit warning */}
+                    <Card className={isOverLimit ? 'border-destructive bg-destructive/5' : 'border-green-300 bg-green-50/30'}>
+                      <CardContent className="py-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span>{isOverLimit ? '⚠️' : '✅'}</span>
+                            <span className="text-sm font-medium">
+                              {pConfig.name}: {pConfig.captionLimit.toLocaleString()} char limit
+                            </span>
+                          </div>
+                          <div className={`text-sm font-mono ${isOverLimit ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+                            {fullText.length.toLocaleString()} / {pConfig.captionLimit.toLocaleString()}
+                          </div>
+                        </div>
+                        {isOverLimit && (
+                          <p className="text-xs text-destructive mt-1">
+                            {captionOnlyOver
+                              ? `Caption alone is ${captionData.caption.length - pConfig.captionLimit} chars over. Shorten the caption.`
+                              : 'Caption + hashtags exceed the limit. Post hashtags in a separate comment instead.'}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">{pConfig.hashtagTip}</p>
+                      </CardContent>
+                    </Card>
+
                     <Card>
                       <CardHeader>
                         <CardTitle>Caption</CardTitle>
-                        <CardDescription>Copy and paste into your post</CardDescription>
+                        <CardDescription>{captionData.caption.length} chars</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="relative">
@@ -395,7 +425,7 @@ export default function AdminSocialPage() {
                       <CardHeader>
                         <CardTitle>Hashtags</CardTitle>
                         <CardDescription>
-                          {captionData.hashtags.length} tags — click to copy all
+                          {captionData.hashtags.length} tags · {captionData.hashtags.join(' ').length} chars
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
