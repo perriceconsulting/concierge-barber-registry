@@ -7,6 +7,7 @@ export type FeatureKey =
   | 'services'
   | 'serviceAreas'
   | 'travelDates'
+  | 'socialPostsPerMonth'
   | 'contactRequestsPerMonth'
   | 'reviewResponses'
   | 'seoStructuredData'
@@ -28,6 +29,7 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
       services: 3,
       serviceAreas: 2,
       travelDates: 1,
+      socialPostsPerMonth: 3,
       contactRequestsPerMonth: 10,
       reviewResponses: false,
       seoStructuredData: false,
@@ -43,6 +45,7 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
       services: 10,
       serviceAreas: 10,
       travelDates: 5,
+      socialPostsPerMonth: 20,
       contactRequestsPerMonth: Infinity,
       reviewResponses: true,
       seoStructuredData: true,
@@ -58,6 +61,7 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
       services: 50,
       serviceAreas: 20,
       travelDates: 10,
+      socialPostsPerMonth: Infinity,
       contactRequestsPerMonth: Infinity,
       reviewResponses: true,
       seoStructuredData: true,
@@ -159,6 +163,15 @@ export async function checkFeatureAccess(
   } else if (feature === 'travelDates') {
     current = await prisma.travelDate.count({
       where: { barberProfileId, endDate: { gte: new Date() }, isActive: true },
+    });
+  } else if (feature === 'socialPostsPerMonth') {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    current = await prisma.socialPostGeneration.count({
+      where: {
+        barberProfileId,
+        createdAt: { gte: thirtyDaysAgo },
+      },
     });
   } else if (feature === 'contactRequestsPerMonth') {
     const thirtyDaysAgo = new Date();

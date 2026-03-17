@@ -24,11 +24,12 @@ async function getSubscriptionHandler(request: AuthRequest) {
     const tierConfig = TIER_LIMITS[tier];
 
     // Get usage counts
-    const [portfolioCount, serviceCount, serviceAreaCount, travelDateCount, contactCount] = await Promise.all([
+    const [portfolioCount, serviceCount, serviceAreaCount, travelDateCount, socialPostCount, contactCount] = await Promise.all([
       prisma.portfolioImage.count({ where: { barberProfileId: barberProfile.id } }),
       prisma.service.count({ where: { barberProfileId: barberProfile.id, isActive: true } }),
       prisma.serviceArea.count({ where: { barberProfileId: barberProfile.id } }),
       prisma.travelDate.count({ where: { barberProfileId: barberProfile.id, endDate: { gte: new Date() }, isActive: true } }),
+      prisma.socialPostGeneration.count({ where: { barberProfileId: barberProfile.id, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } }),
       prisma.contactRequest.count({
         where: {
           barberProfileId: barberProfile.id,
@@ -41,6 +42,7 @@ async function getSubscriptionHandler(request: AuthRequest) {
     const serviceLimit = tierConfig.limits.services;
     const serviceAreaLimit = tierConfig.limits.serviceAreas;
     const travelDateLimit = tierConfig.limits.travelDates;
+    const socialPostLimit = tierConfig.limits.socialPostsPerMonth;
     const contactLimit = tierConfig.limits.contactRequestsPerMonth;
 
     return NextResponse.json({
@@ -67,6 +69,10 @@ async function getSubscriptionHandler(request: AuthRequest) {
           travelDates: {
             current: travelDateCount,
             limit: typeof travelDateLimit === 'number' && isFinite(travelDateLimit) ? travelDateLimit : null,
+          },
+          socialPosts: {
+            current: socialPostCount,
+            limit: typeof socialPostLimit === 'number' && isFinite(socialPostLimit) ? socialPostLimit : null,
           },
           contactRequests: {
             current: contactCount,

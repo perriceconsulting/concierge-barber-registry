@@ -130,6 +130,7 @@ model BarberProfile {
   appeals                    SuspensionAppeal[]
   serviceAreas               ServiceArea[]
   travelDates                TravelDate[]
+  socialPostGenerations      SocialPostGeneration[]
 
   @@index([userId])
   @@index([slug])
@@ -351,6 +352,19 @@ enum SubscriptionStatus {
   past_due
   canceled
   unpaid
+}
+
+model SocialPostGeneration {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String        @map("barber_profile_id") @db.Uuid
+  templateType    String        @map("template_type") @db.VarChar(50)
+  platform        String        @db.VarChar(50)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+
+  @@index([barberProfileId])
+  @@index([barberProfileId, createdAt])
+  @@map("social_post_generations")
 }
 
 model ServiceArea {
