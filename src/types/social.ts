@@ -8,11 +8,11 @@ export type SocialPlatform =
   | 'facebook';
 
 export type TemplateType =
-  | 'portfolio-showcase'
-  | 'service-spotlight'
-  | 'review-testimonial'
-  | 'in-town'
-  | 'new-client-special';
+  | 'join-registry'
+  | 'barber-features'
+  | 'find-your-barber'
+  | 'why-choose-us'
+  | 'custom-announcement';
 
 export interface PlatformConfig {
   name: string;
@@ -25,40 +25,15 @@ export interface TemplateConfig {
   name: string;
   description: string;
   icon: string;
-  requiredData: string[];
+  audience: 'barbers' | 'clients' | 'general';
 }
 
-export interface SocialPostData {
-  barberName: string;
-  tagline?: string;
-  city: string;
-  state: string;
-  tier: 'starter' | 'professional' | 'elite';
-  instagramHandle?: string;
-  tiktokHandle?: string;
-
-  // Portfolio Showcase
-  portfolioImageUrl?: string;
-  portfolioCaption?: string;
-
-  // Service Spotlight
-  serviceName?: string;
-  servicePriceCents?: number;
-  serviceDurationMinutes?: number;
-
-  // Review Testimonial
-  reviewRating?: number;
-  reviewComment?: string;
-  reviewerName?: string;
-
-  // In Town
-  travelCity?: string;
-  travelState?: string;
-  travelStartDate?: string;
-  travelEndDate?: string;
-
-  // New Client Special
-  promoText?: string;
+export interface MarketingPostData {
+  headline?: string;
+  subheadline?: string;
+  ctaText?: string;
+  statBarbers?: number;
+  statCities?: number;
 }
 
 export const PLATFORM_CONFIGS: Record<SocialPlatform, PlatformConfig> = {
@@ -72,9 +47,9 @@ export const PLATFORM_CONFIGS: Record<SocialPlatform, PlatformConfig> = {
 };
 
 export const TEMPLATE_CONFIGS: Record<TemplateType, TemplateConfig> = {
-  'portfolio-showcase':  { name: 'Portfolio Showcase',  description: 'Feature a portfolio image with your branding', icon: '📸', requiredData: ['portfolio'] },
-  'service-spotlight':   { name: 'Service Spotlight',   description: 'Highlight a specific service with pricing',    icon: '✂️', requiredData: ['services'] },
-  'review-testimonial':  { name: 'Review Testimonial',  description: 'Show off a great client review',              icon: '⭐', requiredData: ['reviews'] },
-  'in-town':             { name: "I'm in Town",         description: 'Announce your travel dates',                   icon: '✈️', requiredData: ['travelDates'] },
-  'new-client-special':  { name: 'New Client Special',  description: 'Promote a special offer',                     icon: '🎉', requiredData: [] },
+  'join-registry':      { name: 'Join the Registry',  description: 'Recruit barbers — grow your business, get verified',    icon: '✂️', audience: 'barbers' },
+  'barber-features':    { name: 'Barber Features',    description: 'Showcase platform features for barbers',                icon: '🚀', audience: 'barbers' },
+  'find-your-barber':   { name: 'Find Your Barber',   description: 'Attract clients — discover verified barbers near you',  icon: '🔍', audience: 'clients' },
+  'why-choose-us':      { name: 'Why Choose Us',      description: 'Trust signals — verified licenses, real reviews',       icon: '🛡️', audience: 'clients' },
+  'custom-announcement': { name: 'Custom Announcement', description: 'Custom headline and message with platform branding', icon: '📣', audience: 'general' },
 };

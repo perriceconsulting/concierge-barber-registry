@@ -14,6 +14,7 @@ const navigation = [
   { name: 'Users', href: ROUTES.ADMIN_USERS, icon: '👥' },
   { name: 'Reviews', href: ROUTES.ADMIN_REVIEWS, icon: '⭐' },
   { name: 'Specialties', href: ROUTES.ADMIN_SPECIALTIES, icon: '🎯' },
+  { name: 'Social Posts', href: ROUTES.ADMIN_SOCIAL, icon: '📱' },
   { name: 'Audit Log', href: ROUTES.ADMIN_AUDIT_LOG, icon: '📋' },
 ];
 

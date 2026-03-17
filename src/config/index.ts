@@ -35,7 +35,6 @@ export const ROUTES = {
   DASHBOARD_SUBSCRIPTION: '/dashboard/subscription',
   DASHBOARD_HELP: '/dashboard/help',
   DASHBOARD_SERVICE_AREAS: '/dashboard/service-areas',
-  DASHBOARD_SOCIAL: '/dashboard/social',
   DASHBOARD_APPEAL: '/dashboard/appeal',
 
   // Admin routes
@@ -45,6 +44,7 @@ export const ROUTES = {
   ADMIN_REVIEWS: '/admin/reviews',
   ADMIN_SPECIALTIES: '/admin/specialties',
   ADMIN_APPEALS: '/admin/appeals',
+  ADMIN_SOCIAL: '/admin/social',
   ADMIN_AUDIT_LOG: '/admin/audit-log',
 
   // API routes
