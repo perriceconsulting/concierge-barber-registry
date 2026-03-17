@@ -44,6 +44,7 @@ export default function AdminSocialPage() {
   const [uploadLabel, setUploadLabel] = useState('');
   const [uploadKeywords, setUploadKeywords] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [postData, setPostData] = useState<MarketingPostData>({
@@ -341,8 +342,17 @@ export default function AdminSocialPage() {
                 <div className="space-y-4">
                   {/* File drop zone */}
                   <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-primary ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'hover:border-primary'} ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
                     onClick={() => fileInputRef.current?.click()}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragActive(false);
+                      if (e.dataTransfer.files?.[0]) handleUploadPhoto(e.dataTransfer.files[0]);
+                    }}
                   >
                     <input
                       ref={fileInputRef}
@@ -353,7 +363,12 @@ export default function AdminSocialPage() {
                         if (e.target.files?.[0]) handleUploadPhoto(e.target.files[0]);
                       }}
                     />
-                    <p className="text-sm font-medium">{uploading ? 'Uploading...' : 'Click or drag & drop an image'}</p>
+                    <div className="flex justify-center mb-2">
+                      <svg className="w-10 h-10 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium">{uploading ? 'Uploading...' : dragActive ? 'Drop image here' : 'Click or drag & drop an image'}</p>
                     <p className="text-xs text-muted-foreground mt-1">JPG, PNG, or WebP (max 10MB)</p>
                   </div>
 
