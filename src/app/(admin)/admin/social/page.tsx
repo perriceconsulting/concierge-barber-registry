@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
-import { generatePostImage, downloadImage } from '@/lib/social-image';
+import { generatePostImage, downloadImage, imageUrlToDataUrl } from '@/lib/social-image';
 import { STOCK_PHOTOS, type StockPhoto } from '@/lib/stock-photos';
 import { generateCaptionData } from '@/lib/social-captions';
 import {
@@ -77,9 +77,20 @@ export default function AdminSocialPage() {
     setStep('photo');
   };
 
-  const handleSelectPhoto = (url: string) => {
-    setPostData({ ...postData, backgroundImageUrl: url });
-    setStep('platform');
+  const [photoLoading, setPhotoLoading] = useState(false);
+
+  const handleSelectPhoto = async (url: string) => {
+    setPhotoLoading(true);
+    try {
+      // Convert to data URL to avoid CORS issues with html-to-image
+      const dataUrl = await imageUrlToDataUrl(url);
+      setPostData({ ...postData, backgroundImageUrl: dataUrl });
+      setStep('platform');
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to load photo. Try another.', variant: 'error' });
+    } finally {
+      setPhotoLoading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -211,8 +222,12 @@ export default function AdminSocialPage() {
                 ))}
               </div>
 
+              {photoLoading && (
+                <div className="text-center py-4 text-muted-foreground">Loading photo...</div>
+              )}
+
               {/* Photo grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 ${photoLoading ? 'opacity-50 pointer-events-none' : ''}`}>
                 {filteredPhotos.map((photo) => (
                   <div
                     key={photo.id}
