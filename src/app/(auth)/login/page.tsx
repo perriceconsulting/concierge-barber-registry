@@ -10,10 +10,15 @@ import { ROUTES } from '@/config';
 import { secureFetch } from '@/lib/csrf-client';
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false,
+  const [formData, setFormData] = useState(() => {
+    // Restore remembered email from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rememberedEmail');
+      if (saved) {
+        return { email: saved, password: '', rememberMe: true };
+      }
+    }
+    return { email: '', password: '', rememberMe: false };
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +61,13 @@ export default function LoginPage() {
 
       if (!response.ok) {
         throw new Error(data.error?.message || 'Login failed');
+      }
+
+      // Save or clear remembered email
+      if (formData.rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
       }
 
       // Redirect based on user role with full page reload to update header
