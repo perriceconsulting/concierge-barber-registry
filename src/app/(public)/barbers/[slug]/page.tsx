@@ -366,9 +366,9 @@ export default function BarberProfilePage() {
                       <div key={service.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                         <div>
                           <p className="font-medium">{service.name}</p>
-                          <p className="text-sm text-muted-foreground">{service.duration} minutes</p>
+                          <p className="text-sm text-muted-foreground">{service.durationMinutes} minutes</p>
                         </div>
-                        <p className="font-semibold">${service.price}</p>
+                        <p className="font-semibold">${(service.priceCents / 100).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
