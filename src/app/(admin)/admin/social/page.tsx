@@ -441,7 +441,7 @@ export default function AdminSocialPage() {
 
       {/* Hidden render container */}
       {selectedTemplate && platformConfig && (
-        <div ref={renderRef} style={{ position: 'fixed', left: '-9999px', top: 0, width: platformConfig.width, height: platformConfig.height, overflow: 'hidden', zIndex: -1 }}>
+        <div ref={renderRef} style={{ position: 'fixed', top: 0, left: 0, width: platformConfig.width, height: platformConfig.height, overflow: 'hidden', opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
           {renderTemplate(postData, platformConfig)}
         </div>
       )}
