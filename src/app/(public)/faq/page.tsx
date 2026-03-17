@@ -76,13 +76,25 @@ const faqs: FAQItem[] = [
     id: 11,
     category: 'For Barbers',
     question: 'What are the subscription costs?',
-    answer: 'We offer different subscription tiers based on features. Contact us for detailed pricing information and to discuss which plan is right for your business.',
+    answer: 'We offer three tiers: Starter (free), Professional ($29/mo), and Elite ($59/mo). Each tier unlocks more portfolio images, services, contact requests, and premium features like review responses. All paid plans include a 14-day free trial.',
   },
   {
     id: 12,
     category: 'For Barbers',
     question: 'Can I update my services and pricing?',
-    answer: 'Absolutely! Log in to your dashboard and go to the Services section. You can add, edit, or remove services and update pricing at any time.',
+    answer: 'Absolutely! Log in to your dashboard and go to the Services section. You can add, edit, or remove services and update pricing at any time. Clients will see your updated services and prices on your public profile.',
+  },
+  {
+    id: 19,
+    category: 'For Barbers',
+    question: 'What happens if my account is suspended?',
+    answer: 'If your account is suspended, your profile is hidden from clients. You\'ll see a banner on your dashboard with the reason and a link to the Appeal page. Depending on the reason, you may be able to submit an appeal with guided steps to resolve the issue (e.g., uploading a renewed license).',
+  },
+  {
+    id: 20,
+    category: 'For Barbers',
+    question: 'How do I appeal a suspension?',
+    answer: 'Go to the Appeal page from your dashboard sidebar. It will show the reason for your suspension, whether you\'re eligible to appeal, and specific steps to resolve it. For appealable suspensions, you can submit an appeal that our team reviews within 5 business days.',
   },
   {
     id: 13,

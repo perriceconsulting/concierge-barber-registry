@@ -37,7 +37,7 @@ const managingBusiness: FaqItem[] = [
   {
     question: 'How do contact requests work?',
     answer:
-      'When a client is interested in your services, they can send you a contact request through your public profile. You\'ll see these in the Requests section. You can mark them as read, respond, or archive them.',
+      'When a client clicks "Contact" on your public profile, they fill out a form with their details and message. The request is saved and appears in your Requests page. You can mark requests as read, responded, or archived. You can also reply directly via email using the "Reply via Email" button.',
   },
   {
     question: 'How do reviews work?',
@@ -48,6 +48,11 @@ const managingBusiness: FaqItem[] = [
     question: 'How do I respond to reviews?',
     answer:
       'Review responses are available on the Professional plan and above. Go to Reviews in the sidebar, find the review you want to respond to, and click "Reply". Your response will appear publicly below the review on your profile.',
+  },
+  {
+    question: 'Where can I see my dashboard stats?',
+    answer:
+      'Your Dashboard shows real-time stats including total reviews, average rating, new contact requests needing response, and total requests. It also shows your 5 most recent contact requests and reviews.',
   },
 ];
 
@@ -71,6 +76,34 @@ const subscriptionFaq: FaqItem[] = [
     question: 'What happens if I downgrade?',
     answer:
       'Your content is never deleted when you downgrade. Items beyond your new tier\'s limits will be hidden from your public profile but remain in your dashboard. Upgrading again will restore full visibility.',
+  },
+];
+
+const verificationFaq: FaqItem[] = [
+  {
+    question: 'How does license verification work?',
+    answer:
+      'After registering, upload a clear photo or scan of your professional barber license on your Profile page. Our admin team reviews it within 24-48 hours. Once approved, your profile becomes visible to clients with a "Verified" badge.',
+  },
+  {
+    question: 'What happens if my account is suspended?',
+    answer:
+      'If your account is suspended, your profile is hidden from clients and your Stripe subscription is automatically cancelled with a prorated refund. You\'ll see a banner on your Dashboard with a link to the Appeal page, which explains the reason and your options.',
+  },
+  {
+    question: 'How do I appeal a suspension?',
+    answer:
+      'Go to the Appeal page from your Dashboard sidebar (it appears when your account is suspended). You\'ll see the suspension reason and guided steps to resolve it. For example, if your license expired, you can upload a renewed license directly on the appeal page. Then submit your appeal — our team reviews it within 5 business days.',
+  },
+  {
+    question: 'Can all suspensions be appealed?',
+    answer:
+      'No. Suspensions for expired licenses, policy violations, and client complaints are appealable. Suspensions for fraudulent documentation, payment fraud, or legal/regulatory reasons are not eligible for appeal. The Appeal page will clearly indicate whether your suspension is appealable.',
+  },
+  {
+    question: 'What happens when my appeal is approved?',
+    answer:
+      'Your account is reinstated, your profile becomes visible again, and you\'ll receive an email confirmation. You can then resubscribe from the Subscription page.',
   },
 ];
 
@@ -181,6 +214,7 @@ export default function HelpPage() {
 
       <FaqSection title="Getting Started" items={gettingStarted} />
       <FaqSection title="Managing Your Business" items={managingBusiness} />
+      <FaqSection title="Verification & Appeals" items={verificationFaq} />
       <FaqSection title="Subscription & Billing" items={subscriptionFaq} />
       <FaqSection title="Account & Login" items={accountFaq} />
 
