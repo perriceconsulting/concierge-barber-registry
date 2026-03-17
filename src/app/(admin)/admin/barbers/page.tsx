@@ -256,7 +256,7 @@ export default function AdminBarbersPage() {
       } else {
         showToast({
           title: 'Error',
-          description: data.message || 'Failed to suspend barber',
+          description: data.error?.message || data.message || 'Failed to suspend barber',
           variant: 'error',
         });
       }
