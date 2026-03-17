@@ -356,6 +356,17 @@ enum SubscriptionStatus {
   unpaid
 }
 
+model SocialPhoto {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  imageUrl  String   @map("image_url")
+  label     String   @db.VarChar(200)
+  keywords  Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("social_photos")
+}
+
 model SocialPostGeneration {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   barberProfileId String        @map("barber_profile_id") @db.Uuid

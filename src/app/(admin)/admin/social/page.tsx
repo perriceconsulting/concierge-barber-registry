@@ -11,6 +11,8 @@ import { useToast } from '@/components/ui/toast';
 import { generatePostImage, downloadImage, imageUrlToDataUrl } from '@/lib/social-image';
 import { STOCK_PHOTOS, type StockPhoto } from '@/lib/stock-photos';
 import { generateCaptionData } from '@/lib/social-captions';
+import { SOCIAL_KEYWORDS, KEYWORD_CATEGORIES } from '@/lib/social-keywords';
+import { secureFetch } from '@/lib/csrf-client';
 import {
   PLATFORM_CONFIGS,
   TEMPLATE_CONFIGS,
@@ -37,6 +39,12 @@ export default function AdminSocialPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | null>(null);
   const [generating, setGenerating] = useState(false);
   const [photoFilter, setPhotoFilter] = useState<StockPhoto['category'] | 'all'>('all');
+  const [photoTab, setPhotoTab] = useState<'stock' | 'uploaded' | 'upload'>('stock');
+  const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ id: string; imageUrl: string; label: string; keywords: string[] }>>([]);
+  const [uploadLabel, setUploadLabel] = useState('');
+  const [uploadKeywords, setUploadKeywords] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [postData, setPostData] = useState<MarketingPostData>({
     headline: '',
@@ -69,6 +77,51 @@ export default function AdminSocialPage() {
       case 'custom-announcement': return <CustomAnnouncement data={data} platform={platform} />;
       default: return null;
     }
+  };
+
+  const fetchUploadedPhotos = async () => {
+    try {
+      const res = await secureFetch('/api/admin/social/photos');
+      const data = await res.json();
+      if (data.success) setUploadedPhotos(data.data.photos);
+    } catch { /* ignore */ }
+  };
+
+  const handleUploadPhoto = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('label', uploadLabel || file.name.replace(/\.[^.]+$/, ''));
+      formData.append('keywords', JSON.stringify(uploadKeywords));
+
+      const res = await secureFetch('/api/admin/social/photos', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast({ title: 'Uploaded!', description: 'Photo added to your library', variant: 'success' });
+        setUploadLabel('');
+        setUploadKeywords([]);
+        fetchUploadedPhotos();
+        // Auto-select the uploaded photo
+        handleSelectPhoto(data.data.photo.imageUrl);
+      } else {
+        showToast({ title: 'Error', description: data.error?.message || 'Upload failed', variant: 'error' });
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to upload photo', variant: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const toggleKeyword = (value: string) => {
+    setUploadKeywords((prev) =>
+      prev.includes(value) ? prev.filter((k) => k !== value) : [...prev, value]
+    );
   };
 
   const handleSelectTemplate = (template: TemplateType) => {
@@ -205,19 +258,23 @@ export default function AdminSocialPage() {
           <Card>
             <CardHeader>
               <CardTitle>Choose a Background Photo</CardTitle>
-              <CardDescription>Select from our royalty-free barbershop photo library</CardDescription>
+              <CardDescription>Select from stock photos, your uploads, or upload a new image</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Category filter */}
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {(['all', 'action', 'tools', 'interior', 'result'] as const).map((cat) => (
+              {/* Tabs */}
+              <div className="flex gap-2 mb-4">
+                {([
+                  { key: 'stock' as const, label: 'Stock Photos' },
+                  { key: 'uploaded' as const, label: `Uploaded (${uploadedPhotos.length})` },
+                  { key: 'upload' as const, label: '+ Upload New' },
+                ]).map((tab) => (
                   <Button
-                    key={cat}
-                    variant={photoFilter === cat ? 'default' : 'outline'}
+                    key={tab.key}
+                    variant={photoTab === tab.key ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setPhotoFilter(cat)}
+                    onClick={() => { setPhotoTab(tab.key); if (tab.key === 'uploaded') fetchUploadedPhotos(); }}
                   >
-                    {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {tab.label}
                   </Button>
                 ))}
               </div>
@@ -226,26 +283,118 @@ export default function AdminSocialPage() {
                 <div className="text-center py-4 text-muted-foreground">Loading photo...</div>
               )}
 
-              {/* Photo grid */}
-              <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 ${photoLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-                {filteredPhotos.map((photo) => (
-                  <div
-                    key={photo.id}
-                    className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 ${postData.backgroundImageUrl === photo.url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'}`}
-                    onClick={() => handleSelectPhoto(photo.url)}
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.label}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                      <p className="text-xs text-white truncate">{photo.label}</p>
-                    </div>
+              {/* Stock Photos Tab */}
+              {photoTab === 'stock' && (
+                <>
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    {(['all', 'action', 'tools', 'interior', 'result'] as const).map((cat) => (
+                      <Button key={cat} variant={photoFilter === cat ? 'default' : 'outline'} size="sm" onClick={() => setPhotoFilter(cat)}>
+                        {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </Button>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 ${photoLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {filteredPhotos.map((photo) => (
+                      <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 border-transparent" onClick={() => handleSelectPhoto(photo.url)}>
+                        <img src={photo.url} alt={photo.label} className="w-full h-full object-cover" loading="lazy" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                          <p className="text-xs text-white truncate">{photo.label}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Uploaded Photos Tab */}
+              {photoTab === 'uploaded' && (
+                <>
+                  {uploadedPhotos.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No uploaded photos yet.</p>
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => setPhotoTab('upload')}>Upload your first</Button>
+                    </div>
+                  ) : (
+                    <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 ${photoLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+                      {uploadedPhotos.map((photo) => (
+                        <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 border-transparent" onClick={() => handleSelectPhoto(photo.imageUrl)}>
+                          <img src={photo.imageUrl} alt={photo.label} className="w-full h-full object-cover" loading="lazy" />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                            <p className="text-xs text-white truncate">{photo.label}</p>
+                            {photo.keywords?.length > 0 && (
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {(photo.keywords as string[]).slice(0, 3).map((kw) => (
+                                  <span key={kw} className="text-[9px] bg-white/20 text-white px-1 rounded">{kw}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Upload New Tab */}
+              {photoTab === 'upload' && (
+                <div className="space-y-4">
+                  {/* File drop zone */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-primary ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) handleUploadPhoto(e.target.files[0]);
+                      }}
+                    />
+                    <p className="text-sm font-medium">{uploading ? 'Uploading...' : 'Click or drag & drop an image'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG, or WebP (max 10MB)</p>
+                  </div>
+
+                  {/* Label */}
+                  <div className="space-y-1">
+                    <Label htmlFor="photo-label">Label</Label>
+                    <Input
+                      id="photo-label"
+                      value={uploadLabel}
+                      onChange={(e) => setUploadLabel(e.target.value)}
+                      placeholder="e.g., Fresh fade closeup"
+                      maxLength={200}
+                    />
+                  </div>
+
+                  {/* Keyword picker */}
+                  <div className="space-y-2">
+                    <Label>Keywords (select relevant tags)</Label>
+                    {KEYWORD_CATEGORIES.map((cat) => (
+                      <div key={cat.value}>
+                        <p className="text-xs text-muted-foreground font-medium mb-1">{cat.label}</p>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {SOCIAL_KEYWORDS.filter((kw) => kw.category === cat.value).map((kw) => (
+                            <Badge
+                              key={kw.value}
+                              variant={uploadKeywords.includes(kw.value) ? 'default' : 'outline'}
+                              className="cursor-pointer text-xs"
+                              onClick={() => toggleKeyword(kw.value)}
+                            >
+                              {kw.label}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {uploadKeywords.length > 0 && (
+                      <p className="text-xs text-muted-foreground">{uploadKeywords.length} keywords selected</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Skip photo option */}
               <div className="mt-4 text-center">
