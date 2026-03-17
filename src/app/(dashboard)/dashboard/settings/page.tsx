@@ -41,10 +41,16 @@ export default function SettingsPage() {
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
   const [emailVerified, setEmailVerified] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [profileData, setProfileData] = useState<{ vacationMode?: boolean } | null>(null);
 
   useEffect(() => {
     fetchUserData();
     fetchPreferences();
+    // Fetch barber profile for vacation mode
+    fetch('/api/barbers/profile', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.barberProfile) setProfileData(d.data.barberProfile); })
+      .catch(() => {});
   }, []);
 
   const fetchUserData = async () => {
@@ -475,6 +481,51 @@ export default function SettingsPage() {
 
       {/* Danger Zone */}
       <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle>Vacation Mode</CardTitle>
+          <CardDescription>Temporarily hide your profile from search</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                When enabled, your profile won&apos;t appear in search results. Your data is preserved — just toggle off when you&apos;re back.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const res = await secureFetch('/api/barbers/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify({ vacationMode: !profileData?.vacationMode }),
+                  });
+                  if (res.ok) {
+                    showToast({
+                      title: profileData?.vacationMode ? 'Welcome Back!' : 'Vacation Mode On',
+                      description: profileData?.vacationMode
+                        ? 'Your profile is now visible to clients again.'
+                        : 'Your profile is hidden from search. Toggle off when you return.',
+                      variant: 'success',
+                    });
+                    // Refresh profile data
+                    const updated = await res.json();
+                    if (updated.data?.barberProfile) {
+                      setProfileData(updated.data.barberProfile);
+                    }
+                  }
+                } catch {
+                  showToast({ title: 'Error', description: 'Failed to update', variant: 'error' });
+                }
+              }}
+            >
+              {profileData?.vacationMode ? '🏖️ Turn Off' : '🏖️ Turn On'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>Irreversible account actions</CardDescription>

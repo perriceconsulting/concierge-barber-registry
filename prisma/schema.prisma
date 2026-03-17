@@ -90,6 +90,8 @@ model BarberProfile {
   licenseVerified            Boolean            @default(false) @map("license_verified")
   verificationStatus         VerificationStatus @default(pending) @map("verification_status")
   verificationNotes          String?            @map("verification_notes")
+  isHidden                   Boolean            @default(false) @map("is_hidden")
+  vacationMode               Boolean            @default(false) @map("vacation_mode")
   verifiedAt                 DateTime?          @map("verified_at")
   verifiedByUserId           String?            @map("verified_by_user_id") @db.Uuid
   submittedForVerificationAt DateTime?          @map("submitted_for_verification_at")

@@ -51,9 +51,11 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Build where clause
+    // Build where clause — only show approved, not hidden, not on vacation
     const where: Prisma.BarberProfileWhereInput = {
       verificationStatus: 'approved',
+      isHidden: false,
+      vacationMode: false,
     };
 
     if (query) {

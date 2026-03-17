@@ -35,6 +35,8 @@ interface BarberResponse {
   licenseExpirationDate?: string;
   licenseDocumentUrl?: string;
   submittedForVerificationAt?: string;
+  isHidden?: boolean;
+  vacationMode?: boolean;
   createdAt: string;
   appeals?: PendingAppeal[];
   user?: {
@@ -53,6 +55,8 @@ interface Barber {
   state: string;
   verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
   suspensionReason?: SuspensionReason | null;
+  isHidden?: boolean;
+  vacationMode?: boolean;
   pendingAppeal?: PendingAppeal | null;
   licenseNumber?: string;
   licenseState?: string;
@@ -228,6 +232,31 @@ export default function AdminBarbersPage() {
     setSelectedReason('');
     setSuspendNotes('');
     setSuspendDialog({ barberId: id, barberName: name });
+  };
+
+  const handleToggleHidden = async (barberId: string, currentlyHidden: boolean) => {
+    try {
+      const response = await secureFetch(`/api/admin/barbers/${barberId}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'approved',
+          isHidden: !currentlyHidden,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        showToast({
+          title: 'Success',
+          description: currentlyHidden ? 'Barber is now visible' : 'Barber is now hidden from search',
+          variant: 'success',
+        });
+        fetchBarbers();
+      } else {
+        showToast({ title: 'Error', description: data.error?.message || 'Failed to update', variant: 'error' });
+      }
+    } catch {
+      showToast({ title: 'Error', description: 'Failed to update visibility', variant: 'error' });
+    }
   };
 
   const confirmSuspend = async () => {
@@ -497,9 +526,17 @@ export default function AdminBarbersPage() {
                       </div>
                     )}
                   </div>
-                  <Badge variant={getStatusBadgeVariant(barber.verificationStatus)}>
-                    {barber.verificationStatus}
-                  </Badge>
+                  <div className="flex gap-1.5 items-center">
+                    <Badge variant={getStatusBadgeVariant(barber.verificationStatus)}>
+                      {barber.verificationStatus}
+                    </Badge>
+                    {barber.isHidden && (
+                      <Badge variant="outline" className="text-xs">Hidden</Badge>
+                    )}
+                    {barber.vacationMode && (
+                      <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">Vacation</Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -534,13 +571,22 @@ export default function AdminBarbersPage() {
                     </>
                   )}
                   {barber.verificationStatus === 'approved' && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleSuspend(barber.id, barber.displayName)}
-                    >
-                      Suspend
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleHidden(barber.id, barber.isHidden || false)}
+                      >
+                        {barber.isHidden ? 'Show' : 'Hide'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleSuspend(barber.id, barber.displayName)}
+                      >
+                        Suspend
+                      </Button>
+                    </>
                   )}
                   {barber.verificationStatus === 'suspended' && (
                     <>

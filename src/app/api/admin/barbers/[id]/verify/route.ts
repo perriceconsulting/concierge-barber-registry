@@ -16,6 +16,7 @@ const verifyBarberSchema = z.object({
   status: z.enum(['approved', 'rejected', 'suspended']),
   notes: z.string().max(1000).optional(),
   suspensionReason: z.nativeEnum(SuspensionReason).optional(),
+  isHidden: z.boolean().optional(),
 }).refine(
   (data) => data.status !== 'suspended' || data.suspensionReason,
   { message: 'Suspension reason is required when suspending a barber', path: ['suspensionReason'] }
@@ -51,7 +52,7 @@ const verifyBarberHandler = async (
     }
 
     const body = await request.json();
-    const { status, notes, suspensionReason } = verifyBarberSchema.parse(body);
+    const { status, notes, suspensionReason, isHidden } = verifyBarberSchema.parse(body);
 
     // Block approval if no license document on file
     if (status === 'approved' && !barberProfile.licenseDocumentUrl) {
@@ -66,6 +67,10 @@ const verifyBarberHandler = async (
       verifiedByUserId: status === 'approved' ? adminUserId : null,
       verificationNotes: notes,
     };
+
+    if (isHidden !== undefined) {
+      updateData.isHidden = isHidden;
+    }
 
     if (status === 'suspended') {
       updateData.suspensionReason = suspensionReason;

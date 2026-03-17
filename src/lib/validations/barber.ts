@@ -22,6 +22,7 @@ export const createBarberProfileSchema = z.object({
   tiktokHandle: z.string().max(100, 'TikTok handle is too long').optional(),
   acceptsWalkins: z.boolean().default(true),
   acceptsAppointments: z.boolean().default(true),
+  vacationMode: z.boolean().default(false),
   specialtyIds: z.array(z.number().int()).min(1, 'At least one specialty is required'),
 });
 
