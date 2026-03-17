@@ -23,6 +23,7 @@ const REFRESH_TOKEN_SECRET = new TextEncoder().encode(
 
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
+const REFRESH_TOKEN_EXPIRY_REMEMBER = '30d'; // 30 days with "remember me"
 
 export interface JWTPayload {
   userId: string;
@@ -58,11 +59,11 @@ export async function generateAccessToken(payload: JWTPayload): Promise<string> 
 /**
  * Generate a refresh token (long-lived)
  */
-export async function generateRefreshToken(payload: JWTPayload): Promise<string> {
+export async function generateRefreshToken(payload: JWTPayload, rememberMe: boolean = false): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(REFRESH_TOKEN_EXPIRY)
+    .setExpirationTime(rememberMe ? REFRESH_TOKEN_EXPIRY_REMEMBER : REFRESH_TOKEN_EXPIRY)
     .sign(REFRESH_TOKEN_SECRET);
 }
 
@@ -103,14 +104,15 @@ export async function verifyRefreshToken(token: string): Promise<JWTPayload> {
 /**
  * Generate both access and refresh tokens
  */
-export async function generateTokenPair(payload: JWTPayload): Promise<{
+export async function generateTokenPair(payload: JWTPayload, rememberMe: boolean = false): Promise<{
   accessToken: string;
   refreshToken: string;
+  rememberMe: boolean;
 }> {
   const [accessToken, refreshToken] = await Promise.all([
     generateAccessToken(payload),
-    generateRefreshToken(payload),
+    generateRefreshToken(payload, rememberMe),
   ]);
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, rememberMe };
 }

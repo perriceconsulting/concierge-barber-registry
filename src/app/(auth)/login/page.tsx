@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    rememberMe: false,
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -124,6 +125,20 @@ export default function LoginPage() {
                 disabled={isLoading}
                 autoComplete="current-password"
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={formData.rememberMe}
+                onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
+                className="rounded border-input"
+                disabled={isLoading}
+              />
+              <label htmlFor="rememberMe" className="text-sm cursor-pointer">
+                Remember me for 30 days
+              </label>
             </div>
 
             <Button

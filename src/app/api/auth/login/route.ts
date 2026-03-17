@@ -53,19 +53,21 @@ export async function POST(request: NextRequest) {
       throw AuthErrors.EMAIL_NOT_VERIFIED;
     }
 
-    // Generate tokens
+    // Generate tokens (extend session if "remember me")
+    const rememberMe = validatedData.rememberMe === true;
     const { accessToken, refreshToken } = await generateTokenPair({
       userId: user.id,
       email: user.email,
       role: user.role,
-    });
+    }, rememberMe);
 
     // Hash the refresh token before storing
     const refreshTokenHash = await hashToken(refreshToken);
 
     // Enforce maximum sessions per user with atomic transaction to prevent race conditions
     const MAX_SESSIONS_PER_USER = 5;
-    const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const sessionDays = rememberMe ? 30 : 7;
+    const sessionExpiresAt = new Date(Date.now() + sessionDays * 24 * 60 * 60 * 1000);
 
     await prisma.$transaction(async (tx) => {
       // Lock user row to prevent concurrent session creation race conditions
@@ -136,11 +138,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Set refresh token cookie (httpOnly, long-lived)
+    const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;
     response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: refreshMaxAge,
       path: '/',
     });
 
