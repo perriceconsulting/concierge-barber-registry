@@ -114,7 +114,7 @@ function addSecurityHeaders(response: NextResponse): void {
     [
       "frame-ancestors 'none'",
       "connect-src 'self' https://*.blob.vercel-storage.com",
-      "img-src 'self' data: blob: https://*.blob.vercel-storage.com",
+      "img-src 'self' data: blob: https://*.blob.vercel-storage.com https://images.unsplash.com",
     ].join('; ')
   );
 

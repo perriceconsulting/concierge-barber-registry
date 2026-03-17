@@ -11,8 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'vercel.blob.core.windows.net',
       },
-      // Add any other specific image domains you need here
-      // Do NOT use wildcards like '**' as it allows any domain
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
     // SVG support with CSP protection
     dangerouslyAllowSVG: true,
