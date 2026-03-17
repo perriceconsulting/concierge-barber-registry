@@ -400,53 +400,61 @@ export default function AdminSocialPage() {
 
                     <Card>
                       <CardHeader>
-                        <CardTitle>Caption</CardTitle>
-                        <CardDescription>{captionData.caption.length} chars</CardDescription>
+                        <CardTitle>Caption + Hashtags</CardTitle>
+                        <CardDescription>Ready to paste — caption and tags combined</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="relative">
-                          <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded-md border max-h-48 overflow-y-auto">{captionData.caption}</pre>
+                          <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded-md border max-h-64 overflow-y-auto">{fullText}</pre>
                           <Button
                             variant="outline"
                             size="sm"
                             className="absolute top-2 right-2"
                             onClick={() => {
-                              navigator.clipboard.writeText(captionData.caption);
-                              showToast({ title: 'Copied!', description: 'Caption copied to clipboard', variant: 'success' });
+                              navigator.clipboard.writeText(fullText);
+                              showToast({ title: 'Copied!', description: 'Caption + hashtags copied to clipboard', variant: 'success' });
                             }}
                           >
-                            Copy
+                            Copy All
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Hashtags</CardTitle>
-                        <CardDescription>
-                          {captionData.hashtags.length} tags · {captionData.hashtags.join(' ').length} chars
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          {captionData.hashtags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
+                        {/* Individual copy buttons */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(captionData.caption);
+                              showToast({ title: 'Copied!', description: 'Caption only', variant: 'success' });
+                            }}
+                          >
+                            Copy Caption Only
+                          </Button>
+                          {captionData.hashtags.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(captionData.hashtags.join(' '));
+                                showToast({ title: 'Copied!', description: 'Hashtags only', variant: 'success' });
+                              }}
+                            >
+                              Copy Hashtags Only
+                            </Button>
+                          )}
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            navigator.clipboard.writeText(captionData.hashtags.join(' '));
-                            showToast({ title: 'Copied!', description: 'All hashtags copied', variant: 'success' });
-                          }}
-                        >
-                          Copy All Hashtags
-                        </Button>
+
+                        {/* Hashtag badges for reference */}
+                        {captionData.hashtags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-2 border-t">
+                            {captionData.hashtags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
