@@ -34,6 +34,9 @@ export const metadata: Metadata = {
     'professional barber',
     'licensed barber',
   ],
+  verification: {
+    google: 'Gm1CnwKCcs2ZjZKmPSMTYB7pn-65Rz61vFJhLU4ZstE',
+  },
   authors: [{ name: APP_CONFIG.name }],
   creator: APP_CONFIG.name,
   publisher: APP_CONFIG.name,
