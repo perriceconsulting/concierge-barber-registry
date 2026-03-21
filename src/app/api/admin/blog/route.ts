@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
@@ -68,8 +69,17 @@ const postHandler = async (request: AuthRequest) => {
 
     const post = await prisma.blogPost.create({
       data: {
-        ...data,
-        keywords: data.keywords,
+        title: data.title,
+        slug: data.slug,
+        description: data.description,
+        content: data.content,
+        keywords: data.keywords as unknown as Prisma.InputJsonValue,
+        category: data.category as 'for_clients' | 'for_barbers' | 'industry',
+        status: data.status as 'draft' | 'published',
+        readingTime: data.readingTime,
+        author: data.author,
+        imageUrl: data.imageUrl ?? null,
+        imageAlt: data.imageAlt ?? null,
         publishedAt: data.status === 'published' ? new Date() : null,
       },
     });
