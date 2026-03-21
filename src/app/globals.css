@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* Barbershop Premium Theme - Tailwind v4 */
 
