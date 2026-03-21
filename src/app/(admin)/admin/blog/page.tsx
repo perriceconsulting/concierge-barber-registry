@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { secureFetch } from '@/lib/csrf-client';
 import { useToast } from '@/components/ui/toast';
+import { BLOG_TEMPLATES, type BlogTemplate, type GeneratedPost } from '@/lib/blog-templates';
 
 interface BlogPost {
   id: string;
@@ -50,6 +51,10 @@ export default function AdminBlogPage() {
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<'posts' | 'generate'>('posts');
+  const [selectedTemplate, setSelectedTemplate] = useState<BlogTemplate | null>(null);
+  const [templateVars, setTemplateVars] = useState<Record<string, string>>({});
+  const [generatedPreview, setGeneratedPreview] = useState<GeneratedPost | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -190,6 +195,86 @@ export default function AdminBlogPage() {
     } catch {
       showToast({ variant: 'error', title: 'Failed to update status' });
     }
+  };
+
+  const handleSelectTemplate = (template: BlogTemplate) => {
+    setSelectedTemplate(template);
+    const vars: Record<string, string> = {};
+    template.variables.forEach(v => {
+      vars[v.key] = v.options?.[0]?.value || '';
+    });
+    setTemplateVars(vars);
+    setGeneratedPreview(null);
+  };
+
+  const handleGeneratePreview = () => {
+    if (!selectedTemplate) return;
+    const generated = selectedTemplate.generate(templateVars);
+    setGeneratedPreview(generated);
+  };
+
+  const handlePublishGenerated = async () => {
+    if (!generatedPreview || !selectedTemplate) return;
+    setSaving(true);
+    try {
+      const category = selectedTemplate.id === 'custom-article'
+        ? templateVars.audience || 'industry'
+        : selectedTemplate.audience;
+
+      const res = await secureFetch('/api/admin/blog', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: generatedPreview.title,
+          slug: generatedPreview.slug,
+          description: generatedPreview.description,
+          content: generatedPreview.content,
+          keywords: generatedPreview.keywords,
+          category,
+          status: 'published',
+          readingTime: generatedPreview.readingTime,
+          author: 'Concierge Barber Registry',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast({ variant: 'success', title: 'Blog post published!' });
+        setSelectedTemplate(null);
+        setGeneratedPreview(null);
+        setTab('posts');
+        fetchPosts();
+      } else {
+        showToast({ variant: 'error', title: data.error?.message || 'Failed to publish' });
+      }
+    } catch {
+      showToast({ variant: 'error', title: 'Failed to publish' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditGenerated = () => {
+    if (!generatedPreview || !selectedTemplate) return;
+    const category = selectedTemplate.id === 'custom-article'
+      ? templateVars.audience || 'industry'
+      : selectedTemplate.audience;
+
+    setForm({
+      title: generatedPreview.title,
+      slug: generatedPreview.slug,
+      description: generatedPreview.description,
+      content: generatedPreview.content,
+      keywords: generatedPreview.keywords.join(', '),
+      category,
+      status: 'draft',
+      readingTime: generatedPreview.readingTime,
+      author: 'Concierge Barber Registry',
+    });
+    setEditingPost(null);
+    setIsCreating(true);
+    setSelectedTemplate(null);
+    setGeneratedPreview(null);
+    setTab('posts');
   };
 
   const filteredPosts = posts.filter(p => {
@@ -361,13 +446,163 @@ export default function AdminBlogPage() {
           <h1 className="text-2xl font-bold">Blog Management</h1>
           <p className="text-sm text-muted-foreground">{posts.length} total posts</p>
         </div>
+        <div className="flex gap-2">
+          <button
+            onClick={startCreate}
+            className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          >
+            New Post
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b">
         <button
-          onClick={startCreate}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          onClick={() => setTab('posts')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === 'posts' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'
+          }`}
         >
-          New Post
+          All Posts
+        </button>
+        <button
+          onClick={() => setTab('generate')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === 'generate' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'
+          }`}
+        >
+          Generate Article
         </button>
       </div>
+
+      {/* Generate tab */}
+      {tab === 'generate' && (
+        <div className="max-w-4xl">
+          {!selectedTemplate ? (
+            <>
+              <p className="text-muted-foreground mb-6">Select a template to auto-generate an SEO-optimized blog article.</p>
+
+              {['for_clients', 'for_barbers', 'industry'].map(audience => {
+                const templates = BLOG_TEMPLATES.filter(t => t.audience === audience);
+                const label = audience === 'for_clients' ? 'For Clients' : audience === 'for_barbers' ? 'For Barbers' : 'Industry';
+                return (
+                  <div key={audience} className="mb-8">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">{label}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {templates.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => handleSelectTemplate(t)}
+                          className="text-left p-4 border rounded-lg hover:border-primary hover:shadow-sm transition-all"
+                        >
+                          <div className="font-medium text-sm mb-1">{t.name}</div>
+                          <div className="text-xs text-muted-foreground">{t.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          ) : !generatedPreview ? (
+            <>
+              <button onClick={() => setSelectedTemplate(null)} className="text-sm text-muted-foreground hover:text-primary mb-4 block">
+                &larr; Back to templates
+              </button>
+              <h3 className="text-lg font-bold mb-1">{selectedTemplate.name}</h3>
+              <p className="text-sm text-muted-foreground mb-6">{selectedTemplate.description}</p>
+
+              <div className="space-y-4 max-w-md">
+                {selectedTemplate.variables.map(v => (
+                  <div key={v.key}>
+                    <label className="block text-sm font-medium mb-1">{v.label} {v.required && '*'}</label>
+                    {v.type === 'select' ? (
+                      <select
+                        value={templateVars[v.key] || ''}
+                        onChange={e => setTemplateVars(prev => ({ ...prev, [v.key]: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        {v.options?.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={templateVars[v.key] || ''}
+                        onChange={e => setTemplateVars(prev => ({ ...prev, [v.key]: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        placeholder={v.placeholder}
+                      />
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={handleGeneratePreview}
+                  disabled={selectedTemplate.variables.some(v => v.required && !templateVars[v.key])}
+                  className="px-6 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-primary/90"
+                >
+                  Generate Preview
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setGeneratedPreview(null)} className="text-sm text-muted-foreground hover:text-primary mb-4 block">
+                &larr; Back to options
+              </button>
+
+              <div className="border rounded-lg p-6 mb-6">
+                <span className="text-xs px-2 py-1 rounded bg-secondary/10 text-secondary">
+                  {selectedTemplate.audienceLabel}
+                </span>
+                <h2 className="text-2xl font-bold text-primary mt-3 mb-2">{generatedPreview.title}</h2>
+                <p className="text-muted-foreground mb-2">{generatedPreview.description}</p>
+                <div className="flex gap-3 text-xs text-muted-foreground mb-4">
+                  <span>/blog/{generatedPreview.slug}</span>
+                  <span>{generatedPreview.readingTime} min read</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {generatedPreview.keywords.map(k => (
+                    <span key={k} className="text-xs px-2 py-0.5 bg-gray-100 rounded">{k}</span>
+                  ))}
+                </div>
+                <div
+                  className="prose prose-sm max-w-none border-t pt-4 mt-4"
+                  dangerouslySetInnerHTML={{ __html: generatedPreview.content }}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handlePublishGenerated}
+                  disabled={saving}
+                  className="px-6 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-primary/90"
+                >
+                  {saving ? 'Publishing...' : 'Publish Now'}
+                </button>
+                <button
+                  onClick={handleEditGenerated}
+                  className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  Edit Before Publishing
+                </button>
+                <button
+                  onClick={() => setGeneratedPreview(null)}
+                  className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  Regenerate
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Posts list tab */}
+      {tab === 'posts' && (<>
+
 
       {/* Filters */}
       <div className="flex gap-2 mb-6">
@@ -460,6 +695,7 @@ export default function AdminBlogPage() {
           <p className="text-center text-muted-foreground py-8">No posts found.</p>
         )}
       </div>
+      </>)}
     </div>
   );
 }
