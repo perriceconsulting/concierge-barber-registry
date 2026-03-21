@@ -46,6 +46,7 @@ export const ROUTES = {
   ADMIN_SPECIALTIES: '/admin/specialties',
   ADMIN_APPEALS: '/admin/appeals',
   ADMIN_SOCIAL: '/admin/social',
+  ADMIN_BLOG: '/admin/blog',
   ADMIN_AUDIT_LOG: '/admin/audit-log',
 
   // API routes

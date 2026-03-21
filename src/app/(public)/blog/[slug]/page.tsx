@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { ArticleStructuredData } from '@/components/seo/article-structured-data';
-import { getPostBySlug, getRelatedPosts, getAllPosts } from '@/content/blog';
+import { prisma } from '@/lib/db';
 
-export async function generateStaticParams() {
-  return getAllPosts().map(post => ({ slug: post.slug }));
-}
+const CATEGORY_LABELS: Record<string, string> = {
+  for_clients: 'For Clients',
+  for_barbers: 'For Barbers',
+  industry: 'Industry',
+};
 
 export async function generateMetadata({
   params,
@@ -15,23 +17,28 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await prisma.blogPost.findUnique({
+    where: { slug, status: 'published' },
+    select: { title: true, description: true, keywords: true, category: true, publishedAt: true, updatedAt: true, author: true },
+  });
   if (!post) return { title: 'Article Not Found' };
+
+  const keywords = Array.isArray(post.keywords) ? post.keywords as string[] : [];
 
   return {
     title: post.title,
     description: post.description,
-    keywords: post.keywords,
+    keywords,
     openGraph: {
       title: `${post.title} | Concierge Barber Registry`,
       description: post.description,
-      url: `/blog/${post.slug}`,
+      url: `/blog/${slug}`,
       type: 'article',
-      publishedTime: post.publishedAt,
-      modifiedTime: post.updatedAt || post.publishedAt,
+      publishedTime: post.publishedAt?.toISOString(),
+      modifiedTime: post.updatedAt.toISOString(),
       authors: [post.author],
-      section: post.categoryLabel,
-      tags: post.keywords,
+      section: CATEGORY_LABELS[post.category] || post.category,
+      tags: keywords,
     },
     twitter: {
       card: 'summary_large_image',
@@ -39,7 +46,7 @@ export async function generateMetadata({
       description: post.description,
     },
     alternates: {
-      canonical: `/blog/${post.slug}`,
+      canonical: `/blog/${slug}`,
     },
   };
 }
@@ -50,14 +57,44 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await prisma.blogPost.findUnique({
+    where: { slug, status: 'published' },
+  });
   if (!post) notFound();
 
-  const related = getRelatedPosts(slug, 3);
+  const categoryLabel = CATEGORY_LABELS[post.category] || post.category;
+  const keywords = Array.isArray(post.keywords) ? post.keywords as string[] : [];
+
+  // Get related posts in same category
+  const related = await prisma.blogPost.findMany({
+    where: {
+      category: post.category,
+      status: 'published',
+      slug: { not: slug },
+    },
+    take: 3,
+    orderBy: { publishedAt: 'desc' },
+    select: { slug: true, title: true, description: true },
+  });
 
   return (
     <div className="min-h-[calc(100vh-16rem)] py-16">
-      <ArticleStructuredData post={post} />
+      <ArticleStructuredData
+        post={{
+          slug: post.slug,
+          title: post.title,
+          description: post.description,
+          keywords,
+          category: post.category.replace('_', '-') as 'for-clients' | 'for-barbers' | 'industry',
+          categoryLabel,
+          publishedAt: post.publishedAt?.toISOString() || post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+          readingTime: post.readingTime,
+          author: post.author,
+          image: post.imageUrl || undefined,
+          imageAlt: post.imageAlt || undefined,
+        }}
+      />
       <Container>
         <article className="max-w-3xl mx-auto">
           {/* Breadcrumb */}
@@ -65,26 +102,28 @@ export default async function BlogPostPage({
             <Link href="/blog" className="hover:text-primary">Blog</Link>
             <span className="mx-2">/</span>
             <Link href={`/blog?category=${post.category}`} className="hover:text-primary">
-              {post.categoryLabel}
+              {categoryLabel}
             </Link>
           </nav>
 
           {/* Header */}
           <header className="mb-8">
             <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-secondary/10 text-secondary mb-4">
-              {post.categoryLabel}
+              {categoryLabel}
             </span>
             <h1 className="text-4xl font-bold text-primary mb-4">{post.title}</h1>
             <p className="text-lg text-muted-foreground mb-4">{post.description}</p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground border-b border-gray-200 pb-6">
               <span>{post.author}</span>
               <span>·</span>
-              <time dateTime={post.publishedAt}>
-                {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+              <time dateTime={post.publishedAt?.toISOString()}>
+                {post.publishedAt
+                  ? new Date(post.publishedAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : 'Draft'}
               </time>
               <span>·</span>
               <span>{post.readingTime} min read</span>
