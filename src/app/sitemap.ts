@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/db';
 import { createLogger } from '@/lib/logger';
+import { getAllPosts } from '@/content/blog';
 
 const logger = createLogger('SITEMAP');
 
@@ -75,6 +76,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: 'yearly',
         priority: 0.3,
       },
+
+      // Blog listing page
+      {
+        url: `${baseUrl}/blog`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      },
+
+      // Blog posts
+      ...getAllPosts().map((post) => ({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: new Date(post.updatedAt || post.publishedAt),
+        changeFrequency: 'monthly' as const,
+        priority: 0.7,
+      })),
 
       // Dynamic barber profile pages
       ...barbers.map((barber) => ({

@@ -46,6 +46,14 @@ export function Footer() {
                   FAQ
                 </Link>
               </li>
+              <li>
+                <Link
+                  href={ROUTES.BLOG}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Blog
+                </Link>
+              </li>
             </ul>
           </div>
 

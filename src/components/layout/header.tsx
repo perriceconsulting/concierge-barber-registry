@@ -16,6 +16,7 @@ const navLinks = [
   { name: 'Find Barbers', href: ROUTES.SEARCH },
   { name: 'Specialties', href: ROUTES.SPECIALTIES },
   { name: 'About', href: ROUTES.ABOUT },
+  { name: 'Blog', href: ROUTES.BLOG },
 ];
 
 export function Header() {

@@ -13,6 +13,7 @@ export const ROUTES = {
   ABOUT: '/about',
   CONTACT: '/contact',
   FAQ: '/faq',
+  BLOG: '/blog',
   PRIVACY: '/privacy-policy',
   TERMS: '/terms-of-service',
 
