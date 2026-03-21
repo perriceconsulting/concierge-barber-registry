@@ -1,6 +1,18 @@
+import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+
+export const metadata: Metadata = {
+  title: 'Browse Barbers',
+  description: 'Discover verified, top-rated barbers in your area. Browse portfolios, read reviews, compare services and pricing. Find your perfect barber on Concierge Barber Registry.',
+  keywords: ['browse barbers', 'find barbers', 'barber directory', 'verified barbers', 'barber near me', 'barber listings'],
+  openGraph: {
+    title: 'Browse Barbers | Concierge Barber Registry',
+    description: 'Discover verified, top-rated barbers in your area. Browse portfolios, read reviews, and find your perfect barber.',
+    url: '/barbers',
+  },
+};
 
 export default function BarbersPage() {
   return (

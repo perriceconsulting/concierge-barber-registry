@@ -1,6 +1,34 @@
+import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
 import { SPECIALTIES } from '@/config';
 import { notFound } from 'next/navigation';
+
+function getSpecialtyName(slug: string): string | undefined {
+  return SPECIALTIES.find(
+    (s) => s.toLowerCase().replace(/[\/\s]/g, '-') === slug
+  );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const name = getSpecialtyName(slug);
+  if (!name) return { title: 'Specialty Not Found' };
+
+  return {
+    title: `${name} Barbers - Find Specialists Near You`,
+    description: `Find verified barbers specializing in ${name.toLowerCase()}. Browse portfolios, read reviews, and book with ${name.toLowerCase()} experts on Concierge Barber Registry.`,
+    keywords: [name.toLowerCase(), `${name.toLowerCase()} barber`, `${name.toLowerCase()} near me`, `best ${name.toLowerCase()} barber`, 'barber specialist'],
+    openGraph: {
+      title: `${name} Barbers | Concierge Barber Registry`,
+      description: `Find verified barbers specializing in ${name.toLowerCase()}.`,
+      url: `/specialties/${slug}`,
+    },
+  };
+}
 
 export default async function SpecialtyDetailPage({
   params,
@@ -9,10 +37,7 @@ export default async function SpecialtyDetailPage({
 }) {
   const { slug } = await params;
 
-  // Convert slug back to specialty name
-  const specialtyName = SPECIALTIES.find(
-    (s) => s.toLowerCase().replace(/[\/\s]/g, '-') === slug
-  );
+  const specialtyName = getSpecialtyName(slug);
 
   if (!specialtyName) {
     notFound();
