@@ -194,3 +194,71 @@
     color: var(--color-secondary-foreground);
   }
 }
+
+/* Blog prose styles — fallback if @tailwindcss/typography doesn't load */
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.prose strong {
+  font-weight: 700;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose a {
+  color: var(--color-secondary);
+  text-decoration: underline;
+}
+
+.prose-sm h2 {
+  font-size: 1.25rem;
+}
+
+.prose-sm p, .prose-sm li {
+  font-size: 0.875rem;
+}
+
+.prose-lg h2 {
+  font-size: 1.75rem;
+}
+
+.prose-lg p, .prose-lg li {
+  font-size: 1.125rem;
+}
