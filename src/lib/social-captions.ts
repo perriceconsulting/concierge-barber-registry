@@ -29,6 +29,7 @@ const PLATFORM_HASHTAGS: Record<string, string[]> = {
   'x-twitter': [],
   'pinterest': ['#pinterestinspired'],
   'facebook': [],
+  'youtube-shorts': ['#shorts', '#youtubeshorts'],
 };
 
 // Full captions for long-form platforms (Instagram, TikTok, Facebook)
@@ -87,10 +88,11 @@ const PLATFORM_TIPS: Record<SocialPlatform, string> = {
   'x-twitter': 'Engage in replies for reach. Post 3-5x/day. Keep it punchy.',
   'pinterest': 'Add keyword-rich description. Pin to relevant boards. Vertical pins get 60% more engagement.',
   'facebook': 'Ask a question for engagement. Tag location. Post 1-4pm weekdays.',
+  'youtube-shorts': 'Title is key — front-load keywords. Add 3 hashtags including #shorts. Under 60 seconds.',
 };
 
 // Platforms with short character limits
-const SHORT_PLATFORMS: SocialPlatform[] = ['x-twitter', 'snapchat', 'pinterest'];
+const SHORT_PLATFORMS: SocialPlatform[] = ['x-twitter', 'snapchat', 'pinterest', 'youtube-shorts'];
 
 export function generateCaptionData(
   template: TemplateType,

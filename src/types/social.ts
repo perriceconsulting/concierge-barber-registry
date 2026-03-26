@@ -5,7 +5,8 @@ export type SocialPlatform =
   | 'snapchat'
   | 'x-twitter'
   | 'pinterest'
-  | 'facebook';
+  | 'facebook'
+  | 'youtube-shorts';
 
 export type TemplateType =
   | 'join-registry'
@@ -45,6 +46,7 @@ export const PLATFORM_CONFIGS: Record<SocialPlatform, PlatformConfig> = {
   'x-twitter':       { name: 'X / Twitter',     width: 1200, height: 675,  aspectRatio: '16:9',    captionLimit: 280,  hashtagTip: 'Max 1-3 hashtags, keep it brief' },
   'pinterest':       { name: 'Pinterest',       width: 1000, height: 1500, aspectRatio: '2:3',     captionLimit: 500,  hashtagTip: 'Max 20 hashtags in description' },
   'facebook':        { name: 'Facebook Post',   width: 1200, height: 630,  aspectRatio: '~1.91:1', captionLimit: 63206, hashtagTip: 'Max 3-5 hashtags, less is more' },
+  'youtube-shorts':  { name: 'YouTube Shorts',  width: 1080, height: 1920, aspectRatio: '9:16',    captionLimit: 100,   hashtagTip: 'Max 3 hashtags in title, use tags field for more' },
 };
 
 export const TEMPLATE_CONFIGS: Record<TemplateType, TemplateConfig> = {
