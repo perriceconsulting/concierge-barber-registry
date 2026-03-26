@@ -91,14 +91,52 @@ const PLATFORM_TIPS: Record<SocialPlatform, string> = {
   'youtube-shorts': 'Title is key — front-load keywords. Add 3 hashtags including #shorts. Under 60 seconds.',
 };
 
+// Ultra-short captions for YouTube Shorts (100 char title limit — hashtags go in tags field, not title)
+const YT_SHORTS_CAPTIONS: Record<TemplateType, { barber: string; client: string }> = {
+  'join-registry': {
+    barber: 'Grow Your Barber Business — Join Free #shorts #barber',
+    client: '',
+  },
+  'barber-features': {
+    barber: 'Everything Barbers Need in One Platform #shorts',
+    client: '',
+  },
+  'find-your-barber': {
+    barber: '',
+    client: 'Find Verified Barbers Near You — Free #shorts #barber',
+  },
+  'why-choose-us': {
+    barber: '',
+    client: 'Why Clients Trust Verified Barbers #shorts #barbershop',
+  },
+  'custom-announcement': {
+    barber: 'Big News from Concierge Barber Registry #shorts',
+    client: 'Big News from Concierge Barber Registry #shorts',
+  },
+};
+
 // Platforms with short character limits
-const SHORT_PLATFORMS: SocialPlatform[] = ['x-twitter', 'snapchat', 'pinterest', 'youtube-shorts'];
+const SHORT_PLATFORMS: SocialPlatform[] = ['x-twitter', 'snapchat', 'pinterest'];
 
 export function generateCaptionData(
   template: TemplateType,
   platform: SocialPlatform,
 ): CaptionData {
   const isBarberTemplate = ['join-registry', 'barber-features'].includes(template);
+
+  // YouTube Shorts gets its own ultra-short captions — no separate hashtags (baked into title)
+  if (platform === 'youtube-shorts') {
+    const ytCaptions = YT_SHORTS_CAPTIONS[template];
+    const caption = isBarberTemplate
+      ? ytCaptions.barber
+      : (ytCaptions.client || ytCaptions.barber);
+    return {
+      caption,
+      hashtags: [],
+      platformTip: PLATFORM_TIPS[platform],
+    };
+  }
+
   const isShort = SHORT_PLATFORMS.includes(platform);
   const captions = isShort ? SHORT_CAPTIONS[template] : LONG_CAPTIONS[template];
 
