@@ -7,7 +7,7 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 export const metadata: Metadata = buildPageMetadata({
   title: `Find Your Perfect Barber | ${APP_CONFIG.name}`,
   description:
-    'Discover and connect with verified, top-rated barbers in your area. Browse portfolios, read reviews, compare services, and book appointments with trusted barbers near you.',
+    'Find verified barbers near you. Browse portfolios, read real client reviews, and book trusted pros on Concierge Barber Registry.',
   path: '/',
   keywords: [
     'barber near me',

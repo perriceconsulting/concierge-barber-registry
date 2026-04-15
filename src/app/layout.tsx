@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     default: 'Concierge Barber Registry - Find Top Rated Barbers Near You',
     template: `%s | ${APP_CONFIG.name}`,
   },
-  description: 'Discover verified, professional barbers in your area. View portfolios, read reviews, compare services and pricing. Book appointments with trusted barbers near you.',
+  description: 'Discover verified professional barbers near you. View portfolios, read reviews, and book appointments with trusted barbers in your area.',
   keywords: [
     'barber near me',
     'best barber',
