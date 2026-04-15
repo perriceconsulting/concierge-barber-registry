@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { APP_CONFIG } from '@/config';
 import HomeContent from './_home-content';
 import { OrganizationSchema } from '@/components/seo/organization-schema';
+import { FeaturedArticles } from '@/components/blog/featured-articles';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildPageMetadata({
@@ -28,6 +29,7 @@ export default function HomePage() {
     <>
       <OrganizationSchema />
       <HomeContent />
+      <FeaturedArticles />
     </>
   );
 }

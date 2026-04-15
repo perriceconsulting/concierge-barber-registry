@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { generateBarberMetadata } from './metadata';
+import { RelatedArticlesForBarber } from '@/components/blog/related-articles-for-barber';
 
 export async function generateMetadata({
   params,
@@ -10,10 +11,18 @@ export async function generateMetadata({
   return generateBarberMetadata(slug);
 }
 
-export default function BarberProfileLayout({
+export default async function BarberProfileLayout({
+  params,
   children,
 }: {
+  params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  const { slug } = await params;
+  return (
+    <>
+      {children}
+      <RelatedArticlesForBarber barberSlug={slug} />
+    </>
+  );
 }

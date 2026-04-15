@@ -5,6 +5,7 @@ import { Container } from '@/components/layout/container';
 import { ArticleStructuredData } from '@/components/seo/article-structured-data';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { prisma } from '@/lib/db';
+import { autoLinkBlogContent } from '@/lib/blog/auto-link-content';
 
 const CATEGORY_LABELS: Record<string, string> = {
   for_clients: 'For Clients',
@@ -141,7 +142,7 @@ export default async function BlogPostPage({
               prose-li:text-muted-foreground
               prose-strong:text-primary
               prose-a:text-secondary prose-a:no-underline hover:prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: autoLinkBlogContent(post.content) }}
           />
 
           {/* CTA */}
