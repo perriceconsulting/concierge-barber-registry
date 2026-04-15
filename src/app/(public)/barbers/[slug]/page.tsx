@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Container } from '@/components/layout/container';
 import { useToast } from '@/components/ui/toast';
 import { BarberStructuredData } from '@/components/seo/barber-structured-data';
+import { Breadcrumb } from '@/components/breadcrumb';
 import { TierBadge } from '@/components/subscription/tier-badge';
 import { createLogger } from '@/lib/logger';
 import { secureFetch } from '@/lib/csrf-client';
@@ -250,15 +251,21 @@ export default function BarberProfilePage() {
     );
   }
 
+  const primarySpecialty = barber.specialties?.[0]?.specialty.name;
+  const breadcrumbItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Barbers', path: '/barbers' },
+    { name: barber.displayName, path: `/barbers/${barber.slug}` },
+  ];
+
   return (
     <>
-      {barber && (barberTier === 'professional' || barberTier === 'elite') && (
-        <BarberStructuredData barber={barber} />
-      )}
-      <div className="py-10">
+      {barber && <BarberStructuredData barber={barber} />}
+      <article className="py-10">
         <Container>
+        <Breadcrumb items={breadcrumbItems} className="mb-6" />
         {/* Header Section */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
@@ -300,7 +307,7 @@ export default function BarberProfilePage() {
               </Badge>
             )}
           </div>
-        </div>
+        </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -346,7 +353,12 @@ export default function BarberProfilePage() {
                       <div key={image.id} className="aspect-square bg-muted relative rounded-lg overflow-hidden group">
                         <Image
                           src={image.imageUrl}
-                          alt={image.caption || 'Portfolio image'}
+                          alt={
+                            image.caption ||
+                            (primarySpecialty
+                              ? `${primarySpecialty} by ${barber.displayName}, barber in ${barber.city}, ${barber.state}`
+                              : `Haircut by ${barber.displayName}, barber in ${barber.city}, ${barber.state}`)
+                          }
                           fill
                           className="object-cover transition-transform group-hover:scale-105"
                           sizes="(max-width: 768px) 50vw, 33vw"
@@ -594,7 +606,7 @@ export default function BarberProfilePage() {
           </div>
         )}
       </Container>
-    </div>
+    </article>
     </>
   );
 }

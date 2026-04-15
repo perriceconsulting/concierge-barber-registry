@@ -1,22 +1,41 @@
+import { APP_CONFIG } from '@/config';
+import { JsonLd } from './json-ld';
+
 export function OrganizationSchema() {
-  const schema = {
+  const organization = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Concierge Barber Registry',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com',
-    description: 'Discover and connect with verified, top-rated barbers in your area. Browse portfolios, read reviews, and find your perfect cut.',
+    name: APP_CONFIG.name,
+    url: APP_CONFIG.url,
+    description: APP_CONFIG.description,
     sameAs: [],
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com'}/contact`,
+      url: `${APP_CONFIG.url}/contact`,
+    },
+  };
+
+  const website = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: APP_CONFIG.name,
+    url: APP_CONFIG.url,
+    description: APP_CONFIG.description,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${APP_CONFIG.url}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
     },
   };
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <>
+      <JsonLd data={organization} />
+      <JsonLd data={website} />
+    </>
   );
 }

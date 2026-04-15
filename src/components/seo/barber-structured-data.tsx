@@ -1,4 +1,5 @@
-'use client';
+import { APP_CONFIG } from '@/config';
+import { JsonLd } from './json-ld';
 
 interface BarberStructuredDataProps {
   barber: {
@@ -32,9 +33,10 @@ export function BarberStructuredData({ barber }: BarberStructuredDataProps) {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    '@id': `${process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com'}/barbers/${barber.slug}`,
+    '@id': `${APP_CONFIG.url}/barbers/${barber.slug}`,
     name: barber.displayName,
-    description: barber.bio || `Professional barber services in ${barber.city}, ${barber.state}`,
+    description:
+      barber.bio || `Professional barber services in ${barber.city}, ${barber.state}`,
     image: barber.portfolioImages.map((img) => img.imageUrl),
     address: {
       '@type': 'PostalAddress',
@@ -75,10 +77,5 @@ export function BarberStructuredData({ barber }: BarberStructuredDataProps) {
     }),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-    />
-  );
+  return <JsonLd data={structuredData} />;
 }

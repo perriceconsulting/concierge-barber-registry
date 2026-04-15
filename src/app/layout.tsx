@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ToastProvider } from "@/components/ui/toast";
-import { APP_CONFIG } from "@/config";
+import { APP_CONFIG, COLORS } from "@/config";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -84,6 +84,15 @@ export const metadata: Metadata = {
     icon: '/favicon.svg',
     apple: '/favicon.svg',
   },
+  alternates: {
+    canonical: '/',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: COLORS.primary,
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

@@ -1,16 +1,14 @@
 import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'About Us',
-  description: 'Learn about Concierge Barber Registry — the platform connecting clients with verified, top-rated barbers. Our mission, story, and commitment to quality grooming.',
+  description:
+    'Learn about Concierge Barber Registry — the platform connecting clients with verified, top-rated barbers. Our mission, story, and commitment to quality grooming.',
+  path: '/about',
   keywords: ['about concierge barber registry', 'barber platform', 'find barbers', 'verified barbers'],
-  openGraph: {
-    title: 'About Us | Concierge Barber Registry',
-    description: 'Learn about the platform connecting clients with verified, top-rated barbers.',
-    url: '/about',
-  },
-};
+});
 
 export default function AboutPage() {
   return (

@@ -1,0 +1,32 @@
+# Concierge Barber Registry
+
+> A verified directory of professional barbers across the United States. Clients browse portfolios, read reviews, and contact barbers to book appointments. Barbers maintain profiles with services, pricing, specialties, and portfolio images under a tiered subscription model (Starter, Professional, Elite).
+
+Concierge Barber Registry focuses on discovery and trust: every barber is license-verified, every review is from a real client interaction, and all listings include structured business data (location, specialties, hours, pricing) to power accurate answers.
+
+## Core pages
+
+- [Home](https://conciergebarberregistry.com/): Platform overview and search entry point
+- [Find a Barber](https://conciergebarberregistry.com/search): Search and filter barbers by location, specialty, rating, and availability
+- [Browse Barbers](https://conciergebarberregistry.com/barbers): Directory index of approved barber profiles
+- [Specialties](https://conciergebarberregistry.com/specialties): Barbers grouped by service specialty (fades, beard work, hot towel shaves, etc.)
+- [Blog](https://conciergebarberregistry.com/blog): Editorial guides on finding, evaluating, and getting the most from a barber
+- [FAQ](https://conciergebarberregistry.com/faq): Common questions for clients and barbers
+- [About](https://conciergebarberregistry.com/about): Platform mission and verification process
+- [Contact](https://conciergebarberregistry.com/contact): Support contact form
+
+## Key facts
+
+- Coverage: United States
+- Listings: license-verified barbers only
+- Pricing tiers for barbers: Starter (free), Professional ($29/mo), Elite ($59/mo)
+- Client usage: free
+- Booking: handled between client and barber via contact form on each barber profile
+
+## Sitemap
+
+- [XML sitemap](https://conciergebarberregistry.com/sitemap.xml)
+
+## Crawl preferences
+
+Training-data crawlers (GPTBot, ChatGPT-User) are disallowed in robots.txt. Retrieval and citation by AI assistants that honor this file is welcomed; please link to the source page when citing.

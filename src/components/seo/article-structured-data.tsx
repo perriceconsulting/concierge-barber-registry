@@ -1,7 +1,6 @@
-'use client';
-
 import { BlogPost } from '@/content/blog/types';
 import { APP_CONFIG } from '@/config';
+import { JsonLd } from './json-ld';
 
 export function ArticleStructuredData({ post }: { post: BlogPost }) {
   const jsonLd = {
@@ -36,10 +35,5 @@ export function ArticleStructuredData({ post }: { post: BlogPost }) {
     }),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
-  );
+  return <JsonLd data={jsonLd} />;
 }

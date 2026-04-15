@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { ArticleStructuredData } from '@/components/seo/article-structured-data';
+import { Breadcrumb } from '@/components/breadcrumb';
 import { prisma } from '@/lib/db';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -97,14 +98,15 @@ export default async function BlogPostPage({
       />
       <Container>
         <article className="max-w-3xl mx-auto">
-          {/* Breadcrumb */}
-          <nav className="text-sm text-muted-foreground mb-6">
-            <Link href="/blog" className="hover:text-primary">Blog</Link>
-            <span className="mx-2">/</span>
-            <Link href={`/blog?category=${post.category}`} className="hover:text-primary">
-              {categoryLabel}
-            </Link>
-          </nav>
+          <Breadcrumb
+            items={[
+              { name: 'Home', path: '/' },
+              { name: 'Blog', path: '/blog' },
+              { name: categoryLabel, path: `/blog?category=${post.category}` },
+              { name: post.title, path: `/blog/${post.slug}` },
+            ]}
+            className="mb-6"
+          />
 
           {/* Header */}
           <header className="mb-8">

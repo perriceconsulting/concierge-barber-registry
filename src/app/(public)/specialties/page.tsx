@@ -1,18 +1,24 @@
 import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
-import { APP_CONFIG, SPECIALTIES } from '@/config';
+import { SPECIALTIES } from '@/config';
 import Link from 'next/link';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Barber Specialties',
-  description: 'Browse barber specialties including fades, tapers, beard trims, lineups, and more. Find barbers who specialize in the exact style you want.',
-  keywords: ['barber specialties', 'fade specialist', 'beard trim', 'taper fade', 'lineup', 'barber services', 'hair cut styles'],
-  openGraph: {
-    title: 'Barber Specialties | ' + APP_CONFIG.name,
-    description: 'Browse barber specialties including fades, tapers, beard trims, lineups, and more.',
-    url: '/specialties',
-  },
-};
+  description:
+    'Browse barber specialties including fades, tapers, beard trims, lineups, and more. Find barbers who specialize in the exact style you want.',
+  path: '/specialties',
+  keywords: [
+    'barber specialties',
+    'fade specialist',
+    'beard trim',
+    'taper fade',
+    'lineup',
+    'barber services',
+    'hair cut styles',
+  ],
+});
 
 export default function SpecialtiesPage() {
   return (

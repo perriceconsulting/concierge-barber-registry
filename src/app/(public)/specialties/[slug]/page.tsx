@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
 import { SPECIALTIES } from '@/config';
 import { notFound } from 'next/navigation';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { Breadcrumb } from '@/components/breadcrumb';
 
 function getSpecialtyName(slug: string): string | undefined {
   return SPECIALTIES.find(
@@ -18,16 +20,19 @@ export async function generateMetadata({
   const name = getSpecialtyName(slug);
   if (!name) return { title: 'Specialty Not Found' };
 
-  return {
+  const lower = name.toLowerCase();
+  return buildPageMetadata({
     title: `${name} Barbers - Find Specialists Near You`,
-    description: `Find verified barbers specializing in ${name.toLowerCase()}. Browse portfolios, read reviews, and book with ${name.toLowerCase()} experts on Concierge Barber Registry.`,
-    keywords: [name.toLowerCase(), `${name.toLowerCase()} barber`, `${name.toLowerCase()} near me`, `best ${name.toLowerCase()} barber`, 'barber specialist'],
-    openGraph: {
-      title: `${name} Barbers | Concierge Barber Registry`,
-      description: `Find verified barbers specializing in ${name.toLowerCase()}.`,
-      url: `/specialties/${slug}`,
-    },
-  };
+    description: `Find verified barbers specializing in ${lower}. Browse portfolios, read reviews, and book with ${lower} experts on Concierge Barber Registry.`,
+    path: `/specialties/${slug}`,
+    keywords: [
+      lower,
+      `${lower} barber`,
+      `${lower} near me`,
+      `best ${lower} barber`,
+      'barber specialist',
+    ],
+  });
 }
 
 export default async function SpecialtyDetailPage({
@@ -43,18 +48,25 @@ export default async function SpecialtyDetailPage({
     notFound();
   }
 
+  const breadcrumbItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Specialties', path: '/specialties' },
+    { name: specialtyName, path: `/specialties/${slug}` },
+  ];
+
   return (
     <div className="min-h-[calc(100vh-16rem)] py-12">
       <Container>
         <div className="mx-auto max-w-4xl">
-          <div className="mb-8">
+          <Breadcrumb items={breadcrumbItems} className="mb-6" />
+          <header className="mb-8">
             <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
               {specialtyName}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
               Find expert barbers specializing in {specialtyName.toLowerCase()}
             </p>
-          </div>
+          </header>
 
           <div className="rounded-lg border bg-card p-8 text-center">
             <p className="text-muted-foreground">

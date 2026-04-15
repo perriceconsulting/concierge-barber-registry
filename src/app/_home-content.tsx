@@ -159,8 +159,68 @@ export default function HomeContent() {
         </Container>
       </section>
 
+      {/* How It Works Section */}
+      <section className="py-20 bg-muted/30" aria-labelledby="how-it-works-heading">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center">
+            <h2
+              id="how-it-works-heading"
+              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+            >
+              How It Works
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Three simple steps to your next great haircut
+            </p>
+          </div>
+
+          <ol className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-3">
+            <li className="flex flex-col items-center text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
+                1
+              </div>
+              <h3 className="mt-6 text-xl font-semibold">Search</h3>
+              <p className="mt-2 text-muted-foreground">
+                Filter by city, specialty, rating, or availability to find verified barbers
+                who match what you&apos;re looking for.
+              </p>
+            </li>
+            <li className="flex flex-col items-center text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
+                2
+              </div>
+              <h3 className="mt-6 text-xl font-semibold">Compare</h3>
+              <p className="mt-2 text-muted-foreground">
+                Browse portfolios, review services and pricing, and read authentic reviews
+                from past clients before you commit.
+              </p>
+            </li>
+            <li className="flex flex-col items-center text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
+                3
+              </div>
+              <h3 className="mt-6 text-xl font-semibold">Book</h3>
+              <p className="mt-2 text-muted-foreground">
+                Contact the barber directly through their profile with your preferred time —
+                no middleman, no booking fees.
+              </p>
+            </li>
+          </ol>
+
+          <div className="mx-auto mt-12 max-w-3xl text-center text-muted-foreground">
+            <p>
+              Every barber listed on Concierge Barber Registry is license-verified before
+              approval. Reviews come from real client interactions, and portfolio images
+              are curated by the barber to represent their current work. Whether you&apos;re
+              looking for a precise fade, a beard sculpt, a hot towel shave, or a scissor
+              cut, you&apos;ll find specialists in your area who take their craft seriously.
+            </p>
+          </div>
+        </Container>
+      </section>
+
       {/* Featured Barbers Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20">
         <Container>
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">

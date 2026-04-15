@@ -1,11 +1,13 @@
 import { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Privacy Policy',
-  description: 'Privacy policy for Concierge Barber Registry. Learn how we collect, use, and protect your personal information.',
-  robots: { index: true, follow: true },
-};
+  description:
+    'Privacy policy for Concierge Barber Registry. Learn how we collect, use, and protect your personal information.',
+  path: '/privacy-policy',
+});
 
 export default function PrivacyPolicyPage() {
   return (

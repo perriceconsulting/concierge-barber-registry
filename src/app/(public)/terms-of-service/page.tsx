@@ -1,11 +1,13 @@
 import { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Terms of Service',
-  description: 'Terms of service for Concierge Barber Registry. Understand your rights and obligations when using our platform.',
-  robots: { index: true, follow: true },
-};
+  description:
+    'Terms of service for Concierge Barber Registry. Understand your rights and obligations when using our platform.',
+  path: '/terms-of-service',
+});
 
 export default function TermsOfServicePage() {
   return (
