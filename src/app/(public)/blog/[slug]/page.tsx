@@ -141,7 +141,7 @@ export default async function BlogPostPage({
               prose-p:text-muted-foreground prose-p:leading-relaxed
               prose-li:text-muted-foreground
               prose-strong:text-primary
-              prose-a:text-secondary prose-a:no-underline hover:prose-a:underline"
+              prose-a:text-secondary prose-a:font-medium prose-a:underline prose-a:underline-offset-2 prose-a:decoration-secondary/40 hover:prose-a:decoration-secondary"
             dangerouslySetInnerHTML={{ __html: autoLinkBlogContent(post.content) }}
           />
 
