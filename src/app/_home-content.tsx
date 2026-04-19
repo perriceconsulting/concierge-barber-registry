@@ -6,8 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
-import { ROUTES } from '@/config';
+import { ROUTES, SPECIALTIES } from '@/config';
 import { createLogger } from '@/lib/logger';
+import { slugify } from '@/lib/slug';
+
+const FEATURED_SPECIALTIES = [
+  'Fades',
+  'Beard Trim',
+  'Hot Towel Shave',
+  'Lineups',
+  'Scissor Cut',
+  'Kids Cuts',
+] as const satisfies ReadonlyArray<(typeof SPECIALTIES)[number]>;
 
 const logger = createLogger('HOME');
 
@@ -219,23 +229,26 @@ export default function HomeContent() {
         </Container>
       </section>
 
-      {/* Featured Barbers Section */}
-      <section className="py-20">
-        <Container>
-          <div className="mx-auto max-w-2xl text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
-              Top-Rated Barbers
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Discover our featured professional barbers
-            </p>
-          </div>
-
-          {isLoading ? (
+      {/* Featured Barbers OR Explore Specialties — swap based on availability */}
+      {isLoading ? (
+        <section className="py-20">
+          <Container>
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading barbers...</p>
+              <p className="text-muted-foreground">Loading...</p>
             </div>
-          ) : featuredBarbers.length > 0 ? (
+          </Container>
+        </section>
+      ) : featuredBarbers.length > 0 ? (
+        <section className="py-20">
+          <Container>
+            <div className="mx-auto max-w-2xl text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+                Top-Rated Barbers
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Discover our featured professional barbers
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredBarbers.map((barber) => (
                 <Link key={barber.id} href={`/barbers/${barber.slug}`}>
@@ -263,7 +276,7 @@ export default function HomeContent() {
                         <p className="text-sm text-muted-foreground mb-3 italic">{barber.tagline}</p>
                       )}
                       <div className="flex gap-2 flex-wrap">
-                          {barber.specialties?.slice(0, 3).map((item) => (
+                        {barber.specialties?.slice(0, 3).map((item) => (
                           <Badge key={item.specialty.id} variant="secondary">
                             {item.specialty.name}
                           </Badge>
@@ -279,26 +292,50 @@ export default function HomeContent() {
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground mb-4">
-                No featured barbers available yet
-              </p>
-              <Link href={ROUTES.FOR_BARBERS}>
-                <Button variant="outline">Be the First to Register</Button>
-              </Link>
-            </div>
-          )}
-
-          {featuredBarbers.length > 0 && (
             <div className="text-center mt-12">
               <Link href={ROUTES.SEARCH}>
                 <Button size="lg">View All Barbers</Button>
               </Link>
             </div>
-          )}
-        </Container>
-      </section>
+          </Container>
+        </section>
+      ) : (
+        <section className="py-20" aria-labelledby="explore-specialties-heading">
+          <Container>
+            <div className="mx-auto max-w-2xl text-center mb-12">
+              <h2
+                id="explore-specialties-heading"
+                className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              >
+                Explore by Specialty
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Find barbers who specialize in the exact style you want
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              {FEATURED_SPECIALTIES.map((specialty) => (
+                <Link
+                  key={specialty}
+                  href={`${ROUTES.SPECIALTIES}/${slugify(specialty)}`}
+                  className="group block rounded-lg border bg-background p-6 text-center hover:border-primary hover:shadow-md transition-all"
+                >
+                  <span className="text-lg font-semibold text-primary group-hover:text-secondary transition-colors">
+                    {specialty}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-10">
+              <Link href={ROUTES.SPECIALTIES}>
+                <Button size="lg" variant="outline">
+                  View All Specialties
+                </Button>
+              </Link>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="bg-primary py-16 text-primary-foreground">
