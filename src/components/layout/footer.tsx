@@ -24,6 +24,14 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
+                  href={ROUTES.FOR_CLIENTS}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link
                   href={ROUTES.SEARCH}
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >

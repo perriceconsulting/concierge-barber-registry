@@ -6,21 +6,21 @@ import { FeaturedArticles } from '@/components/blog/featured-articles';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: `Find Your Perfect Barber | ${APP_CONFIG.name}`,
+  title: `${APP_CONFIG.name} — License-Verified Barber Directory`,
   description:
-    'Find verified barbers near you. Browse portfolios, read real client reviews, and book trusted pros on Concierge Barber Registry.',
+    'License-verified barber directory. Barbers: free profile, zero booking fees. Clients: browse portfolios, read reviews, book trusted pros.',
   path: '/',
   keywords: [
+    'barber directory',
+    'verified barbers',
+    'barber platform',
+    'independent barber',
+    'join barber directory',
     'barber near me',
     'find barbers',
-    'best barber',
-    'barbershop',
-    'fade',
-    'beard trim',
+    'licensed barber',
     'barber reviews',
-    'barber directory',
-    'book barber',
-    'grooming',
+    'mobile barber',
   ],
 });
 
