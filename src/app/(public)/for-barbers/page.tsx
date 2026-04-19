@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { SUBSCRIPTION } from '@/config';
+import { TIER_LIMITS } from '@/lib/subscription';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'For Barbers — Keep 100% of Your Cut',
@@ -106,6 +107,10 @@ const FAQS = [
 const PROFESSIONAL_PRICE = SUBSCRIPTION.PRICES.PROFESSIONAL_MONTHLY_CENTS / 100;
 const ELITE_PRICE = SUBSCRIPTION.PRICES.ELITE_MONTHLY_CENTS / 100;
 
+const STARTER_LIMITS = TIER_LIMITS.starter.limits;
+const PRO_LIMITS = TIER_LIMITS.professional.limits;
+const ELITE_LIMITS = TIER_LIMITS.elite.limits;
+
 const PRICING_TIERS = [
   {
     name: 'Starter',
@@ -113,9 +118,9 @@ const PRICING_TIERS = [
     cadence: 'forever',
     features: [
       'Verified professional profile',
-      'Up to 5 portfolio images',
-      'Basic service listings',
-      'Client contact requests',
+      `Up to ${STARTER_LIMITS.portfolioImages} portfolio images`,
+      `Up to ${STARTER_LIMITS.services} services`,
+      `Up to ${STARTER_LIMITS.contactRequestsPerMonth} client contact requests per month`,
       'Appear in search results',
     ],
     highlight: false,
@@ -125,11 +130,12 @@ const PRICING_TIERS = [
     price: `$${PROFESSIONAL_PRICE}`,
     cadence: 'per month',
     features: [
-      'Everything in Starter',
-      'Up to 20 portfolio images',
-      'Unlimited services + pricing',
-      'Priority search placement',
-      'Review collection + analytics',
+      'Everything in Starter, plus:',
+      `Up to ${PRO_LIMITS.portfolioImages} portfolio images`,
+      `Up to ${PRO_LIMITS.services} services`,
+      'Unlimited client contact requests',
+      'Respond to client reviews',
+      '"Pro" profile badge',
       '14-day free trial',
     ],
     highlight: true,
@@ -139,11 +145,13 @@ const PRICING_TIERS = [
     price: `$${ELITE_PRICE}`,
     cadence: 'per month',
     features: [
-      'Everything in Professional',
-      'Respond to every review',
-      'Featured in Top-Rated carousel',
-      'Mobile service radius tools',
-      'Travel date announcements',
+      'Everything in Professional, plus:',
+      `Up to ${ELITE_LIMITS.portfolioImages} portfolio images`,
+      `Up to ${ELITE_LIMITS.services} services`,
+      'Featured placement in search results',
+      `Up to ${ELITE_LIMITS.serviceAreas} service areas for mobile barbers`,
+      'Unlimited social posts',
+      '"Elite" profile badge',
       '14-day free trial',
     ],
     highlight: false,
