@@ -63,10 +63,10 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
-                  href={ROUTES.REGISTER_BARBER}
+                  href={ROUTES.FOR_BARBERS}
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Register Your Profile
+                  Join as a Barber
                 </Link>
               </li>
               <li>

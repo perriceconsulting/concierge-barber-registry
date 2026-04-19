@@ -14,6 +14,7 @@ export const ROUTES = {
   CONTACT: '/contact',
   FAQ: '/faq',
   BLOG: '/blog',
+  FOR_BARBERS: '/for-barbers',
   PRIVACY: '/privacy-policy',
   TERMS: '/terms-of-service',
 

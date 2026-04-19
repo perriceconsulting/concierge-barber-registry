@@ -64,7 +64,7 @@ export default function HomeContent() {
               <Link href={ROUTES.SEARCH}>
                 <Button size="lg" className="w-full sm:w-auto">Find Barbers</Button>
               </Link>
-              <Link href={ROUTES.REGISTER_BARBER}>
+              <Link href={ROUTES.FOR_BARBERS}>
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
                   Register as Barber
                 </Button>
@@ -284,7 +284,7 @@ export default function HomeContent() {
               <p className="text-lg text-muted-foreground mb-4">
                 No featured barbers available yet
               </p>
-              <Link href={ROUTES.REGISTER_BARBER}>
+              <Link href={ROUTES.FOR_BARBERS}>
                 <Button variant="outline">Be the First to Register</Button>
               </Link>
             </div>
@@ -310,7 +310,7 @@ export default function HomeContent() {
               Registration is free and takes just a few minutes.
             </p>
             <div className="mt-8">
-              <Link href={ROUTES.REGISTER_BARBER}>
+              <Link href={ROUTES.FOR_BARBERS}>
                 <Button size="lg" variant="secondary">
                   Create Your Profile
                 </Button>
