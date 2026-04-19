@@ -337,20 +337,90 @@ export default function HomeContent() {
         </section>
       )}
 
-      {/* CTA Section */}
-      <section className="bg-primary py-16 text-primary-foreground">
+      {/* For Barbers CTA */}
+      <section
+        className="bg-primary py-20 text-primary-foreground"
+        aria-labelledby="for-barbers-cta-heading"
+      >
         <Container>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold">Are You a Barber?</h2>
-            <p className="mt-4 text-lg opacity-90">
-              Join our community and showcase your skills to potential clients.
-              Registration is free and takes just a few minutes.
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-block px-3 py-1 mb-5 text-xs font-semibold rounded-full bg-secondary/20 text-secondary uppercase tracking-wide">
+              For Barbers &amp; Stylists
+            </span>
+            <h2
+              id="for-barbers-cta-heading"
+              className="text-3xl font-bold sm:text-4xl"
+            >
+              Keep 100% of Your Cut. 0% of the Shop Drama.
+            </h2>
+            <p className="mt-5 text-lg opacity-90">
+              Join a license-verified directory built for independent pros. No chair
+              rent, no booking fees, no middleman — just premium clients and the
+              profile you deserve.
             </p>
-            <div className="mt-8">
+
+            <ul className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-left max-w-2xl mx-auto">
+              <li className="flex items-start gap-2">
+                <svg
+                  className="h-5 w-5 text-secondary shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>License-verified badge clients trust</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="h-5 w-5 text-secondary shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Zero booking fees — you own every client</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="h-5 w-5 text-secondary shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Free to register, 14-day trial on paid plans</span>
+              </li>
+            </ul>
+
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href={ROUTES.FOR_BARBERS}>
                 <Button size="lg" variant="secondary">
-                  Create Your Profile
+                  Claim Your Professional Profile
                 </Button>
+              </Link>
+              <Link
+                href={ROUTES.FOR_BARBERS}
+                className="text-sm underline underline-offset-4 opacity-80 hover:opacity-100"
+              >
+                Learn more about the platform →
               </Link>
             </div>
           </div>
