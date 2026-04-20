@@ -11,12 +11,33 @@ interface BuildPageMetadataInput {
   keywords?: string[];
   noindex?: boolean;
   ogType?: 'website' | 'article' | 'profile';
+  ogTitle?: string;
+  ogDescription?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
 }
 
 export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
-  const { title, description, path, images, keywords, noindex, ogType = 'website' } = input;
+  const {
+    title,
+    description,
+    path,
+    images,
+    keywords,
+    noindex,
+    ogType = 'website',
+    ogTitle,
+    ogDescription,
+    twitterTitle,
+    twitterDescription,
+  } = input;
   const canonical = canonicalPath(path);
   const ogImages = resolveOgImages(images);
+
+  const resolvedOgTitle = ogTitle ?? title;
+  const resolvedOgDescription = ogDescription ?? description;
+  const resolvedTwitterTitle = twitterTitle ?? resolvedOgTitle;
+  const resolvedTwitterDescription = twitterDescription ?? resolvedOgDescription;
 
   return {
     title,
@@ -30,16 +51,16 @@ export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
       locale: 'en_US',
       url: canonical,
       siteName: APP_CONFIG.name,
-      title,
-      description,
+      title: resolvedOgTitle,
+      description: resolvedOgDescription,
       images: ogImages,
     },
     twitter: {
       card: 'summary_large_image',
       site: '@ConciergeBarber',
       creator: '@ConciergeBarber',
-      title,
-      description,
+      title: resolvedTwitterTitle,
+      description: resolvedTwitterDescription,
       images: images && images.length > 0 ? [images[0].url] : [DEFAULT_TWITTER_IMAGE],
     },
     ...(noindex

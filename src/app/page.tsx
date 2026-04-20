@@ -8,20 +8,25 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 export const metadata: Metadata = buildPageMetadata({
   title: `${APP_CONFIG.name} — License-Verified Barber Directory`,
   description:
-    'License-verified barber directory. Barbers: free profile, zero booking fees. Clients: browse portfolios, read reviews, book trusted pros.',
+    'Join the only license-verified barber directory built for independent pros. Keep 100% of your earnings with zero booking fees. Find top-rated local pros.',
   path: '/',
   keywords: [
     'barber directory',
-    'verified barbers',
-    'barber platform',
+    'license-verified barber',
     'independent barber',
     'join barber directory',
+    'no chair rent',
+    'barber platform',
+    'verified barbers',
     'barber near me',
     'find barbers',
     'licensed barber',
-    'barber reviews',
     'mobile barber',
+    'fade specialist',
   ],
+  ogTitle: 'Own Your Chair. Join the Concierge Barber Registry.',
+  ogDescription:
+    'A professional directory built for independent, license-verified barbers. No shop drama, no middleman fees, just premium clients.',
 });
 
 export default function HomePage() {

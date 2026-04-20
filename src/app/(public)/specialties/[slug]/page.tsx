@@ -22,14 +22,16 @@ export async function generateMetadata({
 
   const lower = name.toLowerCase();
   return buildPageMetadata({
-    title: `${name} Barbers - Find Specialists Near You`,
-    description: `Find verified barbers specializing in ${lower}. Browse portfolios, read reviews, and book with ${lower} experts on Concierge Barber Registry.`,
+    title: `Expert ${name} Barbers Near You | License-Verified Pros`,
+    description: `Looking for the best ${lower} in your area? Browse our registry of license-verified barbers specializing in ${lower}. Direct booking, no middleman fees.`,
     path: `/specialties/${slug}`,
     keywords: [
       lower,
       `${lower} barber`,
       `${lower} near me`,
       `best ${lower} barber`,
+      `${lower} specialist`,
+      `license-verified ${lower} barber`,
       'barber specialist',
     ],
   });

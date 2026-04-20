@@ -7,6 +7,7 @@ export function OrganizationSchema() {
     '@type': 'Organization',
     name: APP_CONFIG.name,
     url: APP_CONFIG.url,
+    logo: `${APP_CONFIG.url}/favicon.svg`,
     description: APP_CONFIG.description,
     sameAs: [],
     contactPoint: {
