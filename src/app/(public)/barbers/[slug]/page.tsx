@@ -13,6 +13,7 @@ import { Container } from '@/components/layout/container';
 import { useToast } from '@/components/ui/toast';
 import { BarberStructuredData } from '@/components/seo/barber-structured-data';
 import { Breadcrumb } from '@/components/breadcrumb';
+import { RemovalRequestForm } from '@/components/barber/removal-request-form';
 import { TierBadge } from '@/components/subscription/tier-badge';
 import { createLogger } from '@/lib/logger';
 import { secureFetch } from '@/lib/csrf-client';
@@ -312,6 +313,12 @@ export default function BarberProfilePage() {
                     </a>
                   )}
                 </p>
+                <details className="mt-4 group">
+                  <summary className="cursor-pointer text-xs text-amber-900/70 hover:text-amber-900 select-none">
+                    Don&apos;t want a profile here? Request removal →
+                  </summary>
+                  <RemovalRequestForm slug={barber.slug} />
+                </details>
               </div>
             </div>
           </div>
