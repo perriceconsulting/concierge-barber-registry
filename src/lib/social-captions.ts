@@ -1,5 +1,6 @@
 import type { TemplateType, SocialPlatform } from '@/types/social';
 import { PLATFORM_CONFIGS } from '@/types/social';
+import { APP_CONFIG, ROUTES } from '@/config';
 
 interface CaptionData {
   caption: string;
@@ -7,18 +8,38 @@ interface CaptionData {
   platformTip: string;
 }
 
+const BRAND_HASHTAG = '#conciergebarberregistry';
+
 const BARBER_HASHTAGS = [
-  '#barber', '#barbershop', '#fade', '#freshcut', '#haircut',
-  '#barberlife', '#menshair', '#lineup', '#taper', '#skinfade',
-  '#barberlove', '#hairstyle', '#grooming', '#mensgrooming',
-  '#barberworld', '#cleancut', '#barbernation',
+  '#licenseverifiedbarber',
+  '#independentbarber',
+  '#barbermarketing',
+  '#nochairrent',
+  '#barber',
+  '#barberlife',
+  '#barbershop',
+  '#barbergrowth',
+  '#barbernation',
+  '#fade',
+  '#freshcut',
+  '#barberlove',
+  '#mensgrooming',
+  '#barberworld',
 ];
 
 const CLIENT_HASHTAGS = [
-  '#findabarber', '#barberneeded', '#freshfade', '#newbarber',
-  '#barbershopnearme', '#mensgrooming', '#haircut', '#fade',
-  '#barber', '#barbershop', '#grooming', '#mensstyle',
-  '#selfcare', '#lookgood', '#confidence',
+  '#licenseverifiedbarber',
+  '#findabarber',
+  '#barbershopnearme',
+  '#freshfade',
+  '#trustedbarber',
+  '#barber',
+  '#barbershop',
+  '#mensgrooming',
+  '#haircut',
+  '#freshcut',
+  '#mensstyle',
+  '#selfcare',
 ];
 
 const PLATFORM_HASHTAGS: Record<string, string[]> = {
@@ -32,51 +53,146 @@ const PLATFORM_HASHTAGS: Record<string, string[]> = {
   'youtube-shorts': ['#shorts', '#youtubeshorts'],
 };
 
-// Full captions for long-form platforms (Instagram, TikTok, Facebook)
+// Map each template to the destination URL that matches its audience funnel.
+// Barber-recruiting posts -> /for-barbers; client-discovery posts -> /for-clients;
+// announcements default to homepage.
+const TEMPLATE_DESTINATIONS: Record<TemplateType, string> = {
+  'join-registry': ROUTES.FOR_BARBERS,
+  'barber-features': ROUTES.FOR_BARBERS,
+  'find-your-barber': ROUTES.FOR_CLIENTS,
+  'why-choose-us': ROUTES.FOR_CLIENTS,
+  'custom-announcement': ROUTES.HOME,
+};
+
+function destinationUrl(template: TemplateType): string {
+  // Strip protocol+slash for caption display, then add path after the bare domain
+  const path = TEMPLATE_DESTINATIONS[template];
+  return path === '/'
+    ? APP_CONFIG.domain
+    : `${APP_CONFIG.domain}${path}`;
+}
+
+// Long captions for Instagram, TikTok, Facebook — full pitch + bullets + URL.
+// Voice: aligned with site (license-verified, "Keep 100% of your cut", "no booking fees",
+// "no chair rent"). Brand entity ("Concierge Barber Registry") used in full at least once
+// for NLP entity disambiguation.
 const LONG_CAPTIONS: Record<TemplateType, { barber: string; client: string }> = {
   'join-registry': {
-    barber: '🪒 Ready to grow your client base? Join Concierge Barber Registry — the platform built for barbers who want to be found.\n\n✅ Get verified\n✅ Showcase your portfolio\n✅ Accept bookings from new clients\n✅ Travel & mobile service support\n\nSign up free today 👇\nconciergebarberregistry.com',
+    barber: `🪒 Keep 100% of your cut. 0% of the shop drama.
+
+Concierge Barber Registry is the license-verified directory built for independent barbers and stylists.
+
+✅ Verified badge clients trust
+✅ Zero booking fees — own every client
+✅ No chair rent. No middleman.
+✅ Free Starter tier, 14-day trial on paid plans
+
+Claim your professional profile 👇
+${destinationUrl('join-registry')}`,
     client: '',
   },
   'barber-features': {
-    barber: '💈 Everything you need to grow your barber business — in one platform.\n\n📸 Portfolio gallery\n⭐ Client reviews\n✈️ Travel dates\n🚗 Mobile service\n🛡️ Verified badge\n📱 Marketing tools\n\nJoin for free 👇\nconciergebarberregistry.com',
+    barber: `💈 Everything an independent barber needs — in one license-verified platform.
+
+📸 Curated portfolio gallery
+⭐ Authentic client reviews
+✈️ Travel & mobile service tools
+🛡️ Verified-pro badge on your profile
+📱 Built-in marketing assets
+
+No chair rent. No booking fees. Just premium clients.
+
+Claim your professional profile 👇
+${destinationUrl('barber-features')}`,
     client: '',
   },
   'find-your-barber': {
     barber: '',
-    client: '🔍 Looking for a skilled barber you can trust?\n\nConcierge Barber Registry connects you with licensed, verified barbers in your area.\n\n✅ Browse portfolios\n✅ Read real reviews\n✅ Find mobile barbers\n✅ 100% free for clients\n\nFind your next barber 👇\nconciergebarberregistry.com',
+    client: `🔍 Looking for a barber you can trust?
+
+Concierge Barber Registry is a license-verified directory of independent barbers in your area.
+
+✅ Every barber is credentialed before approval
+✅ Real client reviews, not paid placements
+✅ Browse portfolios before you book
+✅ Mobile barbers who come to you
+✅ 100% free for clients — no booking fees
+
+Find your next cut 👇
+${destinationUrl('find-your-barber')}`,
   },
   'why-choose-us': {
     barber: '',
-    client: '💈 Why clients trust Concierge Barber Registry:\n\n🛡️ Every barber is license-verified\n⭐ Authentic client reviews\n📸 See their work before you book\n🚗 Find barbers who come to you\n\nSearch free — no account needed 👇\nconciergebarberregistry.com',
+    client: `💈 Why clients trust Concierge Barber Registry:
+
+🛡️ Every barber is license-verified
+⭐ Authentic reviews from real clients
+📸 See their work before you book
+🚗 Mobile barbers who come to you
+💸 Zero booking fees — book direct
+
+The verified barber directory. Free for clients.
+
+Browse the registry 👇
+${destinationUrl('why-choose-us')}`,
   },
   'custom-announcement': {
-    barber: '📣 Big news from Concierge Barber Registry!\n\nStay tuned for details 👇\nconciergebarberregistry.com',
-    client: '📣 Big news from Concierge Barber Registry!\n\nStay tuned for details 👇\nconciergebarberregistry.com',
+    barber: `📣 News from ${APP_CONFIG.name} — the license-verified barber directory.
+
+Stay tuned for details 👇
+${destinationUrl('custom-announcement')}`,
+    client: `📣 News from ${APP_CONFIG.name} — the license-verified barber directory.
+
+Stay tuned for details 👇
+${destinationUrl('custom-announcement')}`,
   },
 };
 
-// Short captions for character-limited platforms (X/Twitter, Snapchat, Pinterest)
+// Short captions for X/Twitter, Snapchat, Pinterest — single-message form.
 const SHORT_CAPTIONS: Record<TemplateType, { barber: string; client: string }> = {
   'join-registry': {
-    barber: '🪒 Grow your client base. Get verified. Showcase your work.\n\nJoin free 👇\nconciergebarberregistry.com',
+    barber: `🪒 Keep 100% of your cut. License-verified directory built for independent barbers. Free Starter tier.\n\n${destinationUrl('join-registry')}`,
     client: '',
   },
   'barber-features': {
-    barber: '💈 Portfolio. Reviews. Mobile service. Travel dates. Everything a barber needs.\n\nconciergebarberregistry.com',
+    barber: `💈 Verified profile. Portfolio. Reviews. Mobile tools. Zero booking fees. Built for independent barbers.\n\n${destinationUrl('barber-features')}`,
     client: '',
   },
   'find-your-barber': {
     barber: '',
-    client: '🔍 Find verified, top-rated barbers near you. Browse portfolios & reviews. 100% free.\n\nconciergebarberregistry.com',
+    client: `🔍 License-verified barbers near you. Browse portfolios + real reviews. Free for clients.\n\n${destinationUrl('find-your-barber')}`,
   },
   'why-choose-us': {
     barber: '',
-    client: '💈 License-verified barbers. Real reviews. Browse portfolios before you book.\n\nconciergebarberregistry.com',
+    client: `💈 License-verified barbers. Real reviews. Zero booking fees. Browse before you book.\n\n${destinationUrl('why-choose-us')}`,
   },
   'custom-announcement': {
-    barber: '📣 News from Concierge Barber Registry 👇\nconciergebarberregistry.com',
-    client: '📣 News from Concierge Barber Registry 👇\nconciergebarberregistry.com',
+    barber: `📣 News from ${APP_CONFIG.name} 👇\n${destinationUrl('custom-announcement')}`,
+    client: `📣 News from ${APP_CONFIG.name} 👇\n${destinationUrl('custom-announcement')}`,
+  },
+};
+
+// Ultra-short captions for YouTube Shorts (100 char title limit — hashtags go in tags field, not title).
+const YT_SHORTS_CAPTIONS: Record<TemplateType, { barber: string; client: string }> = {
+  'join-registry': {
+    barber: 'Keep 100% of Your Cut — License-Verified Barber Directory #shorts',
+    client: '',
+  },
+  'barber-features': {
+    barber: 'Built for Independent Barbers — Free to Start #shorts',
+    client: '',
+  },
+  'find-your-barber': {
+    barber: '',
+    client: 'License-Verified Barbers Near You — Free for Clients #shorts',
+  },
+  'why-choose-us': {
+    barber: '',
+    client: 'Why Clients Trust License-Verified Barbers #shorts',
+  },
+  'custom-announcement': {
+    barber: `News from ${APP_CONFIG.name} #shorts`,
+    client: `News from ${APP_CONFIG.name} #shorts`,
   },
 };
 
@@ -91,31 +207,6 @@ const PLATFORM_TIPS: Record<SocialPlatform, string> = {
   'youtube-shorts': 'Title is key — front-load keywords. Add 3 hashtags including #shorts. Under 60 seconds.',
 };
 
-// Ultra-short captions for YouTube Shorts (100 char title limit — hashtags go in tags field, not title)
-const YT_SHORTS_CAPTIONS: Record<TemplateType, { barber: string; client: string }> = {
-  'join-registry': {
-    barber: 'Grow Your Barber Business — Join Free #shorts #barber',
-    client: '',
-  },
-  'barber-features': {
-    barber: 'Everything Barbers Need in One Platform #shorts',
-    client: '',
-  },
-  'find-your-barber': {
-    barber: '',
-    client: 'Find Verified Barbers Near You — Free #shorts #barber',
-  },
-  'why-choose-us': {
-    barber: '',
-    client: 'Why Clients Trust Verified Barbers #shorts #barbershop',
-  },
-  'custom-announcement': {
-    barber: 'Big News from Concierge Barber Registry #shorts',
-    client: 'Big News from Concierge Barber Registry #shorts',
-  },
-};
-
-// Platforms with short character limits
 const SHORT_PLATFORMS: SocialPlatform[] = ['x-twitter', 'snapchat', 'pinterest'];
 
 export function generateCaptionData(
@@ -154,7 +245,7 @@ export function generateCaptionData(
 
   // No hashtags for Snapchat
   const hashtags = platform === 'snapchat' ? [] : [...new Set([
-    '#conciergebarberregistry',
+    BRAND_HASHTAG,
     ...platformSpecific,
     ...baseHashtags,
   ])].slice(0, maxHashtags + 2);
