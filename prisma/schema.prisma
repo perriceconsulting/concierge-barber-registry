@@ -23,6 +23,7 @@ model User {
   notifyNewReviews      Boolean             @default(true) @map("notify_new_reviews")
   notifyMarketingEmails Boolean             @default(false) @map("notify_marketing_emails")
   agreedToTermsAt       DateTime?           @map("agreed_to_terms_at")
+  isStub                Boolean             @default(false) @map("is_stub")
   createdAt             DateTime            @default(now()) @map("created_at")
   updatedAt             DateTime            @updatedAt @map("updated_at")
   auditLogs             AuditLog[]
@@ -76,59 +77,66 @@ model VerificationToken {
 }
 
 model BarberProfile {
-  id                         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                     String             @unique @map("user_id") @db.Uuid
-  displayName                String             @map("display_name") @db.VarChar(150)
-  slug                       String             @unique @db.VarChar(150)
+  id                         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                     String                 @unique @map("user_id") @db.Uuid
+  displayName                String                 @map("display_name") @db.VarChar(150)
+  slug                       String                 @unique @db.VarChar(150)
   bio                        String?
-  tagline                    String?            @db.VarChar(255)
-  yearsExperience            Int?               @map("years_experience")
-  licenseNumber              String?            @map("license_number") @db.VarChar(100)
-  licenseState               String?            @map("license_state") @db.VarChar(2)
-  licenseExpirationDate      DateTime?          @map("license_expiration_date") @db.Date
-  licenseDocumentUrl         String?            @map("license_document_url")
-  licenseVerified            Boolean            @default(false) @map("license_verified")
-  verificationStatus         VerificationStatus @default(pending) @map("verification_status")
-  verificationNotes          String?            @map("verification_notes")
-  isHidden                   Boolean            @default(false) @map("is_hidden")
-  vacationMode               Boolean            @default(false) @map("vacation_mode")
-  verifiedAt                 DateTime?          @map("verified_at")
-  verifiedByUserId           String?            @map("verified_by_user_id") @db.Uuid
-  submittedForVerificationAt DateTime?          @map("submitted_for_verification_at")
-  shopName                   String?            @map("shop_name") @db.VarChar(200)
-  shopAddressLine1           String?            @map("shop_address_line1") @db.VarChar(255)
-  shopAddressLine2           String?            @map("shop_address_line2") @db.VarChar(255)
-  city                       String             @db.VarChar(100)
-  state                      String             @db.VarChar(2)
-  zipCode                    String             @map("zip_code") @db.VarChar(10)
-  latitude                   Decimal?           @db.Decimal(10, 8)
-  longitude                  Decimal?           @db.Decimal(11, 8)
-  offersMobileService        Boolean            @default(false) @map("offers_mobile_service")
-  mobileServiceRadiusMiles   Int?               @map("mobile_service_radius_miles")
-  websiteUrl                 String?            @map("website_url")
-  instagramHandle            String?            @map("instagram_handle") @db.VarChar(100)
-  tiktokHandle               String?            @map("tiktok_handle") @db.VarChar(100)
-  acceptsWalkins             Boolean            @default(true) @map("accepts_walkins")
-  acceptsAppointments        Boolean            @default(true) @map("accepts_appointments")
-  isFeatured                 Boolean            @default(false) @map("is_featured")
-  averageRating              Decimal            @default(0.0) @map("average_rating") @db.Decimal(2, 1)
-  totalReviews               Int                @default(0) @map("total_reviews")
-  profileViews               Int                @default(0) @map("profile_views")
-  createdAt                  DateTime           @default(now()) @map("created_at")
-  updatedAt                  DateTime           @updatedAt @map("updated_at")
-  user                       User               @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)
-  verifiedBy                 User?              @relation("VerifiedBy", fields: [verifiedByUserId], references: [id])
+  tagline                    String?                @db.VarChar(255)
+  yearsExperience            Int?                   @map("years_experience")
+  licenseNumber              String?                @map("license_number") @db.VarChar(100)
+  licenseState               String?                @map("license_state") @db.VarChar(2)
+  licenseExpirationDate      DateTime?              @map("license_expiration_date") @db.Date
+  licenseDocumentUrl         String?                @map("license_document_url")
+  licenseVerified            Boolean                @default(false) @map("license_verified")
+  verificationStatus         VerificationStatus     @default(pending) @map("verification_status")
+  verificationNotes          String?                @map("verification_notes")
+  isHidden                   Boolean                @default(false) @map("is_hidden")
+  vacationMode               Boolean                @default(false) @map("vacation_mode")
+  verifiedAt                 DateTime?              @map("verified_at")
+  verifiedByUserId           String?                @map("verified_by_user_id") @db.Uuid
+  submittedForVerificationAt DateTime?              @map("submitted_for_verification_at")
+  shopName                   String?                @map("shop_name") @db.VarChar(200)
+  shopAddressLine1           String?                @map("shop_address_line1") @db.VarChar(255)
+  shopAddressLine2           String?                @map("shop_address_line2") @db.VarChar(255)
+  city                       String                 @db.VarChar(100)
+  state                      String                 @db.VarChar(2)
+  zipCode                    String                 @map("zip_code") @db.VarChar(10)
+  latitude                   Decimal?               @db.Decimal(10, 8)
+  longitude                  Decimal?               @db.Decimal(11, 8)
+  offersMobileService        Boolean                @default(false) @map("offers_mobile_service")
+  mobileServiceRadiusMiles   Int?                   @map("mobile_service_radius_miles")
+  websiteUrl                 String?                @map("website_url")
+  instagramHandle            String?                @map("instagram_handle") @db.VarChar(100)
+  tiktokHandle               String?                @map("tiktok_handle") @db.VarChar(100)
+  acceptsWalkins             Boolean                @default(true) @map("accepts_walkins")
+  acceptsAppointments        Boolean                @default(true) @map("accepts_appointments")
+  isFeatured                 Boolean                @default(false) @map("is_featured")
+  averageRating              Decimal                @default(0.0) @map("average_rating") @db.Decimal(2, 1)
+  totalReviews               Int                    @default(0) @map("total_reviews")
+  profileViews               Int                    @default(0) @map("profile_views")
+  claimStatus                ClaimStatus            @default(claimed) @map("claim_status")
+  dataSource                 DataSource             @default(self_signup) @map("data_source")
+  claimToken                 String?                @unique @map("claim_token") @db.Uuid
+  claimInvitationSentAt      DateTime?              @map("claim_invitation_sent_at")
+  claimInvitationCount       Int                    @default(0) @map("claim_invitation_count")
+  outreachEmail              String?                @map("outreach_email") @db.VarChar(255)
+  removalRequestedAt         DateTime?              @map("removal_requested_at")
+  createdAt                  DateTime               @default(now()) @map("created_at")
+  updatedAt                  DateTime               @updatedAt @map("updated_at")
+  user                       User                   @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)
+  verifiedBy                 User?                  @relation("VerifiedBy", fields: [verifiedByUserId], references: [id])
   specialties                BarberSpecialty[]
   contactRequests            ContactRequest[]
   favorites                  Favorite[]
   portfolioImages            PortfolioImage[]
   reviews                    Review[]
   services                   Service[]
-  suspensionReason           SuspensionReason?  @map("suspension_reason")
-  suspendedAt                DateTime?          @map("suspended_at")
-  suspendedByUserId          String?            @map("suspended_by_user_id") @db.Uuid
+  suspensionReason           SuspensionReason?      @map("suspension_reason")
+  suspendedAt                DateTime?              @map("suspended_at")
+  suspendedByUserId          String?                @map("suspended_by_user_id") @db.Uuid
   subscription               Subscription?
-  suspendedBy                User?              @relation("SuspendedBy", fields: [suspendedByUserId], references: [id])
+  suspendedBy                User?                  @relation("SuspendedBy", fields: [suspendedByUserId], references: [id])
   appeals                    SuspensionAppeal[]
   serviceAreas               ServiceArea[]
   travelDates                TravelDate[]
@@ -144,6 +152,7 @@ model BarberProfile {
   @@index([averageRating])
   @@index([verificationStatus, averageRating]) // Composite for approved + sorted queries
   @@index([verificationStatus, city, state]) // Composite for location-based search
+  @@index([claimStatus])
   @@map("barber_profiles")
 }
 
@@ -198,18 +207,18 @@ model PortfolioImage {
 }
 
 model Review {
-  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  barberProfileId String        @map("barber_profile_id") @db.Uuid
-  clientUserId    String?       @map("client_user_id") @db.Uuid
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberProfileId String          @map("barber_profile_id") @db.Uuid
+  clientUserId    String?         @map("client_user_id") @db.Uuid
   rating          Int
-  title           String?       @db.VarChar(200)
+  title           String?         @db.VarChar(200)
   comment         String?
-  isVerified      Boolean       @default(false) @map("is_verified")
-  isVisible       Boolean       @default(true) @map("is_visible")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  barberProfile   BarberProfile @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
-  client          User?         @relation(fields: [clientUserId], references: [id])
+  isVerified      Boolean         @default(false) @map("is_verified")
+  isVisible       Boolean         @default(true) @map("is_visible")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  barberProfile   BarberProfile   @relation(fields: [barberProfileId], references: [id], onDelete: Cascade)
+  client          User?           @relation(fields: [clientUserId], references: [id])
   response        ReviewResponse?
 
   @@unique([barberProfileId, clientUserId])
@@ -335,6 +344,19 @@ enum VerificationStatus {
   suspended
 }
 
+enum ClaimStatus {
+  unclaimed
+  claim_sent
+  claimed
+}
+
+enum DataSource {
+  self_signup
+  manual_admin
+  google_places
+  state_license
+}
+
 enum ContactRequestStatus {
   new
   read
@@ -430,8 +452,8 @@ enum AppealStatus {
 }
 
 enum BlogCategory {
-  for_clients  @map("for-clients")
-  for_barbers  @map("for-barbers")
+  for_clients @map("for-clients")
+  for_barbers @map("for-barbers")
   industry
 }
 

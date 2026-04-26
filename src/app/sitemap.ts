@@ -9,10 +9,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
 
   try {
-    // Fetch all approved barbers
+    // Fetch all approved barbers (claimed AND unclaimed) — exclude removal requests
     const barbers = await prisma.barberProfile.findMany({
-      where: { verificationStatus: 'approved' },
-      select: { slug: true, updatedAt: true },
+      where: {
+        verificationStatus: 'approved',
+        removalRequestedAt: null,
+      },
+      select: { slug: true, updatedAt: true, claimStatus: true },
     });
 
     // Fetch all specialties
@@ -96,12 +99,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })),
 
-      // Dynamic barber profile pages
+      // Dynamic barber profile pages — claimed get higher priority + weekly freq
       ...barbers.map((barber) => ({
         url: `${baseUrl}/barbers/${barber.slug}`,
         lastModified: barber.updatedAt,
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
+        changeFrequency:
+          barber.claimStatus === 'claimed' ? ('weekly' as const) : ('monthly' as const),
+        priority: barber.claimStatus === 'claimed' ? 0.8 : 0.6,
       })),
 
       // Dynamic specialty pages

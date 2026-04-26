@@ -73,6 +73,8 @@ interface BarberProfile {
   mobileServiceRadiusMiles?: number | null;
   websiteUrl: string | null;
   instagramHandle: string | null;
+  claimStatus?: 'unclaimed' | 'claim_sent' | 'claimed';
+  claimToken?: string | null;
   specialties: BarberSpecialtyItem[];
   portfolioImages: PortfolioImageItem[];
   services: ServiceItem[];
@@ -257,6 +259,7 @@ export default function BarberProfilePage() {
     { name: 'Barbers', path: '/barbers' },
     { name: barber.displayName, path: `/barbers/${barber.slug}` },
   ];
+  const isUnclaimed = barber.claimStatus && barber.claimStatus !== 'claimed';
 
   return (
     <>
@@ -264,6 +267,55 @@ export default function BarberProfilePage() {
       <article className="py-10">
         <Container>
         <Breadcrumb items={breadcrumbItems} className="mb-6" />
+        {isUnclaimed && (
+          <div className="mb-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <svg
+                  className="h-6 w-6 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 005 19z"
+                  />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-amber-900">
+                  Unclaimed Profile
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  This profile was created from public information. The barber
+                  hasn&apos;t verified or customized it yet.
+                </p>
+                <p className="mt-3 text-sm">
+                  Are you {barber.displayName}?{' '}
+                  {barber.claimToken ? (
+                    <a
+                      href={`/claim/${barber.claimToken}`}
+                      className="font-semibold text-primary underline underline-offset-2"
+                    >
+                      Claim this profile →
+                    </a>
+                  ) : (
+                    <a
+                      href="/contact"
+                      className="font-semibold text-primary underline underline-offset-2"
+                    >
+                      Contact us to claim it →
+                    </a>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header Section */}
         <header className="mb-8">
           <div className="flex items-start justify-between mb-4">
