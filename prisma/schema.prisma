@@ -122,6 +122,7 @@ model BarberProfile {
   claimInvitationCount       Int                    @default(0) @map("claim_invitation_count")
   outreachEmail              String?                @map("outreach_email") @db.VarChar(255)
   removalRequestedAt         DateTime?              @map("removal_requested_at")
+  googlePlaceId              String?                @unique @map("google_place_id") @db.VarChar(255)
   createdAt                  DateTime               @default(now()) @map("created_at")
   updatedAt                  DateTime               @updatedAt @map("updated_at")
   user                       User                   @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)

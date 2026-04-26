@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { secureFetch } from '@/lib/csrf-client';
+import { GooglePlacesSearch } from './google-places-search';
 
 interface CreatedProfile {
   slug: string;
@@ -128,20 +129,49 @@ export default function AdminImportPage() {
     }
   };
 
+  const handleBulkImported = (
+    results: Array<{
+      placeId: string;
+      displayName: string;
+      slug?: string;
+      publicUrl?: string;
+      claimUrl?: string;
+      invitationStatus?: 'sent' | 'no_email' | 'failed';
+      status: 'created' | 'skipped' | 'error';
+    }>
+  ) => {
+    const created = results
+      .filter((r) => r.status === 'created' && r.slug && r.claimUrl && r.publicUrl)
+      .map((r) => ({
+        slug: r.slug!,
+        displayName: r.displayName,
+        city: '',
+        state: '',
+        claimUrl: r.claimUrl!,
+        publicUrl: r.publicUrl!,
+        invitationStatus: r.invitationStatus ?? 'no_email',
+      }));
+    if (created.length > 0) {
+      setCreated((prev) => [...created, ...prev]);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Import Barber Profile</h1>
+        <h1 className="text-3xl font-bold text-primary">Import Barber Profiles</h1>
         <p className="mt-2 text-muted-foreground">
-          Manually create an unclaimed barber profile. The profile is publicly visible
-          with a clear &ldquo;Claim it&rdquo; CTA. Send the claim link to the barber via
-          your outreach channel.
+          Search Google Places to bulk-import unclaimed profiles, or add one manually
+          below. Each profile is publicly visible with a clear &ldquo;Claim it&rdquo;
+          CTA. Outreach emails auto-send the claim invitation.
         </p>
       </div>
 
+      <GooglePlacesSearch onImported={handleBulkImported} />
+
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>New Unclaimed Profile</CardTitle>
+          <CardTitle>Manual Entry</CardTitle>
           <CardDescription>
             Required: name, location. Optional fields fill out the public listing and
             improve credibility before claim.
