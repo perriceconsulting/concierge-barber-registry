@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { SUBSCRIPTION } from '@/config';
 import { TIER_LIMITS } from '@/lib/subscription';
+import { FAQStructuredData } from '@/components/seo/faq-structured-data';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'For Barbers — Keep 100% of Your Cut',
@@ -79,28 +80,34 @@ const HOW_IT_WORKS = [
 
 const FAQS = [
   {
-    q: 'How much does it cost to join?',
-    a: 'Registration is free and our Starter tier is free forever. Professional is $29/mo and Elite is $59/mo — both come with a 14-day free trial.',
+    question: 'How much does it cost to join?',
+    answer:
+      'Registration is free and our Starter tier is free forever. Professional is $29/mo and Elite is $59/mo — both come with a 14-day free trial.',
   },
   {
-    q: 'Do you take a cut of my bookings?',
-    a: "No. We don't process payments or take commission on bookings. Clients contact you directly and you keep 100% of every cut.",
+    question: 'Do you take a cut of my bookings?',
+    answer:
+      "No. We don't process payments or take commission on bookings. Clients contact you directly and you keep 100% of every cut.",
   },
   {
-    q: 'What does "license-verified" mean?',
-    a: "Every barber on the registry uploads their professional license during onboarding. We verify it's active and valid before approving the profile. This signals to clients that you're the real deal.",
+    question: 'What does "license-verified" mean?',
+    answer:
+      "Every barber on the registry uploads their professional license during onboarding. We verify it's active and valid before approving the profile. This signals to clients that you're the real deal.",
   },
   {
-    q: 'Can I offer mobile services?',
-    a: 'Yes. You can mark your profile as accepting walk-ins, by appointment, or offering mobile service with a service radius. Perfect for independent and concierge-style barbers.',
+    question: 'Can I offer mobile services?',
+    answer:
+      'Yes. You can mark your profile as accepting walk-ins, by appointment, or offering mobile service with a service radius. Perfect for independent and concierge-style barbers.',
   },
   {
-    q: 'How do clients contact me?',
-    a: "Every profile has a contact form. Clients fill it out with their preferred date, time, and service — you see the request in your dashboard and respond directly. No intermediary, no platform fees.",
+    question: 'How do clients contact me?',
+    answer:
+      'Every profile has a contact form. Clients fill it out with their preferred date, time, and service — you see the request in your dashboard and respond directly. No intermediary, no platform fees.',
   },
   {
-    q: 'What if I already have a website or Instagram?',
-    a: "Link them from your profile. The registry complements your existing presence with a verified badge, searchable listing, and centralized reviews — things social media can't give you.",
+    question: 'What if I already have a website or Instagram?',
+    answer:
+      "Link them from your profile. The registry complements your existing presence with a verified badge, searchable listing, and centralized reviews — things social media can't give you.",
   },
 ];
 
@@ -161,6 +168,7 @@ const PRICING_TIERS = [
 export default function ForBarbersPage() {
   return (
     <>
+      <FAQStructuredData items={FAQS} />
       {/* HERO */}
       <section className="relative bg-gradient-to-br from-primary/10 via-background to-accent/5 py-24 md:py-32">
         <Container>
@@ -450,10 +458,10 @@ export default function ForBarbersPage() {
 
             <div className="space-y-4">
               {FAQS.map((faq) => (
-                <Card key={faq.q}>
+                <Card key={faq.question}>
                   <CardContent className="p-6">
-                    <h3 className="font-semibold text-primary mb-2">{faq.q}</h3>
-                    <p className="text-muted-foreground">{faq.a}</p>
+                    <h3 className="font-semibold text-primary mb-2">{faq.question}</h3>
+                    <p className="text-muted-foreground">{faq.answer}</p>
                   </CardContent>
                 </Card>
               ))}

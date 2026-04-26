@@ -1,16 +1,26 @@
-import { FAQS } from '@/data/faq';
 import { JsonLd } from './json-ld';
 
-export function FAQStructuredData() {
+export interface FAQSchemaItem {
+  question: string;
+  answer: string;
+}
+
+interface FAQStructuredDataProps {
+  items: FAQSchemaItem[];
+}
+
+export function FAQStructuredData({ items }: FAQStructuredDataProps) {
+  if (items.length === 0) return null;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: FAQS.map((faq) => ({
+    mainEntity: items.map((item) => ({
       '@type': 'Question',
-      name: faq.question,
+      name: item.question,
       acceptedAnswer: {
         '@type': 'Answer',
-        text: faq.answer,
+        text: item.answer,
       },
     })),
   };

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { FAQStructuredData } from '@/components/seo/faq-structured-data';
+import { FAQS } from '@/data/faq';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'FAQ',
@@ -18,7 +19,9 @@ export const metadata: Metadata = buildPageMetadata({
 export default function FaqLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <FAQStructuredData />
+      <FAQStructuredData
+        items={FAQS.map((f) => ({ question: f.question, answer: f.answer }))}
+      />
       {children}
     </>
   );

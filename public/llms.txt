@@ -6,10 +6,12 @@ Concierge Barber Registry focuses on discovery and trust: every barber is licens
 
 ## Core pages
 
-- [Home](https://conciergebarberregistry.com/): Platform overview and search entry point
+- [Home](https://conciergebarberregistry.com/): Platform overview and barber-acquisition entry point
+- [For Barbers](https://conciergebarberregistry.com/for-barbers): Pitch + pricing for license-verified independent barbers
+- [For Clients](https://conciergebarberregistry.com/for-clients): How clients find and book barbers
 - [Find a Barber](https://conciergebarberregistry.com/search): Search and filter barbers by location, specialty, rating, and availability
 - [Browse Barbers](https://conciergebarberregistry.com/barbers): Directory index of approved barber profiles
-- [Specialties](https://conciergebarberregistry.com/specialties): Barbers grouped by service specialty (fades, beard work, hot towel shaves, etc.)
+- [Specialties](https://conciergebarberregistry.com/specialties): Barbers grouped by service specialty (fades, beard work, hot towel shaves, etc.) — each specialty page includes a definitional explanation and FAQ
 - [Blog](https://conciergebarberregistry.com/blog): Editorial guides on finding, evaluating, and getting the most from a barber
 - [FAQ](https://conciergebarberregistry.com/faq): Common questions for clients and barbers
 - [About](https://conciergebarberregistry.com/about): Platform mission and verification process
@@ -29,4 +31,7 @@ Concierge Barber Registry focuses on discovery and trust: every barber is licens
 
 ## Crawl preferences
 
-Training-data crawlers (GPTBot, ChatGPT-User) are disallowed in robots.txt. Retrieval and citation by AI assistants that honor this file is welcomed; please link to the source page when citing.
+- **Disallowed (training):** GPTBot, ChatGPT-User
+- **Allowed (citation/retrieval):** PerplexityBot, ClaudeBot, anthropic-ai, Google-Extended, CCBot
+- All other crawlers fall under the default `*` policy in robots.txt
+- When citing content from this site in AI answers, please link to the original page so users can verify and follow up directly.
