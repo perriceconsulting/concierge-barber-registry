@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 import { generateUniqueBarberSlug } from '@/lib/slug';
 import { createLogger } from '@/lib/logger';
+import { sendClaimInvitationEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 const logger = createLogger('ADMIN_BARBER_CREATE');
@@ -127,6 +128,47 @@ const manualCreateHandler = async (request: Request) => {
       slug: profile.slug,
     });
 
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
+    const claimUrl = `${baseUrl}/claim/${claimToken}`;
+    const publicUrl = `${baseUrl}/barbers/${profile.slug}`;
+
+    // Send claim invitation email if outreachEmail provided
+    let invitationStatus: 'sent' | 'no_email' | 'failed' = 'no_email';
+    if (data.outreachEmail) {
+      try {
+        const result = await sendClaimInvitationEmail({
+          to: data.outreachEmail,
+          firstName: data.firstName,
+          displayName: data.displayName,
+          city: data.city,
+          state: data.state.toUpperCase(),
+          claimUrl,
+          publicUrl,
+        });
+
+        if (result.success) {
+          await prisma.barberProfile.update({
+            where: { id: profile.id },
+            data: {
+              claimStatus: 'claim_sent',
+              claimInvitationSentAt: new Date(),
+              claimInvitationCount: { increment: 1 },
+            },
+          });
+          invitationStatus = 'sent';
+        } else {
+          invitationStatus = 'failed';
+        }
+      } catch (err) {
+        logger.error('Failed to send claim invitation', {
+          profileId: profile.id,
+          error: err instanceof Error ? err.message : 'unknown',
+        });
+        invitationStatus = 'failed';
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -138,8 +180,9 @@ const manualCreateHandler = async (request: Request) => {
           state: profile.state,
         },
         claimToken,
-        claimUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com'}/claim/${claimToken}`,
-        publicUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com'}/barbers/${profile.slug}`,
+        claimUrl,
+        publicUrl,
+        invitationStatus,
       },
     });
   } catch (error) {

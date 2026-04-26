@@ -16,6 +16,7 @@ interface CreatedProfile {
   state: string;
   claimUrl: string;
   publicUrl: string;
+  invitationStatus: 'sent' | 'no_email' | 'failed';
 }
 
 const initialForm = {
@@ -85,14 +86,22 @@ export default function AdminImportPage() {
           state: result.profile.state,
           claimUrl: result.claimUrl,
           publicUrl: result.publicUrl,
+          invitationStatus: result.invitationStatus,
         },
         ...prev,
       ]);
 
+      const toastDescription =
+        result.invitationStatus === 'sent'
+          ? 'Claim invitation emailed to the barber.'
+          : result.invitationStatus === 'failed'
+          ? 'Profile created, but the email failed to send. Copy the claim link manually.'
+          : 'Copy the claim link below to send manually.';
+
       showToast({
         title: 'Profile created',
-        description: 'Copy the claim link below.',
-        variant: 'success',
+        description: toastDescription,
+        variant: result.invitationStatus === 'failed' ? 'warning' : 'success',
       });
       setForm(initialForm);
     } catch (err) {
@@ -309,11 +318,29 @@ export default function AdminImportPage() {
                 key={profile.slug}
                 className="rounded-lg border bg-background p-4 space-y-3"
               >
-                <div>
-                  <div className="font-semibold text-primary">{profile.displayName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {profile.city}, {profile.state}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-primary">{profile.displayName}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {profile.city}, {profile.state}
+                    </div>
                   </div>
+                  <span
+                    className={
+                      'shrink-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ' +
+                      (profile.invitationStatus === 'sent'
+                        ? 'bg-green-100 text-green-800'
+                        : profile.invitationStatus === 'failed'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800')
+                    }
+                  >
+                    {profile.invitationStatus === 'sent'
+                      ? '✓ Email sent'
+                      : profile.invitationStatus === 'failed'
+                      ? '⚠ Email failed'
+                      : 'No email — copy link'}
+                  </span>
                 </div>
 
                 <div className="space-y-2">

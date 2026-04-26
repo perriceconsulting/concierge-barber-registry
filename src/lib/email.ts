@@ -692,3 +692,91 @@ export async function sendContactRequestEmail(
 
   return sendEmail({ to: barberEmail, subject, html });
 }
+
+export function getClaimInvitationEmailHtml(
+  firstName: string,
+  displayName: string,
+  city: string,
+  state: string,
+  claimUrl: string,
+  publicUrl: string
+) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Your Concierge Barber Registry profile is ready to claim</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #1A1A2E; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 26px;">Your profile is ready to claim</h1>
+          <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Concierge Barber Registry</p>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+          <p style="font-size: 18px; margin-bottom: 20px;">Hi ${firstName},</p>
+
+          <p>We listed <strong>${displayName}</strong> on Concierge Barber Registry — a license-verified directory of independent barbers in ${city}, ${state} and beyond.</p>
+
+          <p style="background-color: #fef3c7; border-left: 4px solid #C9A96E; padding: 12px 16px; margin: 20px 0; font-size: 14px;">
+            Your profile is currently <strong>unclaimed</strong>. Anyone visiting it sees a clear &ldquo;Claim this profile&rdquo; link. Take ownership now to control how you appear, add your portfolio, and get the verified-pro badge.
+          </p>
+
+          <p><strong>What you get when you claim:</strong></p>
+          <ul style="padding-left: 20px;">
+            <li>Keep 100% of your cut — zero booking fees, ever</li>
+            <li>License-verified badge once you submit your credentials</li>
+            <li>Free Starter tier (no credit card required)</li>
+            <li>Curated portfolio gallery + client reviews on your profile</li>
+            <li>14-day free trial on Professional and Elite tiers</li>
+          </ul>
+
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${claimUrl}" style="display: inline-block; background-color: #C9A96E; color: #1A1A2E; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Claim Your Profile</a>
+          </div>
+
+          <p style="font-size: 13px; color: #6b7280;">
+            View your current public listing: <a href="${publicUrl}" style="color: #1A1A2E;">${publicUrl}</a>
+          </p>
+
+          <p style="font-size: 13px; color: #6b7280; margin-top: 25px;">
+            Not the right person? Don&apos;t want a profile listed? Reply to this email and we&apos;ll remove the listing right away.
+          </p>
+
+          <p style="margin-top: 30px;">— The Concierge Barber Registry Team</p>
+        </div>
+
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">
+          <p>© ${new Date().getFullYear()} Concierge Barber Registry. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendClaimInvitationEmail(params: {
+  to: string;
+  firstName: string;
+  displayName: string;
+  city: string;
+  state: string;
+  claimUrl: string;
+  publicUrl: string;
+}) {
+  const html = getClaimInvitationEmailHtml(
+    params.firstName,
+    params.displayName,
+    params.city,
+    params.state,
+    params.claimUrl,
+    params.publicUrl
+  );
+
+  return sendEmail({
+    to: params.to,
+    subject: `${params.firstName}, your Concierge Barber Registry profile is ready to claim`,
+    html,
+  });
+}
