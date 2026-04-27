@@ -43,6 +43,9 @@ export const ROUTES = {
   // Admin routes
   ADMIN: '/admin',
   ADMIN_BARBERS: '/admin/barbers',
+  ADMIN_IMPORT: '/admin/import',
+  ADMIN_OUTREACH: '/admin/outreach',
+  ADMIN_REMOVAL_REQUESTS: '/admin/removal-requests',
   ADMIN_USERS: '/admin/users',
   ADMIN_REVIEWS: '/admin/reviews',
   ADMIN_SPECIALTIES: '/admin/specialties',

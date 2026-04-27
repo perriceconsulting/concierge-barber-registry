@@ -10,6 +10,9 @@ import { ModalProvider } from '@/components/ui/modal';
 const navigation = [
   { name: 'Dashboard', href: ROUTES.ADMIN, icon: '📊' },
   { name: 'Barbers', href: ROUTES.ADMIN_BARBERS, icon: '✂️' },
+  { name: 'Import', href: ROUTES.ADMIN_IMPORT, icon: '📥' },
+  { name: 'Outreach', href: ROUTES.ADMIN_OUTREACH, icon: '📨' },
+  { name: 'Removal Requests', href: ROUTES.ADMIN_REMOVAL_REQUESTS, icon: '🗑️' },
   { name: 'Appeals', href: ROUTES.ADMIN_APPEALS, icon: '📝' },
   { name: 'Users', href: ROUTES.ADMIN_USERS, icon: '👥' },
   { name: 'Reviews', href: ROUTES.ADMIN_REVIEWS, icon: '⭐' },
