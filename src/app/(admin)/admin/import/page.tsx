@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { secureFetch } from '@/lib/csrf-client';
 import { GooglePlacesSearch } from './google-places-search';
+import { IgQuickImport } from './ig-quick-import';
 
 interface CreatedProfile {
   slug: string;
@@ -131,8 +132,10 @@ export default function AdminImportPage() {
 
   const handleBulkImported = (
     results: Array<{
-      placeId: string;
-      displayName: string;
+      placeId?: string;
+      displayName?: string;
+      handle?: string;
+      input?: string;
       slug?: string;
       publicUrl?: string;
       claimUrl?: string;
@@ -144,7 +147,8 @@ export default function AdminImportPage() {
       .filter((r) => r.status === 'created' && r.slug && r.claimUrl && r.publicUrl)
       .map((r) => ({
         slug: r.slug!,
-        displayName: r.displayName,
+        displayName:
+          r.displayName || (r.handle ? `@${r.handle}` : r.input || r.slug!),
         city: '',
         state: '',
         claimUrl: r.claimUrl!,
@@ -168,6 +172,8 @@ export default function AdminImportPage() {
       </div>
 
       <GooglePlacesSearch onImported={handleBulkImported} />
+
+      <IgQuickImport onImported={handleBulkImported} />
 
       <Card className="mb-8">
         <CardHeader>

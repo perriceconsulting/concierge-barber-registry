@@ -86,11 +86,25 @@ const updateProfileHandler = async (request: { userId?: string; json: () => Prom
     let updatedProfile;
 
     if (existingProfile) {
+      // Auto-unhide: if profile was hidden (e.g., from IG-quick-import or manual
+      // admin entry without location) and this update fills in city/state/zipCode,
+      // make the profile publicly visible.
+      const resolvedCity =
+        sanitizedProfileData.city ?? existingProfile.city;
+      const resolvedState =
+        sanitizedProfileData.state ?? existingProfile.state;
+      const resolvedZip =
+        sanitizedProfileData.zipCode ?? existingProfile.zipCode;
+      const willHaveCompleteLocation =
+        Boolean(resolvedCity) && Boolean(resolvedState) && Boolean(resolvedZip);
+      const shouldUnhide = existingProfile.isHidden && willHaveCompleteLocation;
+
       // Update existing profile
       updatedProfile = await prisma.barberProfile.update({
         where: { userId },
         data: {
           ...sanitizedProfileData,
+          ...(shouldUnhide ? { isHidden: false } : {}),
           // Update specialties if provided
           ...(specialtyIds && {
             specialties: {

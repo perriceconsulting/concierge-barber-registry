@@ -10,10 +10,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Fetch all approved barbers (claimed AND unclaimed) — exclude removal requests
+    // and exclude isHidden profiles (e.g., IG-quick-imports awaiting location data)
     const barbers = await prisma.barberProfile.findMany({
       where: {
         verificationStatus: 'approved',
         removalRequestedAt: null,
+        isHidden: false,
       },
       select: { slug: true, updatedAt: true, claimStatus: true },
     });

@@ -88,6 +88,12 @@ export async function GET(
       throw new ApiError(404, 'NOT_FOUND', 'Barber not found');
     }
 
+    // Hidden profiles (e.g., IG-quick-imports awaiting location data, or admin-hidden)
+    // are not publicly viewable. 404 instead of leaking the existence of an unfilled stub.
+    if (barberProfile.isHidden) {
+      throw new ApiError(404, 'NOT_FOUND', 'Barber not found');
+    }
+
     // Increment profile views with deduplication (fire and forget)
     (async () => {
       try {
