@@ -93,6 +93,50 @@ function buildSearchUrl(platform: 'ig' | 'fb' | 'tiktok' | 'google', profile: Ou
   }
 }
 
+// "First names" we get from Google Places splits are often business-word
+// fragments like "All Hair Cuts" -> firstName="All". Filter those out so we
+// never produce "Hey All".
+const NON_PERSON_NAME_TOKENS = new Set([
+  'all',
+  'the',
+  'a',
+  'an',
+  'mr',
+  'mrs',
+  'ms',
+  'master',
+  'salon',
+  'studio',
+  'shop',
+  'hair',
+  'cuts',
+  'cut',
+  'barber',
+  'barbers',
+  'barbershop',
+  'pro',
+  'pros',
+  'classic',
+  'modern',
+  'royal',
+  'crown',
+  'fade',
+  'fades',
+  'blade',
+  'blades',
+  'edge',
+  'sharp',
+]);
+
+function isLikelyPersonName(name: string | undefined): boolean {
+  if (!name) return false;
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  if (trimmed.length < 2 || trimmed.length > 20) return false;
+  if (/[\s\d]/.test(trimmed)) return false; // multi-word or has digits = not a first name
+  return !NON_PERSON_NAME_TOKENS.has(trimmed.toLowerCase());
+}
+
 function buildDmTemplate(profile: OutreachProfile): string {
   const baseUrl =
     typeof window !== 'undefined'
@@ -102,16 +146,26 @@ function buildDmTemplate(profile: OutreachProfile): string {
     ? `${baseUrl}/claim/${profile.claimToken}`
     : `${baseUrl}/barbers/${profile.slug}`;
 
-  // Refer to the shop/business by its actual name. Avoid pretending we've
-  // met them — "saw you in" implies a personal observation we don't have.
-  // Use what the public data actually tells us: location.
   const businessLabel = profile.shopName || profile.displayName;
+  const salutation = isLikelyPersonName(profile.user.firstName)
+    ? `Hey ${profile.user.firstName}!`
+    : 'Hey there!';
 
-  return `I see you're located in ${profile.city}, ${profile.state} — came across ${businessLabel} while building Concierge Barber Registry, a license-verified directory for independent barbers.
+  return `${salutation} I'm Percy from Concierge Barber Registry — local NJ founder.
 
-Reserved a free profile for you. No chair rent, no booking fees, ever: ${claimUrl}
+[Personalize here: 1–2 sentences about something specific to ${businessLabel} — a recent post, a new hire, a style you saw, anything real. Skip if you have nothing genuine to say.]
 
-Not interested? Reply and I'll take the listing down.`;
+I'm building a license-verified directory specifically for independent barbers and reserved a profile under ${businessLabel} in ${profile.city}, ${profile.state}. Three things it actually solves:
+
+→ Trust signal that converts: clients see your verified-license badge, your portfolio, and real reviews — not "DM for prices" guessing.
+
+→ No middleman cut: I don't process payments or take a commission. Clients message you direct. You keep 100% of every cut.
+
+→ Findable by specialty: when ${profile.city} clients search "fade barber" or "hot towel shave," your profile surfaces — not just whoever paid for the ad slot.
+
+Free forever on the Starter tier, no credit card. Claim it here: ${claimUrl}
+
+Or tell me to take the listing down — no hard feelings.`;
 }
 
 export default function AdminOutreachPage() {
