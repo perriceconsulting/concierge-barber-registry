@@ -13,6 +13,8 @@ const logger = createLogger('ADMIN_DASHBOARD');
 
 interface DashboardStats {
   totalBarbers: number;
+  claimedBarbers: number;
+  unclaimedBarbers: number;
   pendingVerifications: number;
   totalClients: number;
   totalReviews: number;
@@ -35,16 +37,36 @@ interface RecentSignup {
   createdAt: string;
 }
 
+interface RecentImport {
+  id: string;
+  displayName: string;
+  shopName: string | null;
+  city: string;
+  state: string;
+  dataSource: 'manual_admin' | 'google_places' | 'state_license';
+  claimStatus: 'unclaimed' | 'claim_sent';
+  createdAt: string;
+}
+
+const SOURCE_LABEL: Record<RecentImport['dataSource'], string> = {
+  manual_admin: 'Manual',
+  google_places: 'Google Places',
+  state_license: 'License board',
+};
+
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalBarbers: 0,
+    claimedBarbers: 0,
+    unclaimedBarbers: 0,
     pendingVerifications: 0,
     totalClients: 0,
     totalReviews: 0,
   });
   const [pendingBarbers, setPendingBarbers] = useState<PendingBarber[]>([]);
   const [recentSignups, setRecentSignups] = useState<RecentSignup[]>([]);
+  const [recentImports, setRecentImports] = useState<RecentImport[]>([]);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -55,6 +77,7 @@ export default function AdminDashboardPage() {
           setStats(json.data.stats);
           setPendingBarbers(json.data.pendingBarbers);
           setRecentSignups(json.data.recentSignups);
+          setRecentImports(json.data.recentImports || []);
         }
       } catch (error) {
         logger.error('Failed to fetch dashboard data:', error);
@@ -181,25 +204,90 @@ export default function AdminDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Signups</CardTitle>
-            <CardDescription>Latest user registrations</CardDescription>
+            <CardDescription>Real users who registered themselves (excludes admin imports)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentSignups.map((user) => (
-                <div key={user.id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                  <div>
-                    <p className="font-medium">{user.firstName} {user.lastName}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </p>
+            {recentSignups.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">
+                No real signups yet. Admin-imported profiles appear in &ldquo;Recent Imports&rdquo; below.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {recentSignups.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                    <div>
+                      <p className="font-medium">{user.firstName} {user.lastName}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge variant={user.role === 'barber' ? 'default' : 'secondary'}>
+                      {user.role}
+                    </Badge>
                   </div>
-                  <Badge variant={user.role === 'barber' ? 'default' : 'secondary'}>
-                    {user.role}
-                  </Badge>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Imports — admin-created unclaimed profiles, separate from organic signups */}
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Recent Imports</CardTitle>
+                <CardDescription>
+                  Unclaimed profiles you&apos;ve created (manual or Google Places). Send claim invitations from{' '}
+                  <Link href={ROUTES.ADMIN_OUTREACH} className="text-primary underline">
+                    Outreach
+                  </Link>
+                  .
+                </CardDescription>
+              </div>
+              <Link href={ROUTES.ADMIN_IMPORT}>
+                <Button variant="outline" size="sm">
+                  + Import more
+                </Button>
+              </Link>
             </div>
+          </CardHeader>
+          <CardContent>
+            {recentImports.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">
+                No imports yet.{' '}
+                <Link href={ROUTES.ADMIN_IMPORT} className="text-primary underline">
+                  Start with /admin/import
+                </Link>
+                .
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {recentImports.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{p.displayName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {p.shopName ? `${p.shopName} · ` : ''}
+                        {p.city}, {p.state}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(p.createdAt).toLocaleDateString()} · {SOURCE_LABEL[p.dataSource]}
+                      </p>
+                    </div>
+                    <Badge variant={p.claimStatus === 'claim_sent' ? 'default' : 'secondary'}>
+                      {p.claimStatus === 'claim_sent' ? 'Claim sent' : 'Unclaimed'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
