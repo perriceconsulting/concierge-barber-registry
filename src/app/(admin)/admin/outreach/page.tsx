@@ -98,12 +98,20 @@ function buildDmTemplate(profile: OutreachProfile): string {
     typeof window !== 'undefined'
       ? window.location.origin
       : 'https://conciergebarberregistry.com';
-  const claimUrl = profile.claimToken ? `${baseUrl}/claim/${profile.claimToken}` : `${baseUrl}/barbers/${profile.slug}`;
-  return `Hey ${profile.user.firstName} — saw you in ${profile.city}. Made you a profile on Concierge Barber Registry — license-verified directory built for independent barbers. Free Starter tier, no chair rent, no booking fees.
+  const claimUrl = profile.claimToken
+    ? `${baseUrl}/claim/${profile.claimToken}`
+    : `${baseUrl}/barbers/${profile.slug}`;
 
-Claim your profile here: ${claimUrl}
+  // Refer to the shop/business by its actual name. Avoid pretending we've
+  // met them — "saw you in" implies a personal observation we don't have.
+  // Use what the public data actually tells us: location.
+  const businessLabel = profile.shopName || profile.displayName;
 
-Reply STOP if you'd rather not be listed and I'll remove it.`;
+  return `I see you're located in ${profile.city}, ${profile.state} — came across ${businessLabel} while building Concierge Barber Registry, a license-verified directory for independent barbers.
+
+Reserved a free profile for you. No chair rent, no booking fees, ever: ${claimUrl}
+
+Not interested? Reply and I'll take the listing down.`;
 }
 
 export default function AdminOutreachPage() {
