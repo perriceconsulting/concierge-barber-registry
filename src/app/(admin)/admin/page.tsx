@@ -114,7 +114,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Barbers</CardDescription>
@@ -123,6 +123,25 @@ export default function AdminDashboardPage() {
           <CardContent>
             <Link href={ROUTES.ADMIN_BARBERS}>
               <Button variant="link" className="p-0 h-auto">View all</Button>
+            </Link>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.claimedBarbers} claimed · {stats.unclaimedBarbers} unclaimed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-500/50 bg-blue-50/50">
+          <CardHeader className="pb-2">
+            <CardDescription>Unclaimed Imports</CardDescription>
+            <CardTitle className="text-3xl text-blue-700">
+              {stats.unclaimedBarbers}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link href={ROUTES.ADMIN_OUTREACH}>
+              <Button variant="link" className="p-0 h-auto text-blue-700">
+                Manage outreach
+              </Button>
             </Link>
           </CardContent>
         </Card>
