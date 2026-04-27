@@ -123,6 +123,9 @@ model BarberProfile {
   outreachEmail              String?                @map("outreach_email") @db.VarChar(255)
   removalRequestedAt         DateTime?              @map("removal_requested_at")
   googlePlaceId              String?                @unique @map("google_place_id") @db.VarChar(255)
+  outreachStatus             OutreachStatus         @default(not_contacted) @map("outreach_status")
+  outreachUpdatedAt          DateTime?              @map("outreach_updated_at")
+  outreachNotes              String?                @map("outreach_notes")
   createdAt                  DateTime               @default(now()) @map("created_at")
   updatedAt                  DateTime               @updatedAt @map("updated_at")
   user                       User                   @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)
@@ -154,6 +157,7 @@ model BarberProfile {
   @@index([verificationStatus, averageRating]) // Composite for approved + sorted queries
   @@index([verificationStatus, city, state]) // Composite for location-based search
   @@index([claimStatus])
+  @@index([outreachStatus])
   @@map("barber_profiles")
 }
 
@@ -356,6 +360,18 @@ enum DataSource {
   manual_admin
   google_places
   state_license
+}
+
+enum OutreachStatus {
+  not_contacted
+  messaged_ig
+  messaged_fb
+  messaged_tiktok
+  messaged_email
+  messaged_phone
+  responded
+  not_interested
+  bounced
 }
 
 enum ContactRequestStatus {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,7 @@ export function GooglePlacesSearch({ onImported }: Props) {
   const [selected, setSelected] = useState<Map<string, SelectedItem>>(new Map());
   const [importing, setImporting] = useState(false);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [filterText, setFilterText] = useState('');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +65,7 @@ export function GooglePlacesSearch({ onImported }: Props) {
     setResults([]);
     setSelected(new Map());
     setImportSummary(null);
+    setFilterText('');
 
     try {
       const response = await secureFetch('/api/admin/import/google-places/search', {
@@ -232,21 +234,22 @@ export function GooglePlacesSearch({ onImported }: Props) {
 
         {results.length > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b pb-2">
-              <p className="text-sm text-muted-foreground">
-                {results.length} results · {selected.size} selected
-              </p>
-              <Button
-                onClick={handleImport}
-                disabled={selected.size === 0 || importing}
-                size="sm"
-              >
-                {importing ? 'Importing...' : `Import ${selected.size} Selected`}
-              </Button>
-            </div>
+            <FilterAndBulkSelectHeader
+              results={results}
+              selected={selected}
+              setSelected={setSelected}
+              filterText={filterText}
+              setFilterText={setFilterText}
+              importing={importing}
+              onImport={handleImport}
+            />
 
             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
-              {results.map((r) => {
+              {results
+                .filter((r) =>
+                  matchesFilter(r, filterText)
+                )
+                .map((r) => {
                 const isSelected = selected.has(r.placeId);
                 const item = selected.get(r.placeId);
                 return (
@@ -359,5 +362,116 @@ export function GooglePlacesSearch({ onImported }: Props) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function matchesFilter(result: PlaceResult, filter: string): boolean {
+  if (!filter.trim()) return true;
+  const needle = filter.toLowerCase();
+  return (
+    result.displayName.toLowerCase().includes(needle) ||
+    result.formattedAddress.toLowerCase().includes(needle) ||
+    (result.phone || '').toLowerCase().includes(needle) ||
+    (result.city || '').toLowerCase().includes(needle)
+  );
+}
+
+interface HeaderProps {
+  results: PlaceResult[];
+  selected: Map<string, SelectedItem>;
+  setSelected: React.Dispatch<React.SetStateAction<Map<string, SelectedItem>>>;
+  filterText: string;
+  setFilterText: (v: string) => void;
+  importing: boolean;
+  onImport: () => void;
+}
+
+function FilterAndBulkSelectHeader({
+  results,
+  selected,
+  setSelected,
+  filterText,
+  setFilterText,
+  importing,
+  onImport,
+}: HeaderProps) {
+  const visibleResults = useMemo(
+    () => results.filter((r) => matchesFilter(r, filterText)),
+    [results, filterText]
+  );
+
+  const selectableVisible = visibleResults.filter((r) => !r.alreadyImported);
+  const visibleSelectedCount = selectableVisible.filter((r) =>
+    selected.has(r.placeId)
+  ).length;
+
+  const allVisibleSelected =
+    selectableVisible.length > 0 &&
+    visibleSelectedCount === selectableVisible.length;
+  const someVisibleSelected =
+    visibleSelectedCount > 0 && visibleSelectedCount < selectableVisible.length;
+
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (allVisibleSelected) {
+        // Deselect all visible
+        for (const r of selectableVisible) {
+          next.delete(r.placeId);
+        }
+      } else {
+        // Select all visible (skip already-selected to preserve their email field)
+        for (const r of selectableVisible) {
+          if (!next.has(r.placeId)) {
+            next.set(r.placeId, { result: r, outreachEmail: '' });
+          }
+        }
+      }
+      return next;
+    });
+  };
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b pb-3">
+        <Input
+          type="search"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          placeholder="Filter results by name, address, phone, or city..."
+          className="sm:max-w-md"
+        />
+        <Button
+          onClick={onImport}
+          disabled={selected.size === 0 || importing}
+          size="sm"
+        >
+          {importing ? 'Importing...' : `Import ${selected.size} Selected`}
+        </Button>
+      </div>
+
+      <div className="flex items-center justify-between text-sm text-muted-foreground py-1">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={allVisibleSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = someVisibleSelected;
+            }}
+            onChange={toggleSelectAll}
+            disabled={selectableVisible.length === 0}
+            className="rounded border-input"
+          />
+          <span>
+            Select all visible ({selectableVisible.length} selectable
+            {filterText ? ' after filter' : ''})
+          </span>
+        </label>
+        <span>
+          {visibleResults.length} of {results.length} shown · {selected.size}{' '}
+          selected
+        </span>
+      </div>
+    </>
   );
 }
