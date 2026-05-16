@@ -12,6 +12,14 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+# local build artifacts (smoke PDFs, mkcert output, etc.)
+/tmp
+/certificates
 
 # next.js
 /.next/
