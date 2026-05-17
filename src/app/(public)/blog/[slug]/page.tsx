@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { ArticleStructuredData } from '@/components/seo/article-structured-data';
+import { BreadcrumbStructuredData } from '@/components/seo/breadcrumb-structured-data';
+import { SpeakableSchema } from '@/components/seo/speakable-schema';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { prisma } from '@/lib/db';
 import { autoLinkBlogContent } from '@/lib/blog/auto-link-content';
@@ -96,7 +98,19 @@ export default async function BlogPostPage({
           image: post.imageUrl || undefined,
           imageAlt: post.imageAlt || undefined,
         }}
+        content={post.content}
       />
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Home', path: '/' },
+          { name: 'Blog', path: '/blog' },
+          { name: categoryLabel, path: `/blog?category=${post.category}` },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ]}
+      />
+      {/* Voice/SGE readout: title + lede are the natural "headline +
+          summary" pair search assistants quote. */}
+      <SpeakableSchema cssSelectors={['article header h1', 'article header > p.text-lg']} />
       <Container>
         <article className="max-w-3xl mx-auto">
           <Breadcrumb
