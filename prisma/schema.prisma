@@ -36,6 +36,7 @@ model User {
   reviews               Review[]
   sessions              Session[]
   verificationTokens    VerificationToken[]
+  groomingPassport      GroomingPassport?
 
   @@index([email])
   @@index([role])
@@ -77,74 +78,85 @@ model VerificationToken {
 }
 
 model BarberProfile {
-  id                         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                     String                 @unique @map("user_id") @db.Uuid
-  displayName                String                 @map("display_name") @db.VarChar(150)
-  slug                       String                 @unique @db.VarChar(150)
+  id                         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                     String             @unique @map("user_id") @db.Uuid
+  displayName                String             @map("display_name") @db.VarChar(150)
+  slug                       String             @unique @db.VarChar(150)
   bio                        String?
-  tagline                    String?                @db.VarChar(255)
-  yearsExperience            Int?                   @map("years_experience")
-  licenseNumber              String?                @map("license_number") @db.VarChar(100)
-  licenseState               String?                @map("license_state") @db.VarChar(2)
-  licenseExpirationDate      DateTime?              @map("license_expiration_date") @db.Date
-  licenseDocumentUrl         String?                @map("license_document_url")
-  licenseVerified            Boolean                @default(false) @map("license_verified")
-  verificationStatus         VerificationStatus     @default(pending) @map("verification_status")
-  verificationNotes          String?                @map("verification_notes")
-  isHidden                   Boolean                @default(false) @map("is_hidden")
-  vacationMode               Boolean                @default(false) @map("vacation_mode")
-  verifiedAt                 DateTime?              @map("verified_at")
-  verifiedByUserId           String?                @map("verified_by_user_id") @db.Uuid
-  submittedForVerificationAt DateTime?              @map("submitted_for_verification_at")
-  shopName                   String?                @map("shop_name") @db.VarChar(200)
-  shopAddressLine1           String?                @map("shop_address_line1") @db.VarChar(255)
-  shopAddressLine2           String?                @map("shop_address_line2") @db.VarChar(255)
-  city                       String                 @db.VarChar(100)
-  state                      String                 @db.VarChar(2)
-  zipCode                    String                 @map("zip_code") @db.VarChar(10)
-  latitude                   Decimal?               @db.Decimal(10, 8)
-  longitude                  Decimal?               @db.Decimal(11, 8)
-  offersMobileService        Boolean                @default(false) @map("offers_mobile_service")
-  mobileServiceRadiusMiles   Int?                   @map("mobile_service_radius_miles")
-  websiteUrl                 String?                @map("website_url")
-  instagramHandle            String?                @map("instagram_handle") @db.VarChar(100)
-  tiktokHandle               String?                @map("tiktok_handle") @db.VarChar(100)
-  acceptsWalkins             Boolean                @default(true) @map("accepts_walkins")
-  acceptsAppointments        Boolean                @default(true) @map("accepts_appointments")
-  isFeatured                 Boolean                @default(false) @map("is_featured")
-  averageRating              Decimal                @default(0.0) @map("average_rating") @db.Decimal(2, 1)
-  totalReviews               Int                    @default(0) @map("total_reviews")
-  profileViews               Int                    @default(0) @map("profile_views")
-  claimStatus                ClaimStatus            @default(claimed) @map("claim_status")
-  dataSource                 DataSource             @default(self_signup) @map("data_source")
-  claimToken                 String?                @unique @map("claim_token") @db.Uuid
-  claimInvitationSentAt      DateTime?              @map("claim_invitation_sent_at")
-  claimInvitationCount       Int                    @default(0) @map("claim_invitation_count")
-  outreachEmail              String?                @map("outreach_email") @db.VarChar(255)
-  removalRequestedAt         DateTime?              @map("removal_requested_at")
-  googlePlaceId              String?                @unique @map("google_place_id") @db.VarChar(255)
-  outreachStatus             OutreachStatus         @default(not_contacted) @map("outreach_status")
-  outreachUpdatedAt          DateTime?              @map("outreach_updated_at")
-  outreachNotes              String?                @map("outreach_notes")
-  createdAt                  DateTime               @default(now()) @map("created_at")
-  updatedAt                  DateTime               @updatedAt @map("updated_at")
-  user                       User                   @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)
-  verifiedBy                 User?                  @relation("VerifiedBy", fields: [verifiedByUserId], references: [id])
-  specialties                BarberSpecialty[]
-  contactRequests            ContactRequest[]
-  favorites                  Favorite[]
-  portfolioImages            PortfolioImage[]
-  reviews                    Review[]
-  services                   Service[]
-  suspensionReason           SuspensionReason?      @map("suspension_reason")
-  suspendedAt                DateTime?              @map("suspended_at")
-  suspendedByUserId          String?                @map("suspended_by_user_id") @db.Uuid
-  subscription               Subscription?
-  suspendedBy                User?                  @relation("SuspendedBy", fields: [suspendedByUserId], references: [id])
-  appeals                    SuspensionAppeal[]
-  serviceAreas               ServiceArea[]
-  travelDates                TravelDate[]
-  socialPostGenerations      SocialPostGeneration[]
+  tagline                    String?            @db.VarChar(255)
+  yearsExperience            Int?               @map("years_experience")
+  licenseNumber              String?            @map("license_number") @db.VarChar(100)
+  licenseState               String?            @map("license_state") @db.VarChar(2)
+  licenseExpirationDate      DateTime?          @map("license_expiration_date") @db.Date
+  licenseDocumentUrl         String?            @map("license_document_url")
+  licenseVerified            Boolean            @default(false) @map("license_verified")
+  verificationStatus         VerificationStatus @default(pending) @map("verification_status")
+  verificationNotes          String?            @map("verification_notes")
+  isHidden                   Boolean            @default(false) @map("is_hidden")
+  vacationMode               Boolean            @default(false) @map("vacation_mode")
+  verifiedAt                 DateTime?          @map("verified_at")
+  verifiedByUserId           String?            @map("verified_by_user_id") @db.Uuid
+  submittedForVerificationAt DateTime?          @map("submitted_for_verification_at")
+  shopName                   String?            @map("shop_name") @db.VarChar(200)
+  shopAddressLine1           String?            @map("shop_address_line1") @db.VarChar(255)
+  shopAddressLine2           String?            @map("shop_address_line2") @db.VarChar(255)
+  city                       String             @db.VarChar(100)
+  state                      String             @db.VarChar(2)
+  zipCode                    String             @map("zip_code") @db.VarChar(10)
+  latitude                   Decimal?           @db.Decimal(10, 8)
+  longitude                  Decimal?           @db.Decimal(11, 8)
+  offersMobileService        Boolean            @default(false) @map("offers_mobile_service")
+  mobileServiceRadiusMiles   Int?               @map("mobile_service_radius_miles")
+  websiteUrl                 String?            @map("website_url")
+  instagramHandle            String?            @map("instagram_handle") @db.VarChar(100)
+  tiktokHandle               String?            @map("tiktok_handle") @db.VarChar(100)
+  acceptsWalkins             Boolean            @default(true) @map("accepts_walkins")
+  acceptsAppointments        Boolean            @default(true) @map("accepts_appointments")
+  isFeatured                 Boolean            @default(false) @map("is_featured")
+  averageRating              Decimal            @default(0.0) @map("average_rating") @db.Decimal(2, 1)
+  totalReviews               Int                @default(0) @map("total_reviews")
+  profileViews               Int                @default(0) @map("profile_views")
+  claimStatus                ClaimStatus        @default(claimed) @map("claim_status")
+  dataSource                 DataSource         @default(self_signup) @map("data_source")
+  claimToken                 String?            @unique @map("claim_token") @db.Uuid
+  claimInvitationSentAt      DateTime?          @map("claim_invitation_sent_at")
+  claimInvitationCount       Int                @default(0) @map("claim_invitation_count")
+  outreachEmail              String?            @map("outreach_email") @db.VarChar(255)
+  removalRequestedAt         DateTime?          @map("removal_requested_at")
+  googlePlaceId              String?            @unique @map("google_place_id") @db.VarChar(255)
+  outreachStatus             OutreachStatus     @default(not_contacted) @map("outreach_status")
+  outreachUpdatedAt          DateTime?          @map("outreach_updated_at")
+  outreachNotes              String?            @map("outreach_notes")
+
+  // CBR v2.0 — Verification paywall (FEAT-001)
+  setupFeePaidAt                DateTime? @map("setup_fee_paid_at")
+  setupFeeAmountCents           Int?      @map("setup_fee_amount_cents")
+  setupFeeStripePaymentIntentId String?   @unique @map("setup_fee_stripe_pi_id") @db.VarChar(255)
+  foundingMember                Boolean   @default(false) @map("founding_member")
+  subscriptionWaivedUntil       DateTime? @map("subscription_waived_until")
+
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  user                  User                   @relation("BarberToUser", fields: [userId], references: [id], onDelete: Cascade)
+  verifiedBy            User?                  @relation("VerifiedBy", fields: [verifiedByUserId], references: [id])
+  specialties           BarberSpecialty[]
+  contactRequests       ContactRequest[]
+  favorites             Favorite[]
+  portfolioImages       PortfolioImage[]
+  reviews               Review[]
+  services              Service[]
+  suspensionReason      SuspensionReason?      @map("suspension_reason")
+  suspendedAt           DateTime?              @map("suspended_at")
+  suspendedByUserId     String?                @map("suspended_by_user_id") @db.Uuid
+  subscription          Subscription?
+  suspendedBy           User?                  @relation("SuspendedBy", fields: [suspendedByUserId], references: [id])
+  appeals               SuspensionAppeal[]
+  serviceAreas          ServiceArea[]
+  travelDates           TravelDate[]
+  socialPostGenerations SocialPostGeneration[]
+  referralsReceived     Referral[]             @relation("ReferralsReceived")
+  referralsPerformed    Referral[]             @relation("ReferralsPerformed")
+  referralPayouts       ReferralPayout[]
 
   @@index([userId])
   @@index([slug])
@@ -340,6 +352,34 @@ enum UserRole {
   barber
   client
   admin
+  hnwi
+}
+
+enum BlackLabelLeadStatus {
+  new
+  contacted
+  converted
+  declined
+}
+
+model BlackLabelLead {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName         String               @map("full_name") @db.VarChar(120)
+  email            String               @db.VarChar(254)
+  city             String?              @db.VarChar(120)
+  source           String?              @db.VarChar(120)
+  notes            String?
+  status           BlackLabelLeadStatus @default(new)
+  adminNotes       String?              @map("admin_notes")
+  reviewedAt       DateTime?            @map("reviewed_at")
+  reviewedByUserId String?              @map("reviewed_by_user_id") @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+  @@map("black_label_leads")
 }
 
 enum VerificationStatus {
@@ -347,6 +387,7 @@ enum VerificationStatus {
   approved
   rejected
   suspended
+  expired
 }
 
 enum ClaimStatus {
@@ -385,6 +426,7 @@ enum SubscriptionTier {
   starter
   professional
   elite
+  verified
 }
 
 enum SubscriptionStatus {
@@ -500,4 +542,107 @@ model BlogPost {
   @@index([publishedAt])
   @@index([status])
   @@map("blog_posts")
+}
+
+// ─── CBR v2.0 — Referral & royalty ledger (FEAT-003) ──────────────────────────
+//
+// Honor-system v1: the *performing* barber (the one in the new city who served
+// the traveling client) submits a referral, crediting the *referring* barber
+// (the client's home barber) with a 10% royalty. Admin reviews, approves, and
+// batches monthly payouts. CBR doesn't process bookings, so no automated
+// service-complete trigger — the performing barber self-reports.
+
+enum ReferralStatus {
+  pending
+  approved
+  paid
+  disputed
+  declined
+}
+
+model Referral {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referringBarberId   String         @map("referring_barber_id") @db.Uuid
+  performingBarberId  String         @map("performing_barber_id") @db.Uuid
+  clientFirstName     String?        @map("client_first_name") @db.VarChar(100)
+  clientCity          String?        @map("client_city") @db.VarChar(100)
+  serviceDescription  String         @map("service_description")
+  serviceFeeCents     Int            @map("service_fee_cents")
+  payoutCents         Int            @map("payout_cents")
+  platformCutCents    Int            @map("platform_cut_cents")
+  status              ReferralStatus @default(pending)
+  adminNotes          String?        @map("admin_notes")
+  disputeReason       String?        @map("dispute_reason")
+  submittedAt         DateTime       @default(now()) @map("submitted_at")
+  approvedAt          DateTime?      @map("approved_at")
+  approvedByUserId    String?        @map("approved_by_user_id") @db.Uuid
+  paidAt              DateTime?      @map("paid_at")
+  payoutId            String?        @map("payout_id") @db.Uuid
+
+  referringBarber   BarberProfile   @relation("ReferralsReceived", fields: [referringBarberId], references: [id], onDelete: Cascade)
+  performingBarber  BarberProfile   @relation("ReferralsPerformed", fields: [performingBarberId], references: [id], onDelete: Cascade)
+  payout            ReferralPayout? @relation(fields: [payoutId], references: [id])
+
+  @@index([referringBarberId])
+  @@index([performingBarberId])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([payoutId])
+  @@map("referrals")
+}
+
+model ReferralPayout {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberId  String   @map("barber_id") @db.Uuid
+  totalCents Int     @map("total_cents")
+  batchRef  String?  @map("batch_ref") @db.VarChar(120)
+  notes     String?
+  paidAt    DateTime @default(now()) @map("paid_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  barber    BarberProfile @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  referrals Referral[]
+
+  @@index([barberId])
+  @@index([batchRef])
+  @@index([paidAt])
+  @@map("referral_payouts")
+}
+
+// ─── CBR v2.0 — Grooming Passport (FEAT-002) ──────────────────────────────────
+//
+// Encrypted vault of a client's technical grooming specs (guard sizes, density,
+// products, allergies, notes). Encrypted at rest via AES-256-GCM with a
+// platform-managed key — keyVersion supports rotation. The client owns their
+// passport; barbers only see it via short-lived single-use share tokens that
+// the client mints (typically as a QR code shown at the chair).
+
+model GroomingPassport {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientUserId   String   @unique @map("client_user_id") @db.Uuid
+  encryptedSpecs Bytes    @map("encrypted_specs")
+  keyVersion     Int      @default(1) @map("key_version")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  client User                  @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  shares PassportShareToken[]
+
+  @@map("grooming_passports")
+}
+
+model PassportShareToken {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passportId     String    @map("passport_id") @db.Uuid
+  tokenHash      String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt      DateTime  @map("expires_at")
+  redeemedAt     DateTime? @map("redeemed_at")
+  redeemedByUserId String? @map("redeemed_by_user_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  passport GroomingPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+
+  @@index([passportId])
+  @@index([expiresAt])
+  @@map("passport_share_tokens")
 }

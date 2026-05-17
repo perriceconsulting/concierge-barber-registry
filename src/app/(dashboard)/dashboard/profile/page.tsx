@@ -11,6 +11,8 @@ import { useToast } from '@/components/ui/toast';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
 import { LicenseUploader } from '@/components/barber/license-uploader';
+import { SetupFeeCard } from '@/components/barber/setup-fee-card';
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('PROFILE');
@@ -40,8 +42,13 @@ export default function ProfilePage() {
     acceptsAppointments: true,
   });
 
-  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'approved' | 'rejected' | 'suspended'>('pending');
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'approved' | 'rejected' | 'suspended' | 'expired'>('pending');
   const [licenseDocumentUrl, setLicenseDocumentUrl] = useState<string>('');
+  const [submittedForVerificationAt, setSubmittedForVerificationAt] = useState<string | null>(null);
+  // CBR v2.0 — verification paywall state (FEAT-001)
+  const [setupFeePaidAt, setSetupFeePaidAt] = useState<string | null>(null);
+  const [setupFeeAmountCents, setSetupFeeAmountCents] = useState<number | null>(null);
+  const [foundingMember, setFoundingMember] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmittingLicense, setIsSubmittingLicense] = useState(false);
@@ -52,6 +59,40 @@ export default function ProfilePage() {
   // Fetch existing profile on mount
   useEffect(() => {
     fetchProfile();
+  }, []);
+
+  // Refetch when the tab regains focus — keeps state in sync after admin
+  // actions in another tab (Founding Member grant/revoke, approval, etc.)
+  useVisibilityRefetch(() => {
+    fetchProfile();
+  });
+
+  // CBR v2.0 — surface Stripe Checkout return state from URL params, then strip them.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const setupFee = params.get('setup_fee');
+    if (setupFee === 'paid') {
+      showToast({
+        title: 'Setup fee received',
+        description: 'Thanks. Your application is now ready for our team to review once your license is uploaded.',
+        variant: 'success',
+      });
+    } else if (setupFee === 'canceled') {
+      showToast({
+        title: 'Checkout canceled',
+        description: 'No charge was made. You can pay anytime to unlock verification.',
+        variant: 'warning',
+      });
+    }
+    if (setupFee) {
+      params.delete('setup_fee');
+      params.delete('session_id');
+      const next = params.toString();
+      const url = `${window.location.pathname}${next ? `?${next}` : ''}`;
+      window.history.replaceState({}, '', url);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -89,6 +130,10 @@ export default function ProfilePage() {
           });
           setVerificationStatus(profile.verificationStatus || 'pending');
           setLicenseDocumentUrl(profile.licenseDocumentUrl || '');
+          setSubmittedForVerificationAt(profile.submittedForVerificationAt || null);
+          setSetupFeePaidAt(profile.setupFeePaidAt || null);
+          setSetupFeeAmountCents(profile.setupFeeAmountCents ?? null);
+          setFoundingMember(Boolean(profile.foundingMember));
         }
       } else {
         // Profile doesn't exist yet (404) or another client error —
@@ -176,6 +221,7 @@ export default function ProfilePage() {
           const data = await response.json();
           if (response.ok) {
             setVerificationStatus('pending');
+            setSubmittedForVerificationAt(new Date().toISOString());
             showToast({
               title: 'Success!',
               description: 'License submitted for review',
@@ -367,11 +413,28 @@ export default function ProfilePage() {
               />
             </div>
 
+            {/* CBR v2.0 — Verification Setup Fee gate (FEAT-001).
+                Hidden during onboarding — there's no profile to charge against
+                until the barber has saved their basics. */}
+            {!isNewProfile && (
+              <SetupFeeCard
+                setupFeePaidAt={setupFeePaidAt}
+                setupFeeAmountCents={setupFeeAmountCents}
+                foundingMember={foundingMember}
+                verificationStatus={verificationStatus}
+              />
+            )}
+            {isNewProfile && (
+              <p className="text-xs text-muted-foreground italic">
+                Save your profile first — the verification setup fee unlocks once your basics are on file.
+              </p>
+            )}
+
             <div className="space-y-2">
               <Label>License Document *</Label>
               <LicenseUploader
                 currentDocumentUrl={licenseDocumentUrl}
-                verificationStatus={verificationStatus}
+                verificationStatus={verificationStatus === 'expired' ? 'pending' : verificationStatus}
                 onUploadSuccess={(url) => {
                   setLicenseDocumentUrl(url);
                   showToast({
@@ -400,16 +463,50 @@ export default function ProfilePage() {
                 </a>{' '}
                 for details.
               </p>
-              {licenseDocumentUrl && verificationStatus !== 'pending' && verificationStatus !== 'approved' && (
-                <Button
-                  type="button"
-                  onClick={handleSubmitLicense}
-                  disabled={isSubmittingLicense}
-                  className="mt-2"
-                >
-                  {isSubmittingLicense ? 'Submitting...' : 'Submit for Review'}
-                </Button>
-              )}
+              {(() => {
+                // Show Submit for Review when:
+                // - a license is uploaded
+                // - the barber isn't already approved or suspended
+                // - they haven't already submitted (pending+submitted = waiting on admin)
+                //   OR their previous submission was rejected/expired (resubmit)
+                const alreadyAwaitingReview =
+                  verificationStatus === 'pending' && !!submittedForVerificationAt;
+                const canShowSubmit =
+                  !!licenseDocumentUrl &&
+                  verificationStatus !== 'approved' &&
+                  verificationStatus !== 'suspended' &&
+                  !alreadyAwaitingReview;
+                if (!canShowSubmit) return null;
+                const setupFeeBlocked = !setupFeePaidAt && !foundingMember;
+                return (
+                  <>
+                    <Button
+                      type="button"
+                      onClick={handleSubmitLicense}
+                      disabled={isSubmittingLicense || setupFeeBlocked}
+                      className="mt-2"
+                      title={setupFeeBlocked ? 'Pay the setup fee above before submitting for review.' : undefined}
+                    >
+                      {isSubmittingLicense ? 'Submitting...' : 'Submit for Review'}
+                    </Button>
+                    {setupFeeBlocked && (
+                      <p className="text-xs text-destructive mt-2">
+                        Pay the setup fee above to unlock submission for review.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
+              {/* Already submitted, waiting for admin review */}
+              {licenseDocumentUrl &&
+                verificationStatus === 'pending' &&
+                submittedForVerificationAt && (
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    Submitted for review on{' '}
+                    {new Date(submittedForVerificationAt).toLocaleDateString()} — awaiting admin
+                    approval.
+                  </p>
+                )}
             </div>
           </CardContent>
         </Card>

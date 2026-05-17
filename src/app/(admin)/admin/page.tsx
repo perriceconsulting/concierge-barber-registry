@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ROUTES } from '@/config';
 import { secureFetch } from '@/lib/csrf-client';
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('ADMIN_DASHBOARD');
@@ -68,25 +69,33 @@ export default function AdminDashboardPage() {
   const [recentSignups, setRecentSignups] = useState<RecentSignup[]>([]);
   const [recentImports, setRecentImports] = useState<RecentImport[]>([]);
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        const res = await secureFetch('/api/admin/dashboard');
-        const json = await res.json();
-        if (json.success) {
-          setStats(json.data.stats);
-          setPendingBarbers(json.data.pendingBarbers);
-          setRecentSignups(json.data.recentSignups);
-          setRecentImports(json.data.recentImports || []);
-        }
-      } catch (error) {
-        logger.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setLoading(false);
+  async function fetchDashboard() {
+    try {
+      const res = await secureFetch('/api/admin/dashboard');
+      const json = await res.json();
+      if (json.success) {
+        setStats(json.data.stats);
+        setPendingBarbers(json.data.pendingBarbers);
+        setRecentSignups(json.data.recentSignups);
+        setRecentImports(json.data.recentImports || []);
       }
+    } catch (error) {
+      logger.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     fetchDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch on tab focus — keeps stats + pending verifications fresh after
+  // barber-side actions (registration, license submission, etc.) in another tab.
+  useVisibilityRefetch(() => {
+    fetchDashboard();
+  });
 
   if (loading) {
     return (
@@ -113,8 +122,10 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      {/* Stats Grid — auto-fit so cards reflow when the help drawer pushes the
+          container narrower (and on responsive viewports). Each card needs ~180px
+          minimum; cards collapse from 5→4→3→2→1 columns as space shrinks. */}
+      <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Barbers</CardDescription>
@@ -183,8 +194,8 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Activity Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Activity Grid — auto-fit; cards collapse 2→1 as space shrinks. */}
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(360px,1fr))]">
         {/* Pending Verifications */}
         <Card>
           <CardHeader>
@@ -206,7 +217,9 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">Review</Button>
+                    <Link href={`${ROUTES.ADMIN_BARBERS}?status=pending`}>
+                      <Button size="sm" variant="outline">Review</Button>
+                    </Link>
                   </div>
                 </div>
               ))}

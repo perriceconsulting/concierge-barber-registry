@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { ROUTES, SPECIALTIES } from '@/config';
 import { slugify } from '@/lib/slug';
+import { FAQS } from '@/lib/copy/faqs';
+import { FaqSection } from '@/components/seo/faq-section';
 
 const FEATURED_SPECIALTIES = [
   'Fades',
@@ -233,8 +235,15 @@ export default function ForClientsPage() {
         </Container>
       </section>
 
+      {/* FAQs — AEO/SGE answers for top-funnel client queries */}
+      <FaqSection
+        items={FAQS.forClients}
+        background="transparent"
+        lede="What clients ask before searching the Concierge Barber Registry."
+      />
+
       {/* FINAL CTA */}
-      <section className="bg-primary py-16 text-primary-foreground">
+      <section className="bg-card border-y border-border py-16 text-foreground spotlight-soft">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">Ready for a Great Cut?</h2>

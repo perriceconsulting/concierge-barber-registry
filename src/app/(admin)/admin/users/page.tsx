@@ -15,7 +15,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'client' | 'barber' | 'admin';
+  role: 'client' | 'barber' | 'admin' | 'hnwi';
   isActive: boolean;
   emailVerified: boolean;
   createdAt: string;
@@ -31,7 +31,7 @@ interface Pagination {
 export default function AdminUsersPage() {
   const { showToast } = useToast();
   const { showConfirm } = useModal();
-  const [filter, setFilter] = useState<'all' | 'client' | 'barber' | 'admin'>('all');
+  const [filter, setFilter] = useState<'all' | 'client' | 'barber' | 'admin' | 'hnwi'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -90,6 +90,7 @@ export default function AdminUsersPage() {
       case 'admin': return 'destructive';
       case 'barber': return 'default';
       case 'client': return 'secondary';
+      case 'hnwi': return 'success';
       default: return 'secondary';
     }
   };
@@ -215,8 +216,8 @@ export default function AdminUsersPage() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats — auto-fit so cards reflow when the help drawer is open */}
+      <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
@@ -416,6 +417,7 @@ export default function AdminUsersPage() {
                 <option value="client">Client</option>
                 <option value="barber">Barber</option>
                 <option value="admin">Admin</option>
+                <option value="hnwi">HNWI (Black Label)</option>
               </Select>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setRoleChangeUser(null)}>

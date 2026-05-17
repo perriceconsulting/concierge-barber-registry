@@ -16,6 +16,10 @@ export const ROUTES = {
   BLOG: '/blog',
   FOR_BARBERS: '/for-barbers',
   FOR_CLIENTS: '/for-clients',
+  PRO: '/pro',
+  CLIENT: '/client',
+  BLACK_LABEL: '/black-label',
+  BLACK_LABEL_REQUEST_ACCESS: '/black-label/request-access',
   PRIVACY: '/privacy-policy',
   TERMS: '/terms-of-service',
 
@@ -39,6 +43,7 @@ export const ROUTES = {
   DASHBOARD_HELP: '/dashboard/help',
   DASHBOARD_SERVICE_AREAS: '/dashboard/service-areas',
   DASHBOARD_APPEAL: '/dashboard/appeal',
+  DASHBOARD_CREDENTIALS: '/dashboard/credentials',
 
   // Admin routes
   ADMIN: '/admin',
@@ -53,6 +58,8 @@ export const ROUTES = {
   ADMIN_SOCIAL: '/admin/social',
   ADMIN_BLOG: '/admin/blog',
   ADMIN_AUDIT_LOG: '/admin/audit-log',
+  ADMIN_BLACK_LABEL_LEADS: '/admin/black-label-leads',
+  ADMIN_REFERRALS: '/admin/referrals',
 
   // API routes
   API_AUTH_REGISTER: '/api/auth/register',
@@ -70,13 +77,14 @@ export const ROUTES = {
 } as const;
 
 export const COLORS = {
-  primary: '#1A1A2E', // Deep Navy/Black
-  secondary: '#C9A96E', // Gold/Brass
-  accent: '#E94560', // Bold Red
-  background: '#FFFFFF',
-  surface: '#F5F5F5',
-  textPrimary: '#1A1A2E',
-  textSecondary: '#6B7280',
+  // CBR v2.0 — Dark luxury / nightclub palette
+  primary: '#0D0D0D', // Obsidian (used for viewport themeColor / browser chrome)
+  secondary: '#D4AF37', // Champagne gold accent
+  accent: '#1f1f1f', // Elevated dark surface
+  background: '#0D0D0D',
+  surface: '#121212',
+  textPrimary: '#F5F5F5',
+  textSecondary: '#9a9a9a',
   success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',

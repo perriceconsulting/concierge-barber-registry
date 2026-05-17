@@ -31,8 +31,14 @@ export function LicenseUploader({
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-  const isLocked = (verificationStatus === 'pending' || verificationStatus === 'approved')
-    || (verificationStatus === 'suspended' && !allowWhenSuspended);
+  // Only lock 'pending' if a document is already uploaded — otherwise a fresh
+  // profile (status defaults to 'pending') would be permanently blocked from
+  // its first upload. Approval and suspension always lock.
+  const hasDocument = Boolean(currentDocumentUrl);
+  const isLocked =
+    verificationStatus === 'approved' ||
+    (verificationStatus === 'pending' && hasDocument) ||
+    (verificationStatus === 'suspended' && !allowWhenSuspended);
 
   const validateFile = (file: File): string | null => {
     if (!ACCEPTED_TYPES.includes(file.type)) {

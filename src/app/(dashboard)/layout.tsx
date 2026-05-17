@@ -10,7 +10,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ToastProvider } from '@/components/ui/toast';
 import { ModalProvider } from '@/components/ui/modal';
 import { useBarberNotifications } from '@/hooks/useBarberNotifications';
+import { HelpDrawer } from '@/components/help-drawer';
+import { BarberHelpContent } from '@/components/barber/barber-help-content';
 
+// Help is rendered as a drawer-trigger button at the bottom of the sidebar,
+// not as a nav Link — so it's intentionally absent from these arrays.
 const fullNavigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: '📊' },
   { name: 'Profile', href: ROUTES.DASHBOARD_PROFILE, icon: '👤' },
@@ -20,13 +24,12 @@ const fullNavigation = [
   { name: 'Reviews', href: ROUTES.DASHBOARD_REVIEWS, icon: '⭐' },
   { name: 'Requests', href: ROUTES.DASHBOARD_REQUESTS, icon: '📬' },
   { name: 'Subscription', href: ROUTES.DASHBOARD_SUBSCRIPTION, icon: '💳' },
+  { name: 'Credentials', href: ROUTES.DASHBOARD_CREDENTIALS, icon: '🪪' },
   { name: 'Settings', href: ROUTES.DASHBOARD_SETTINGS, icon: '⚙️' },
-  { name: 'Help', href: ROUTES.DASHBOARD_HELP, icon: '❓' },
 ];
 
 const onboardingNavigation = [
   { name: 'Profile', href: ROUTES.DASHBOARD_PROFILE, icon: '👤' },
-  { name: 'Help', href: ROUTES.DASHBOARD_HELP, icon: '❓' },
 ];
 
 export default function DashboardLayout({
@@ -36,9 +39,24 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'loading' | 'complete' | 'incomplete'>('loading');
   const [userData, setUserData] = useState<{ emailVerified?: boolean } | null>(null);
   const [profileData, setProfileData] = useState<{ verificationStatus?: string; licenseDocumentUrl?: string | null; verificationNotes?: string | null } | null>(null);
+
+  // Global "?" shortcut to toggle help — skip when typing in inputs/textareas
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== '?') return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      e.preventDefault();
+      setHelpOpen((open) => !open);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,13 +92,13 @@ export default function DashboardLayout({
 
   const isSuspended = profileData?.verificationStatus === 'suspended';
   const isOnboarding = profileStatus === 'incomplete';
+  const isLoadingProfile = profileStatus === 'loading';
   const isProfilePage = pathname === ROUTES.DASHBOARD_PROFILE;
-  const isHelpPage = pathname === ROUTES.DASHBOARD_HELP;
   const baseNavigation = isOnboarding ? onboardingNavigation : fullNavigation;
   const navigation = isSuspended
     ? [...baseNavigation, { name: 'Appeal', href: ROUTES.DASHBOARD_APPEAL, icon: '📋' }]
     : baseNavigation;
-  const showOnboardingPrompt = isOnboarding && !isProfilePage && !isHelpPage;
+  const showOnboardingPrompt = isOnboarding && !isProfilePage;
 
   return (
     <ToastProvider>
@@ -111,41 +129,77 @@ export default function DashboardLayout({
             />
           )}
 
-          {/* Sidebar */}
+          {/* Sidebar — flex column with viewport-height constraint so the Help
+              button always stays in view (mirrors the admin sidebar pattern). */}
           <aside
             className={cn(
-              'fixed lg:static z-30 top-16 bottom-0 w-64 border-r bg-background lg:bg-muted/10 transition-transform duration-200',
+              'fixed lg:sticky z-30 top-16 bottom-0 lg:bottom-auto lg:h-[calc(100vh-4rem)] w-64 border-r bg-background lg:bg-muted/10 transition-transform duration-200 flex flex-col',
               sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             )}
           >
-            <div className="p-6 h-full overflow-y-auto">
+            <div className="flex-1 p-6 overflow-y-auto">
               <h2 className="text-lg font-semibold text-primary mb-4">
-                {isOnboarding ? 'Getting Started' : 'Barber Dashboard'}
+                {isLoadingProfile ? ' ' : isOnboarding ? 'Getting Started' : 'Barber Dashboard'}
               </h2>
-              <nav className="space-y-1">
-                {navigation.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-primary'
-                      )}
-                    >
-                      <span className="text-lg">{item.icon}</span>
-                      {item.name}
-                      {item.href === ROUTES.DASHBOARD && hasActionRequired && (
-                        <span className="ml-auto w-2 h-2 rounded-full bg-destructive shrink-0" />
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
+              {isLoadingProfile ? (
+                // Skeleton — avoid flashing the wrong nav (full vs onboarding) before
+                // we know if the barber has a profile.
+                <nav className="space-y-1" aria-busy="true" aria-label="Loading navigation">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-9 rounded-md bg-muted/40 animate-pulse"
+                      style={{ width: `${70 + (i % 3) * 10}%` }}
+                    />
+                  ))}
+                </nav>
+              ) : (
+                <nav className="space-y-1">
+                  {navigation.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-primary'
+                        )}
+                      >
+                        <span className="text-lg">{item.icon}</span>
+                        {item.name}
+                        {item.href === ROUTES.DASHBOARD && hasActionRequired && (
+                          <span className="ml-auto w-2 h-2 rounded-full bg-destructive shrink-0" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              )}
+            </div>
+
+            {/* Help — pinned at the bottom of the sidebar; opens the drawer.
+                Mirrors the admin-side pattern. */}
+            <div className="px-6 py-4 border-t border-border/50 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setHelpOpen(true);
+                  setSidebarOpen(false);
+                }}
+                title="Open help (press ?)"
+                aria-label="Open help"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground/80 hover:bg-muted hover:text-primary transition-colors"
+              >
+                <span className="text-lg">❓</span>
+                Help
+                <kbd className="ml-auto text-[10px] text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded border border-border">
+                  ?
+                </kbd>
+              </button>
             </div>
           </aside>
 
@@ -170,6 +224,17 @@ export default function DashboardLayout({
               children
             )}
           </main>
+
+          {/* Help drawer — sibling of main so opening it pushes content rather
+              than overlaying (at ≥1100px). Below that it's a centered modal. */}
+          <HelpDrawer
+            open={helpOpen}
+            onClose={() => setHelpOpen(false)}
+            title="Barber Help"
+            subtitle="Reference for verification, billing, and your dashboard"
+          >
+            <BarberHelpContent />
+          </HelpDrawer>
         </div>
       </ModalProvider>
     </ToastProvider>

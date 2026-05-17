@@ -21,6 +21,21 @@ export type AuditAction =
   | 'barber.verification_reject'
   | 'barber.verification_suspend'
   | 'barber.reinstate'
+  | 'barber.founding_member_grant'
+  | 'barber.founding_member_revoke'
+  | 'barber.setup_fee_paid'
+  | 'user.hnwi_grant'
+  | 'user.hnwi_revoke'
+  | 'black_label.lead_received'
+  | 'black_label.lead_status_changed'
+  | 'subscription.trial_expiring_notice_sent'
+  | 'barber.license_expired_auto'
+  | 'barber.reverification_notice_sent'
+  | 'referral.submit'
+  | 'referral.approve'
+  | 'referral.dispute'
+  | 'referral.decline'
+  | 'referral.payout_batch'
   | 'review.create'
   | 'review.update'
   | 'review.delete'
@@ -116,7 +131,7 @@ export async function auditAuthEvent(
  * Create audit log for barber verification events
  */
 export async function auditVerificationEvent(
-  action: Extract<AuditAction, 'barber.verification_submit' | 'barber.verification_approve' | 'barber.verification_reject' | 'barber.verification_suspend' | 'barber.reinstate'>,
+  action: Extract<AuditAction, 'barber.verification_submit' | 'barber.verification_approve' | 'barber.verification_reject' | 'barber.verification_suspend' | 'barber.reinstate' | 'barber.founding_member_grant' | 'barber.founding_member_revoke' | 'barber.setup_fee_paid'>,
   adminUserId: string,
   barberProfileId: string,
   request: Request,

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
+import { VETTING_FEE_PRICING } from '@/lib/copy/v2';
 
-export type TierName = 'starter' | 'professional' | 'elite';
+export type TierName = 'starter' | 'professional' | 'elite' | 'verified';
 
 export type FeatureKey =
   | 'portfolioImages'
@@ -69,6 +70,24 @@ export const TIER_LIMITS: Record<TierName, TierConfig> = {
       profileBadge: 'Elite',
     },
   },
+  // CBR v2.0 — single flat tier post-verification (FEAT-001).
+  // Replaces the old starter/pro/elite ladder for new signups.
+  verified: {
+    name: 'verified',
+    displayName: 'Verified Member',
+    limits: {
+      portfolioImages: 100,
+      services: 50,
+      serviceAreas: 20,
+      travelDates: 10,
+      socialPostsPerMonth: Infinity,
+      contactRequestsPerMonth: Infinity,
+      reviewResponses: true,
+      seoStructuredData: true,
+      featuredInSearch: true,
+      profileBadge: 'Verified',
+    },
+  },
 };
 
 export const SUBSCRIPTION_PRICES = {
@@ -80,9 +99,49 @@ export const SUBSCRIPTION_PRICES = {
     monthly: process.env.STRIPE_PRICE_ELITE_MONTHLY!,
     annual: process.env.STRIPE_PRICE_ELITE_ANNUAL!,
   },
+  // CBR v2.0 — Verified Member recurring price (post-verification trial conversion)
+  verified: {
+    monthly: process.env.STRIPE_PRICE_VERIFIED_MONTHLY!,
+    annual: process.env.STRIPE_PRICE_VERIFIED_ANNUAL!,
+  },
 } as const;
 
 export const TRIAL_DAYS = 14;
+
+/**
+ * CBR v2.0 — One-time setup-fee pricing (FEAT-001).
+ * Charged before a barber can submit for verification.
+ * Founding Members (first {@link VETTING_FEE_PRICING.intro_limit}) pay the intro rate.
+ */
+export const SETUP_FEE_PRICING = VETTING_FEE_PRICING;
+export const VERIFIED_TRIAL_DAYS = 30;
+
+/**
+ * Decide which setup-fee amount applies to the next applicant.
+ * Server-side check — clients should never compute this themselves.
+ */
+export async function resolveSetupFeeAmountCents(): Promise<{
+  amountCents: number;
+  tier: 'intro' | 'standard';
+  introSeatsRemaining: number;
+}> {
+  const paidCount = await prisma.barberProfile.count({
+    where: { setupFeePaidAt: { not: null } },
+  });
+  const introSeatsRemaining = Math.max(0, SETUP_FEE_PRICING.intro_limit - paidCount);
+  if (introSeatsRemaining > 0) {
+    return {
+      amountCents: SETUP_FEE_PRICING.intro * 100,
+      tier: 'intro',
+      introSeatsRemaining,
+    };
+  }
+  return {
+    amountCents: SETUP_FEE_PRICING.standard * 100,
+    tier: 'standard',
+    introSeatsRemaining: 0,
+  };
+}
 
 export interface FeatureAccess {
   allowed: boolean;
@@ -213,9 +272,12 @@ export function getTierFromPriceId(priceId: string): TierName {
   const proAnnual = process.env.STRIPE_PRICE_PRO_ANNUAL;
   const eliteMonthly = process.env.STRIPE_PRICE_ELITE_MONTHLY;
   const eliteAnnual = process.env.STRIPE_PRICE_ELITE_ANNUAL;
+  const verifiedMonthly = process.env.STRIPE_PRICE_VERIFIED_MONTHLY;
+  const verifiedAnnual = process.env.STRIPE_PRICE_VERIFIED_ANNUAL;
 
   if (priceId === proMonthly || priceId === proAnnual) return 'professional';
   if (priceId === eliteMonthly || priceId === eliteAnnual) return 'elite';
+  if (priceId === verifiedMonthly || priceId === verifiedAnnual) return 'verified';
 
   return 'starter';
 }
