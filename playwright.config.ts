@@ -8,9 +8,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // mkcert-generated cert may not be trusted in Playwright's bundled
+    // Chromium even after Windows trust store install — bypass at the
+    // browser layer for tests.
+    ignoreHTTPSErrors: true,
   },
 
   projects: [
@@ -21,9 +25,10 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: 'npm run dev:https',
+    url: 'https://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    ignoreHTTPSErrors: true,
   },
 });
