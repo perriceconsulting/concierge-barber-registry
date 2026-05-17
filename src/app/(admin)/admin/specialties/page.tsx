@@ -191,7 +191,7 @@ export default function AdminSpecialtiesPage() {
           <CardTitle>Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]">
             <div>
               <p className="text-sm text-muted-foreground">Total Specialties</p>
               <p className="text-2xl font-bold">{specialties.length}</p>

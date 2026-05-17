@@ -205,7 +205,7 @@ export default function AdminSocialPage() {
       {step === 'template' && (
         <div>
           <h3 className="font-medium mb-3 text-muted-foreground">Recruit Barbers</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] mb-6">
             {(Object.entries(TEMPLATE_CONFIGS) as [TemplateType, typeof TEMPLATE_CONFIGS[TemplateType]][])
               .filter(([, c]) => c.audience === 'barbers')
               .map(([key, config]) => (
@@ -220,7 +220,7 @@ export default function AdminSocialPage() {
           </div>
 
           <h3 className="font-medium mb-3 text-muted-foreground">Attract Clients</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] mb-6">
             {(Object.entries(TEMPLATE_CONFIGS) as [TemplateType, typeof TEMPLATE_CONFIGS[TemplateType]][])
               .filter(([, c]) => c.audience === 'clients')
               .map(([key, config]) => (

@@ -227,8 +227,8 @@ export default function AdminReviewsPage() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Stats — auto-fit so cards reflow when the help drawer is open */}
+      <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Reviews</CardDescription>

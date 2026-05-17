@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "node scripts/predev.js",
     "dev": "concurrently --names studio,next \"prisma studio\" \"next dev --turbopack\"",
+    "dev:https": "concurrently --names studio,next \"prisma studio\" \"next dev --turbopack --experimental-https --experimental-https-key ./certificates/lan-key.pem --experimental-https-cert ./certificates/lan.pem --hostname 0.0.0.0\"",
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
@@ -28,6 +29,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
+    "@react-pdf/renderer": "^4.5.1",
     "@tailwindcss/typography": "^0.5.19",
     "@vercel/blob": "^2.3.1",
     "@vercel/kv": "^3.0.0",
@@ -39,6 +41,7 @@
     "jose": "^5.9.6",
     "lucide-react": "^0.460.0",
     "next": "16.1.6",
+    "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.9.3",
@@ -57,6 +60,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.1",
