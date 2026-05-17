@@ -1,11 +1,28 @@
 import { NextRequest } from 'next/server';
 import { getAuthUser } from '@/lib/api/middleware';
-import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
+import { ApiError, handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const authUser = await getAuthUser(request);
+    // /api/auth/me is the "who am I?" question used by the global header.
+    // For guests it should return 200 { user: null } rather than 401 — a 401
+    // pollutes the browser console on every public-page load. Auth-required
+    // endpoints (everywhere else) still 401 correctly.
+    let authUser;
+    try {
+      authUser = await getAuthUser(request);
+    } catch (err) {
+      // Only swallow the routine "not logged in" / token-issue cases. Other
+      // errors (e.g. DB failures inside getAuthUser) should still surface.
+      if (
+        err instanceof ApiError &&
+        ['UNAUTHORIZED', 'AUTH_TOKEN_EXPIRED', 'AUTH_TOKEN_INVALID'].includes(err.code)
+      ) {
+        return successResponse({ user: null });
+      }
+      throw err;
+    }
 
     // Fetch full user data from database
     const user = await prisma.user.findUnique({
