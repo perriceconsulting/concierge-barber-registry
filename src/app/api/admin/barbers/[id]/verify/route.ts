@@ -6,6 +6,7 @@ import { sendLicenseApprovedEmail, sendLicenseRejectedEmail, sendLicenseSuspende
 import { auditVerificationEvent } from '@/lib/audit';
 import { getStripe } from '@/lib/stripe';
 import { isAppealable } from '@/lib/suspension';
+import { SUBSCRIPTION_PRICES, VERIFIED_TRIAL_DAYS } from '@/lib/subscription';
 import { SuspensionReason } from '@prisma/client';
 import { z } from 'zod';
 import { createLogger } from '@/lib/logger';
@@ -57,6 +58,19 @@ const verifyBarberHandler = async (
     // Block approval if no license document on file
     if (status === 'approved' && !barberProfile.licenseDocumentUrl) {
       throw new ApiError(400, 'MISSING_LICENSE_DOCUMENT', 'Cannot approve barber without a license document on file');
+    }
+
+    // CBR v2.0 — gate approval on the setup fee unless this is a Founding Member.
+    if (
+      status === 'approved' &&
+      !barberProfile.foundingMember &&
+      !barberProfile.setupFeePaidAt
+    ) {
+      throw new ApiError(
+        400,
+        'SETUP_FEE_UNPAID',
+        'Cannot approve verification: setup fee has not been paid. Either flag the barber as a Founding Member or have them complete the setup payment first.',
+      );
     }
 
     // Build update data based on status
@@ -151,6 +165,26 @@ const verifyBarberHandler = async (
       }
     );
 
+    // CBR v2.0 — On approval, auto-create the Verified Member trial subscription.
+    // Founding Members skip the recurring sub entirely (subscriptionWaivedUntil is set
+    // far in the future via the founding-member admin endpoint).
+    if (status === 'approved' && !updatedProfile.foundingMember) {
+      try {
+        await ensureVerifiedTrialSubscription(barberId, updatedProfile.user.email, {
+          firstName: updatedProfile.user.firstName,
+          lastName: updatedProfile.user.lastName,
+          userId: updatedProfile.user.id,
+        });
+      } catch (subError) {
+        // Log but don't block approval — admin can re-trigger sub creation later.
+        logger.error('Failed to auto-create verified trial subscription on approval', {
+          barberId,
+          errorType: subError instanceof Error ? subError.name : 'Unknown',
+          message: subError instanceof Error ? subError.message : String(subError),
+        });
+      }
+    }
+
     // Send email notification to barber
     if (status === 'approved') {
       await sendLicenseApprovedEmail(
@@ -184,3 +218,92 @@ const verifyBarberHandler = async (
 };
 
 export const PATCH = withAuth(verifyBarberHandler, { requiredRole: 'admin' });
+
+/**
+ * CBR v2.0 — Create or hydrate the Verified Member trial subscription on Stripe.
+ *
+ * Idempotent: if a subscription row already exists for this barber, no-op
+ * (treat as already provisioned). The barber's trialEndsAt drives the day-25
+ * reminder + day-30 conversion cron (W8).
+ *
+ * If the verified-tier price IDs aren't configured in env, this throws —
+ * the caller logs and continues so the verification approval itself still succeeds.
+ */
+async function ensureVerifiedTrialSubscription(
+  barberProfileId: string,
+  email: string,
+  user: { firstName: string; lastName: string; userId: string },
+) {
+  const existing = await prisma.subscription.findUnique({
+    where: { barberProfileId },
+  });
+
+  // Already provisioned — leave it alone.
+  if (existing?.stripeSubscriptionId) {
+    logger.info('Verified trial subscription already exists, skipping provisioning', {
+      barberProfileId,
+    });
+    return;
+  }
+
+  const verifiedMonthlyPriceId = SUBSCRIPTION_PRICES.verified.monthly;
+  if (!verifiedMonthlyPriceId) {
+    throw new Error(
+      'STRIPE_PRICE_VERIFIED_MONTHLY env var is not configured — cannot auto-create trial subscription. Create the Verified Member product in Stripe Dashboard and set the price ID.',
+    );
+  }
+
+  const stripe = getStripe();
+
+  // Reuse Stripe customer from prior setup-fee charge if present.
+  let customerId = existing?.stripeCustomerId;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email,
+      name: `${user.firstName} ${user.lastName}`,
+      metadata: { barberProfileId, userId: user.userId },
+    });
+    customerId = customer.id;
+  }
+
+  const stripeSub = await stripe.subscriptions.create({
+    customer: customerId,
+    items: [{ price: verifiedMonthlyPriceId }],
+    trial_period_days: VERIFIED_TRIAL_DAYS,
+    metadata: { barberProfileId, source: 'cbr_v2_admin_approval' },
+  });
+
+  const item = stripeSub.items.data[0];
+  const periodStart = item ? new Date(item.current_period_start * 1000) : null;
+  const periodEnd = item ? new Date(item.current_period_end * 1000) : null;
+
+  await prisma.subscription.upsert({
+    where: { barberProfileId },
+    create: {
+      barberProfileId,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: stripeSub.id,
+      stripePriceId: verifiedMonthlyPriceId,
+      tier: 'verified',
+      status: stripeSub.status === 'trialing' ? 'trialing' : 'active',
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      trialEndsAt: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
+    },
+    update: {
+      stripeSubscriptionId: stripeSub.id,
+      stripePriceId: verifiedMonthlyPriceId,
+      tier: 'verified',
+      status: stripeSub.status === 'trialing' ? 'trialing' : 'active',
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      trialEndsAt: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
+    },
+  });
+
+  logger.info('Verified trial subscription provisioned', {
+    barberProfileId,
+    stripeSubscriptionId: stripeSub.id,
+    trialEnd: stripeSub.trial_end,
+  });
+}

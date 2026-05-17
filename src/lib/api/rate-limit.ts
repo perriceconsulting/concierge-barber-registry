@@ -120,6 +120,15 @@ export async function rateLimit(
   request: NextRequest,
   config: RateLimitConfig
 ): Promise<void> {
+  // Dev bypass — opt-out via DISABLE_RATE_LIMITING_IN_DEV=false to test the real limits.
+  // Production is never bypassed regardless of the flag.
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.DISABLE_RATE_LIMITING_IN_DEV !== 'false'
+  ) {
+    return;
+  }
+
   const identifier = config.keyGenerator
     ? config.keyGenerator(request)
     : getClientIdentifier(request);

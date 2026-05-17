@@ -1,13 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { withAuth } from '@/lib/api/middleware';
+import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError, ApiError, ResourceErrors } from '@/lib/api/errors';
+import { createAuditLog } from '@/lib/audit';
+import { createLogger } from '@/lib/logger';
 
-const VALID_ROLES = ['client', 'barber', 'admin'] as const;
+const logger = createLogger('ADMIN_USER_UPDATE');
+
+// CBR v2.0 — `hnwi` added (W7) for invitation-only Black Label access.
+const VALID_ROLES = ['client', 'barber', 'admin', 'hnwi'] as const;
 
 // PATCH /api/admin/users/[id] - Update user (admin only)
-const updateUserHandler = async (request: NextRequest, context?: { params: Promise<{ id: string }> }) => {
+const updateUserHandler = async (request: AuthRequest, context?: { params: Promise<{ id: string }> }) => {
   try {
+    const adminUserId = request.userId!;
     const { id } = await context!.params;
     const body = await request.json();
 
@@ -29,7 +35,7 @@ const updateUserHandler = async (request: NextRequest, context?: { params: Promi
 
     if (body.role !== undefined) {
       if (!VALID_ROLES.includes(body.role)) {
-        throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid role. Must be one of: client, barber, admin');
+        throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid role. Must be one of: client, barber, admin, hnwi');
       }
       updateData.role = body.role;
     }
@@ -54,6 +60,29 @@ const updateUserHandler = async (request: NextRequest, context?: { params: Promi
         updatedAt: true,
       },
     });
+
+    // CBR v2.0 — audit HNWI grant/revoke for compliance
+    if (body.role !== undefined && existingUser.role !== body.role) {
+      const grantedHnwi = body.role === 'hnwi';
+      const revokedHnwi = existingUser.role === 'hnwi' && body.role !== 'hnwi';
+      if (grantedHnwi || revokedHnwi) {
+        await createAuditLog({
+          actorUserId: adminUserId,
+          action: grantedHnwi ? 'user.hnwi_grant' : 'user.hnwi_revoke',
+          entityType: 'user',
+          entityId: id,
+          details: {
+            previousRole: existingUser.role,
+            newRole: body.role,
+            email: existingUser.email,
+          },
+        });
+        logger.info(`HNWI ${grantedHnwi ? 'granted' : 'revoked'}`, {
+          userId: id,
+          previousRole: existingUser.role,
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,
