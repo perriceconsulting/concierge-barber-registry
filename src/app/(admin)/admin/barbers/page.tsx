@@ -537,7 +537,7 @@ export default function AdminBarbersPage() {
                 onClick={() => setFilter('appeals')}
               >
                 Appeals {appealsCount > 0 && (
-                  <span className="ml-1 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                  <span className="ml-1 bg-amber-500 text-amber-950 text-xs rounded-full px-1.5 py-0.5">
                     {appealsCount}
                   </span>
                 )}

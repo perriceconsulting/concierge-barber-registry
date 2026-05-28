@@ -141,30 +141,30 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-blue-500/50 bg-blue-50/50">
+        <Card className="border-blue-500/40 bg-blue-500/10">
           <CardHeader className="pb-2">
             <CardDescription>Unclaimed Imports</CardDescription>
-            <CardTitle className="text-3xl text-blue-700">
+            <CardTitle className="text-3xl text-blue-400">
               {stats.unclaimedBarbers}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Link href={ROUTES.ADMIN_OUTREACH}>
-              <Button variant="link" className="p-0 h-auto text-blue-700">
+              <Button variant="link" className="p-0 h-auto text-blue-400">
                 Manage outreach
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="border-yellow-500/50 bg-yellow-50/50">
+        <Card className="border-yellow-500/40 bg-yellow-500/10">
           <CardHeader className="pb-2">
             <CardDescription>Pending Verifications</CardDescription>
-            <CardTitle className="text-3xl text-yellow-600">{stats.pendingVerifications}</CardTitle>
+            <CardTitle className="text-3xl text-yellow-400">{stats.pendingVerifications}</CardTitle>
           </CardHeader>
           <CardContent>
             <Link href={ROUTES.ADMIN_BARBERS}>
-              <Button variant="link" className="p-0 h-auto text-yellow-600">Review now</Button>
+              <Button variant="link" className="p-0 h-auto text-yellow-400">Review now</Button>
             </Link>
           </CardContent>
         </Card>
