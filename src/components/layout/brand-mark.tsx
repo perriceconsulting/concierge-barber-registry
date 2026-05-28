@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { APP_CONFIG } from '@/config';
 
 interface BrandMarkProps {
@@ -21,42 +22,16 @@ export function BrandMark({
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <svg
+      {/* next/image optimizes the 2048px source down to the rendered size, so the
+          full-res brand-logo.jpeg never ships at full weight. */}
+      <Image
+        src="/brand-logo.jpeg"
+        alt={APP_CONFIG.name}
         width={mark}
         height={mark}
-        viewBox="0 0 48 48"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-        className="shrink-0"
-      >
-        <defs>
-          <linearGradient id="cbr-mark-gold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#E8C46B" />
-            <stop offset="50%" stopColor="#D4AF37" />
-            <stop offset="100%" stopColor="#9C7E1E" />
-          </linearGradient>
-        </defs>
-        <rect
-          width="48"
-          height="48"
-          rx="10"
-          fill="#0D0D0D"
-          stroke="url(#cbr-mark-gold)"
-          strokeWidth="1.5"
-        />
-        <text
-          x="24"
-          y="33"
-          fontSize="28"
-          fontFamily="Georgia, 'Times New Roman', serif"
-          fontWeight="700"
-          textAnchor="middle"
-          fill="url(#cbr-mark-gold)"
-          letterSpacing="-0.02em"
-        >
-          C
-        </text>
-      </svg>
+        priority
+        className="shrink-0 rounded-lg object-cover ring-1 ring-cbr-gold/30"
+      />
       {showWordmark && (
         <span
           className={`font-serif font-bold tracking-tight text-cbr-gold leading-none ${wordmark}`}

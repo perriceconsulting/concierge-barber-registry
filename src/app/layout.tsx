@@ -89,10 +89,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  icons: {
-    icon: '/favicon.svg',
-    apple: '/favicon.svg',
-  },
+  // Icons are auto-detected from app/favicon.ico + app/apple-icon.png.
   alternates: {
     canonical: '/',
   },
