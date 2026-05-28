@@ -37,6 +37,7 @@ model User {
   sessions              Session[]
   verificationTokens    VerificationToken[]
   groomingPassport      GroomingPassport?
+  outreachNotesAuthored OutreachNote[]
 
   @@index([email])
   @@index([role])
@@ -157,6 +158,7 @@ model BarberProfile {
   referralsReceived     Referral[]             @relation("ReferralsReceived")
   referralsPerformed    Referral[]             @relation("ReferralsPerformed")
   referralPayouts       ReferralPayout[]
+  outreachNoteEntries   OutreachNote[]
 
   @@index([userId])
   @@index([slug])
@@ -171,6 +173,20 @@ model BarberProfile {
   @@index([claimStatus])
   @@index([outreachStatus])
   @@map("barber_profiles")
+}
+
+model OutreachNote {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId String        @map("profile_id") @db.Uuid
+  authorId  String?       @map("author_id") @db.Uuid
+  body      String
+  createdAt DateTime      @default(now()) @map("created_at")
+  profile   BarberProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  author    User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("outreach_note_entries")
 }
 
 model Specialty {

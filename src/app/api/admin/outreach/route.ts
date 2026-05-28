@@ -72,8 +72,16 @@ const listHandler = async (request: NextRequest) => {
         dataSource: true,
         createdAt: true,
         user: { select: { firstName: true, lastName: true } },
+        _count: { select: { outreachNoteEntries: true } },
       },
     });
+
+    // Flatten the thread entry count onto each profile so the card can show
+    // "Notes (N)" without loading the full thread.
+    const profilesWithNoteCount = profiles.map(({ _count, ...p }) => ({
+      ...p,
+      noteCount: _count.outreachNoteEntries,
+    }));
 
     // Aggregate counts by outreachStatus for filter chips
     const counts = await prisma.barberProfile.groupBy({
@@ -91,7 +99,7 @@ const listHandler = async (request: NextRequest) => {
 
     return NextResponse.json({
       success: true,
-      data: { profiles, counts: countMap },
+      data: { profiles: profilesWithNoteCount, counts: countMap },
     });
   } catch (error) {
     return handleApiError(error);
