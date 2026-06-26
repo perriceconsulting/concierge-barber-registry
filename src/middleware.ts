@@ -5,6 +5,13 @@ import { verifyAccessToken, verifyRefreshToken, generateAccessToken, TokenExpire
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Short marketing alias used on the barber-acquisition ads
+  // (conciergebarberregistry.com/join) — hard-redirect straight to barber
+  // signup to match the "Get Registered" CTA.
+  if (pathname === '/join') {
+    return NextResponse.redirect(new URL('/register?role=barber', request.url));
+  }
+
   // Create response
   const response = await handleProtectedRoutes(request);
 
