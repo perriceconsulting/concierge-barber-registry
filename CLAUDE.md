@@ -164,7 +164,11 @@ fail to load with `ReferenceError: Request is not defined`.
 test:integration` matched 0 tests and exited clean, which is worse than failing.
 
 Real E2E is the Playwright suite in top-level [e2e/](e2e/), run separately via
-`npm run test:e2e` against a live server. There is no jest "e2e" directory anymore; the one that
+`npm run test:e2e` against a live server. One of those specs,
+[effect-refetch-loops.spec.ts](e2e/effect-refetch-loops.spec.ts), exists because a broken effect
+dependency is invisible to tsc, eslint *and* jest — the types check, the lint rule is satisfied,
+and nothing asserts. It only shows up as a browser hammering an endpoint, so that's where it's
+caught. There is no jest "e2e" directory anymore; the one that
 existed mocked the database, email, and filesystem, so nothing about it was end-to-end.
 
 Coverage is scoped to `src/lib` and `src/hooks` — the code these suites actually exercise —
