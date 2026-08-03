@@ -297,6 +297,9 @@ export default function AdminSocialPage() {
                   <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 ${photoLoading ? 'opacity-50 pointer-events-none' : ''}`}>
                     {filteredPhotos.map((photo) => (
                       <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 border-transparent" onClick={() => handleSelectPhoto(photo.url)}>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- stock
+                            photos come from hosts outside next.config remotePatterns;
+                            admin-only picker, already lazy-loaded. */}
                         <img src={photo.url} alt={photo.label} className="w-full h-full object-cover" loading="lazy" />
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
                           <p className="text-xs text-white truncate">{photo.label}</p>
@@ -319,6 +322,8 @@ export default function AdminSocialPage() {
                     <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 ${photoLoading ? 'opacity-50 pointer-events-none' : ''}`}>
                       {uploadedPhotos.map((photo) => (
                         <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 border-transparent" onClick={() => handleSelectPhoto(photo.imageUrl)}>
+                          {/* eslint-disable-next-line @next/next/no-img-element -- see
+                              above: admin-only picker, already lazy-loaded. */}
                           <img src={photo.imageUrl} alt={photo.label} className="w-full h-full object-cover" loading="lazy" />
                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
                             <p className="text-xs text-white truncate">{photo.label}</p>

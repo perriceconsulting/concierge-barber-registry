@@ -174,11 +174,29 @@ not typing them. The `_`-prefix convention the repo already used is now configur
 re-litigated at each site. Mechanical work cleared the rest: 18 JSX entity escapes, dead imports,
 unused catch bindings via optional catch (`} catch {`), one stale `eslint-disable`.
 
-The 13 remaining are deliberately open, because each needs a decision rather than a rule:
-6 `exhaustive-deps` (all the same `useEffect` → `fetchX` stale-closure shape, fix is `useCallback`),
-6 `<img>` → `next/image` (measure LCP first — see the O caveat), and 1 real error,
-`Cannot access refs during render` in
-[useVisibilityRefetch.ts:39](src/hooks/useVisibilityRefetch.ts#L39).
+The final 13 were then closed individually:
+
+- **The refs error.** [useVisibilityRefetch.ts](src/hooks/useVisibilityRefetch.ts) wrote
+  `callbackRef.current` during render. That breaks under StrictMode's double-invoke and under
+  concurrent rendering, where a render can be discarded before commit. The write moved into its
+  own effect; the listener effect still depends only on `throttleMs`/`enabled`, so an inline
+  `onVisible` doesn't re-attach listeners.
+- **6 `exhaustive-deps`**, all the same shape, all fixed with `useCallback` + the callback in the
+  dep array. One trap worth knowing: in every one of these files the `useEffect` sat *above* the
+  `fetchX` definition, so naming `fetchX` in the dep array would hit the temporal dead zone and
+  throw at render — dep arrays evaluate during render, unlike the effect body. The definitions
+  had to move above their effects. `showToast` is safe to depend on: it's `useCallback(…, [])`
+  in the toast provider.
+- **6 `<img>`.** Only one was a real conversion: [header.tsx](src/components/layout/header.tsx)
+  rendered the *same* 32px avatar with `<Image>` on desktop and `<img>` on mobile — a copy that
+  drifted. The other five are cases where `<img>` is correct, and now say so inline: html-to-image
+  rasterization needs a plain tag with `crossOrigin` (canvas tainting), blob/data URLs from the
+  file picker have nothing for the optimizer to fetch, and the admin license viewer has no known
+  intrinsic dimensions. Per the O caveat, the admin photo grids were left alone rather than
+  converted on a guess — they're already lazy-loaded and unmeasured.
+
+**Lint is at zero.** Treat that as the floor: a warning now means something new, so fix it or
+record why it's correct with a disable comment that names the reason.
 - **S:** no multi-tenant scoping module exists (the app is single-tenant today). If tenancy lands,
   it gets exactly one accessor module and all queries route through it.
 

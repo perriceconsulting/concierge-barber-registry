@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { secureFetch } from '@/lib/csrf-client';
 import { useToast } from '@/components/ui/toast';
 import { BLOG_TEMPLATES, type BlogTemplate, type GeneratedPost, type TemplateVariable } from '@/lib/blog-templates';
@@ -89,10 +89,6 @@ export default function AdminBlogPage() {
     author: 'Concierge Barber Registry',
   });
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
   // Load the managed specialty taxonomy once; used for service dropdowns.
   useEffect(() => {
     (async () => {
@@ -130,7 +126,7 @@ export default function AdminBlogPage() {
     });
   }, [serviceOptions, selectedTemplate]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const res = await secureFetch('/api/admin/blog');
       if (res.ok) {
@@ -142,7 +138,11 @@ export default function AdminBlogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const resetForm = () => {
     setForm({

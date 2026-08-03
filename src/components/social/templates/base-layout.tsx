@@ -22,6 +22,10 @@ export function BaseLayout({ width, height, backgroundImageUrl, showWatermark, c
     >
       {/* Background image */}
       {backgroundImageUrl && (
+        /* Rasterized by html-to-image, which needs a plain <img> with crossOrigin
+           set to keep the canvas untainted. next/image's wrapper and srcset
+           break the export. */
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={backgroundImageUrl}
           alt=""

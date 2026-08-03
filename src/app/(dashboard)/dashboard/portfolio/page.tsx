@@ -46,12 +46,7 @@ export default function PortfolioPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchPortfolio();
-    fetchSubscriptionLimits();
-  }, [fetchSubscriptionLimits]);
-
-  const fetchPortfolio = async () => {
+  const fetchPortfolio = useCallback(async () => {
     try {
       const response = await fetch('/api/barbers/portfolio', {
         credentials: 'include',
@@ -86,7 +81,12 @@ export default function PortfolioPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchPortfolio();
+    fetchSubscriptionLimits();
+  }, [fetchPortfolio, fetchSubscriptionLimits]);
 
   const handleUpload = async (dataUrl: string) => {
     try {

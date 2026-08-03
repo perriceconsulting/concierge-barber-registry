@@ -34,9 +34,16 @@ export function useVisibilityRefetch(
   options: Options = {},
 ): void {
   const { throttleMs = 5000, enabled = true } = options;
-  // Stable callback ref — avoids re-attaching listeners every render
+  // Stable callback ref — lets the listener effect below depend only on
+  // throttleMs/enabled, so an inline `onVisible` doesn't re-attach listeners
+  // every render. The ref is written in an effect, never during render:
+  // writing during render breaks under StrictMode's double-invoke and
+  // concurrent rendering, where a render may be discarded before commit.
   const callbackRef = useRef(onVisible);
-  callbackRef.current = onVisible;
+
+  useEffect(() => {
+    callbackRef.current = onVisible;
+  }, [onVisible]);
 
   useEffect(() => {
     if (!enabled) return;

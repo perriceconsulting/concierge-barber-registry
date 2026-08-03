@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -93,17 +93,7 @@ export default function AdminBarbersPage() {
   const [selectedReason, setSelectedReason] = useState<SuspensionReason | ''>('');
   const [suspendNotes, setSuspendNotes] = useState('');
 
-  useEffect(() => {
-    fetchBarbers();
-  }, [filter, searchQuery]);
-
-  // Refetch when the tab regains focus — keeps the list in sync with barber-side
-  // actions (license uploads, setup-fee payments, profile edits) happening in another tab.
-  useVisibilityRefetch(() => {
-    fetchBarbers();
-  });
-
-  const fetchBarbers = async () => {
+  const fetchBarbers = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -148,7 +138,17 @@ export default function AdminBarbersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filter, searchQuery]);
+
+  useEffect(() => {
+    fetchBarbers();
+  }, [fetchBarbers]);
+
+  // Refetch when the tab regains focus — keeps the list in sync with barber-side
+  // actions (license uploads, setup-fee payments, profile edits) happening in another tab.
+  useVisibilityRefetch(() => {
+    fetchBarbers();
+  });
 
   const appealsCount = barbers.filter(b => b.pendingAppeal).length;
 
@@ -832,6 +832,9 @@ export default function AdminBarbersPage() {
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4 flex items-center justify-center" style={{ minHeight: '60vh' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- uploaded
+                  license scans have no known intrinsic dimensions and are shown
+                  fit-to-viewport in an admin-only modal; not on any LCP path. */}
               <img
                 src={viewingLicense}
                 alt="License document"

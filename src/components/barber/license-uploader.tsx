@@ -157,6 +157,10 @@ export function LicenseUploader({
             {/* Image Preview */}
             {fileName && fileName.match(/\.(jpg|jpeg|png)$/i) ? (
               <div className="relative mx-auto max-w-md">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local
+                    blob/data URL from the file picker; nothing for the image
+                    optimizer to fetch, and the file never leaves the browser
+                    until upload. */}
                 <img
                   src={previewUrl}
                   alt="License preview"

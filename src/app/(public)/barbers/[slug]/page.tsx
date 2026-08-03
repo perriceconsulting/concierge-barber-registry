@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -130,13 +130,7 @@ export default function BarberProfilePage() {
     }
   };
 
-  useEffect(() => {
-    if (slug) {
-      fetchBarberProfile();
-    }
-  }, [slug]);
-
-  const fetchBarberProfile = async () => {
+  const fetchBarberProfile = useCallback(async () => {
     try {
       const response = await fetch(`/api/barbers/${slug}`);
       const data = await response.json();
@@ -150,7 +144,13 @@ export default function BarberProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      fetchBarberProfile();
+    }
+  }, [slug, fetchBarberProfile]);
 
   const handleContactClick = () => {
     if (!isAuthenticated) {

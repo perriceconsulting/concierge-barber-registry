@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,12 +48,7 @@ export default function SearchPage() {
   const [barbers, setBarbers] = useState<SearchBarber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch barbers on mount and when filters change
-  useEffect(() => {
-    fetchBarbers();
-  }, [searchQuery, filters]);
-
-  const fetchBarbers = async () => {
+  const fetchBarbers = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -79,7 +74,12 @@ export default function SearchPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchQuery, filters]);
+
+  // Fetch barbers on mount and when the query or filters change
+  useEffect(() => {
+    fetchBarbers();
+  }, [fetchBarbers]);
 
   // Filter barbers client-side for specialty and verification
   const filteredBarbers = barbers.filter((barber) => {

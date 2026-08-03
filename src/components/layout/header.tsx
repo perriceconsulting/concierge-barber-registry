@@ -221,9 +221,11 @@ export function Header() {
           {isLoggedIn && (
             <div className="flex items-center gap-2">
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt={userName || 'User'}
+                  width={32}
+                  height={32}
                   className="h-8 w-8 rounded-full object-cover border"
                 />
               ) : (
