@@ -14,38 +14,51 @@ process.env.NODE_ENV = 'test';
 process.env.RESEND_API_KEY = 'test-resend-api-key';
 process.env.FROM_EMAIL = 'test@example.com';
 process.env.REQUIRE_EMAIL_VERIFICATION = 'false';
+// Exercise the real rate limiter. It self-bypasses outside production unless
+// this opt-out is set, so without it every rate-limit assertion tests nothing.
+process.env.DISABLE_RATE_LIMITING_IN_DEV = 'false';
 
-// Mock Prisma Client
-jest.mock('@/lib/db', () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    session: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    verificationToken: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    barberProfile: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-  },
-}));
+// Mock Prisma Client.
+//
+// DOSI > Single Source: this used to hand-list 4 of the schema's 26 models and
+// a guess at each one's methods, so every new model or method silently produced
+// `Cannot read properties of undefined (reading 'create')` in a test that had
+// no way to know it was out of date. schema.prisma is the canonical origin, and
+// a hand-maintained mirror of it will always drift.
+//
+// Instead, vivify on access: any model, any method, is a jest.fn() the moment a
+// test reaches for it. Nothing to keep in sync.
+jest.mock('@/lib/db', () => {
+  const modelProxy = () =>
+    new Proxy(
+      {},
+      {
+        get(target, prop) {
+          if (typeof prop === 'symbol') return target[prop];
+          if (!(prop in target)) target[prop] = jest.fn();
+          return target[prop];
+        },
+      }
+    );
+
+  const prisma = new Proxy(
+    {},
+    {
+      get(target, prop) {
+        if (typeof prop === 'symbol') return target[prop];
+        // Never look thenable — an accidental `await prisma` must not hang.
+        if (prop === 'then') return undefined;
+        if (!(prop in target)) {
+          // $transaction / $connect / $queryRaw are callables, not models.
+          target[prop] = String(prop).startsWith('$') ? jest.fn() : modelProxy();
+        }
+        return target[prop];
+      },
+    }
+  );
+
+  return { prisma };
+});
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({

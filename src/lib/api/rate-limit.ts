@@ -14,7 +14,7 @@ const rateLimitStore = new Map<string, RateLimitRecord>();
 
 // Cleanup old entries every 10 minutes
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  const sweep = setInterval(() => {
     const now = Date.now();
     for (const [key, record] of rateLimitStore.entries()) {
       if (record.resetAt < now) {
@@ -22,6 +22,11 @@ if (typeof setInterval !== 'undefined') {
       }
     }
   }, 10 * 60 * 1000);
+
+  // Don't hold the event loop open for a janitor. Without this, any Node
+  // process that imports this module — jest workers, scripts — hangs until
+  // force-killed, and the sweep has no value in a process that's exiting.
+  sweep.unref?.();
 }
 
 export interface RateLimitConfig {

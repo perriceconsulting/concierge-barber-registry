@@ -4,7 +4,6 @@ import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth/password';
 
 // Mock the modules
-jest.mock('@/lib/db');
 jest.mock('@/lib/api/csrf');
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
@@ -139,9 +138,16 @@ describe('POST /api/auth/login', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(403);
+    // The route deliberately returns the generic INVALID_CREDENTIALS here
+    // rather than ACCOUNT_DEACTIVATED — see the comment in the login route.
+    // Revealing that an account exists but is deactivated is an account
+    // enumeration oracle. This test previously asserted 403 /
+    // AUTH_ACCOUNT_DEACTIVATED, which would have pressured the product into
+    // leaking exactly that. It had never run, so it never applied that
+    // pressure; the assertion is corrected to the intended behavior.
+    expect(response.status).toBe(401);
     expect(data.success).toBe(false);
-    expect(data.error.code).toBe('AUTH_ACCOUNT_DEACTIVATED');
+    expect(data.error.code).toBe('AUTH_INVALID_CREDENTIALS');
   });
 
   it('should reject malformed request body', async () => {
