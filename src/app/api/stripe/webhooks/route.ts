@@ -112,6 +112,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  // CBR v2.0 — One-time setup fee (FEAT-001) takes a different path than
+  // recurring subscription checkouts. mode='payment' + purpose metadata.
+  if (session.mode === 'payment' && session.metadata?.purpose === 'verification_setup_fee') {
+    await handleSetupFeeCompleted(session, barberProfileId);
+    return;
+  }
+
   const subscriptionId = session.subscription as string;
   const customerId = session.customer as string;
 
@@ -241,6 +248,50 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   });
 
   logger.info(`Payment failed for subscription ${subscriptionId}`);
+}
+
+/**
+ * CBR v2.0 — Mark a barber's setup fee paid + record the payment-intent ID.
+ * Idempotent: safe to retry. Doesn't itself approve verification — that
+ * remains a manual admin action.
+ */
+async function handleSetupFeeCompleted(
+  session: Stripe.Checkout.Session,
+  barberProfileId: string,
+) {
+  const paymentIntentId = typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : session.payment_intent?.id ?? null;
+
+  if (!paymentIntentId) {
+    logger.error('No payment_intent on completed setup-fee session', { sessionId: session.id });
+    return;
+  }
+
+  const profile = await prisma.barberProfile.findUnique({
+    where: { id: barberProfileId },
+    select: { setupFeePaidAt: true },
+  });
+
+  if (profile?.setupFeePaidAt) {
+    logger.info('Setup fee already recorded — skipping', { barberProfileId });
+    return;
+  }
+
+  await prisma.barberProfile.update({
+    where: { id: barberProfileId },
+    data: {
+      setupFeePaidAt: new Date(),
+      setupFeeAmountCents: session.amount_total ?? null,
+      setupFeeStripePaymentIntentId: paymentIntentId,
+    },
+  });
+
+  logger.info('Setup fee recorded', {
+    barberProfileId,
+    amountCents: session.amount_total,
+    paymentIntentId,
+  });
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {

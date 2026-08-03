@@ -73,7 +73,7 @@ export default async function SpecialtyDetailPage({
             <Breadcrumb items={breadcrumbItems} className="mb-6" />
 
             <header className="mb-10">
-              <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
+              <h1 className="text-4xl font-bold tracking-tight text-heading sm:text-5xl">
                 {specialtyName}
               </h1>
               <p className="mt-4 text-lg text-muted-foreground">
@@ -87,7 +87,7 @@ export default async function SpecialtyDetailPage({
             >
               <h2
                 id="what-is-heading"
-                className="text-2xl font-bold text-primary mb-4"
+                className="text-2xl font-bold text-heading mb-4"
               >
                 What is {specialtyName === 'Afro' || specialtyName === 'Mullet' || specialtyName === 'Mohawk' ? 'an' : 'a'}{' '}
                 {specialtyName}?
@@ -103,7 +103,7 @@ export default async function SpecialtyDetailPage({
             >
               <h2
                 id="common-questions-heading"
-                className="text-2xl font-bold text-primary mb-6"
+                className="text-2xl font-bold text-heading mb-6"
               >
                 Common Questions About {specialtyName}
               </h2>
@@ -136,7 +136,7 @@ export default async function SpecialtyDetailPage({
             >
               <h2
                 id="find-barbers-heading"
-                className="text-xl font-bold text-primary mb-2"
+                className="text-xl font-bold text-heading mb-2"
               >
                 Find a {specialtyName} Specialist
               </h2>

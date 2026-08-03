@@ -14,7 +14,7 @@ export default function TermsOfServicePage() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-4xl min-h-[calc(100vh-16rem)]">
       <div className="space-y-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-primary">Terms of Service</h1>
+          <h1 className="text-4xl font-bold text-heading">Terms of Service</h1>
           <p className="text-muted-foreground">
             Last updated: March 13, 2026
           </p>

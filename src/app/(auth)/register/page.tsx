@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import { PasswordRequirements } from '@/components/ui/password-requirements';
 import { Label } from '@/components/ui/label';
+import { PASSWORD_REQUIREMENTS } from '@/lib/validations/auth';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROUTES } from '@/config';
 import { secureFetch } from '@/lib/csrf-client';
@@ -26,6 +29,13 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+  // Live confirm-password feedback (only once the user has started confirming).
+  const passwordsMismatch =
+    formData.confirmPassword.length > 0 && formData.password !== formData.confirmPassword;
+  const passwordsMatch =
+    formData.confirmPassword.length > 0 && formData.password === formData.confirmPassword;
+  const passwordValid = PASSWORD_REQUIREMENTS.every((req) => req.test(formData.password));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,9 +205,8 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Create a strong password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -206,23 +215,27 @@ export default function RegisterPage() {
                 minLength={8}
                 autoComplete="new-password"
               />
-              <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters with uppercase, lowercase, number, and special character
-              </p>
+              <PasswordRequirements value={formData.password} className="mt-2" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="Re-enter your password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
                 disabled={isLoading}
                 autoComplete="new-password"
+                aria-invalid={passwordsMismatch}
               />
+              {passwordsMismatch && (
+                <p className="text-xs text-red-400">Passwords don&apos;t match</p>
+              )}
+              {passwordsMatch && (
+                <p className="text-xs text-green-500">✓ Passwords match</p>
+              )}
             </div>
 
             <div className="flex items-start gap-2">
@@ -250,7 +263,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !formData.agreedToTerms}
+              disabled={isLoading || !formData.agreedToTerms || passwordsMismatch || !passwordValid}
             >
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>

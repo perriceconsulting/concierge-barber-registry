@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { APP_CONFIG, ROUTES } from '@/config';
+import { BrandMark } from '@/components/layout/brand-mark';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,9 +11,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-primary">
-              {APP_CONFIG.name}
-            </h3>
+            <BrandMark size="sm" />
             <p className="text-sm text-muted-foreground">
               Discover and connect with verified, top-rated barbers in your area.
             </p>

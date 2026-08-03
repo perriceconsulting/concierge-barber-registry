@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyRefreshToken } from '@/lib/auth/jwt';
 import { hashToken } from '@/lib/auth/password';

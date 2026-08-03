@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { ArticleStructuredData } from '@/components/seo/article-structured-data';
+import { BreadcrumbStructuredData } from '@/components/seo/breadcrumb-structured-data';
+import { SpeakableSchema } from '@/components/seo/speakable-schema';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { prisma } from '@/lib/db';
 import { autoLinkBlogContent } from '@/lib/blog/auto-link-content';
@@ -96,7 +98,19 @@ export default async function BlogPostPage({
           image: post.imageUrl || undefined,
           imageAlt: post.imageAlt || undefined,
         }}
+        content={post.content}
       />
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Home', path: '/' },
+          { name: 'Blog', path: '/blog' },
+          { name: categoryLabel, path: `/blog?category=${post.category}` },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ]}
+      />
+      {/* Voice/SGE readout: title + lede are the natural "headline +
+          summary" pair search assistants quote. */}
+      <SpeakableSchema cssSelectors={['article header h1', 'article header > p.text-lg']} />
       <Container>
         <article className="max-w-3xl mx-auto">
           <Breadcrumb
@@ -114,7 +128,7 @@ export default async function BlogPostPage({
             <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-secondary/10 text-secondary mb-4">
               {categoryLabel}
             </span>
-            <h1 className="text-4xl font-bold text-primary mb-4">{post.title}</h1>
+            <h1 className="text-4xl font-bold text-heading mb-4">{post.title}</h1>
             <p className="text-lg text-muted-foreground mb-4">{post.description}</p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground border-b border-gray-200 pb-6">
               <span>{post.author}</span>
@@ -136,7 +150,7 @@ export default async function BlogPostPage({
           {/* Content */}
           <div
             className="prose prose-lg max-w-none
-              prose-headings:text-primary prose-headings:font-bold
+              prose-headings:text-heading prose-headings:font-bold
               prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
               prose-p:text-muted-foreground prose-p:leading-relaxed
               prose-li:text-muted-foreground
@@ -147,7 +161,7 @@ export default async function BlogPostPage({
 
           {/* CTA */}
           <div className="mt-12 p-8 bg-primary/5 rounded-lg text-center">
-            <h3 className="text-xl font-bold text-primary mb-2">
+            <h3 className="text-xl font-bold text-heading mb-2">
               Find Your Perfect Barber
             </h3>
             <p className="text-muted-foreground mb-4">
@@ -165,7 +179,7 @@ export default async function BlogPostPage({
         {/* Related posts */}
         {related.length > 0 && (
           <div className="max-w-3xl mx-auto mt-16">
-            <h2 className="text-2xl font-bold text-primary mb-6">Related Articles</h2>
+            <h2 className="text-2xl font-bold text-heading mb-6">Related Articles</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {related.map(r => (
                 <Link
@@ -173,7 +187,7 @@ export default async function BlogPostPage({
                   href={`/blog/${r.slug}`}
                   className="group block border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow"
                 >
-                  <h3 className="font-bold text-primary group-hover:text-secondary transition-colors mb-2 text-sm">
+                  <h3 className="font-bold text-heading group-hover:text-secondary transition-colors mb-2 text-sm">
                     {r.title}
                   </h3>
                   <p className="text-xs text-muted-foreground line-clamp-2">

@@ -1,13 +1,25 @@
 import { z } from 'zod';
 
-// Password validation schema
-export const passwordSchema = z
-  .string()
-  .min(8, 'Password must be at least 8 characters')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+// Single source of truth for password rules — drives BOTH the server-side Zod
+// schema below AND the live UI checklist (<PasswordRequirements />), so the two
+// can never drift apart.
+export const PASSWORD_REQUIREMENTS: { label: string; test: (value: string) => boolean }[] = [
+  { label: 'At least 8 characters', test: (v) => v.length >= 8 },
+  { label: 'One uppercase letter', test: (v) => /[A-Z]/.test(v) },
+  { label: 'One lowercase letter', test: (v) => /[a-z]/.test(v) },
+  { label: 'One number', test: (v) => /[0-9]/.test(v) },
+  { label: 'One special character', test: (v) => /[^A-Za-z0-9]/.test(v) },
+];
+
+// Password validation schema — reports every unmet requirement (not just the
+// first), matching the UI checklist.
+export const passwordSchema = z.string().superRefine((value, ctx) => {
+  for (const { label, test } of PASSWORD_REQUIREMENTS) {
+    if (!test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: label });
+    }
+  }
+});
 
 // Register schema
 export const registerSchema = z.object({

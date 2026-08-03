@@ -15,6 +15,10 @@ export interface TemplateVariable {
   label: string;
   type: 'select' | 'text';
   options?: { value: string; label: string }[];
+  // When set, the UI replaces `options` with a live list fetched at render time
+  // (e.g. the managed Specialty taxonomy). `options` remains the static fallback
+  // used if the fetch fails or returns nothing.
+  source?: 'specialties';
   placeholder?: string;
   required?: boolean;
 }
@@ -46,6 +50,19 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 200);
 }
 
+// Specialty names from the DB are often plural ("Fades", "Lineups", "Kids
+// Cuts") while the templates write singular nouns and append "s" for plurals
+// (`${s}` → "a Fade", `${s}s` → "Fades"). Normalizing the chosen value to its
+// singular form makes every existing interpolation read correctly. Compound
+// names ("Designs/Patterns") degrade gracefully (→ "Designs/Pattern").
+function toSingular(name: string): string {
+  const trimmed = name.trim();
+  if (/ss$/i.test(trimmed)) return trimmed; // "...ss" is not a plural marker
+  if (/ies$/i.test(trimmed)) return trimmed.replace(/ies$/i, 'y');
+  if (/s$/i.test(trimmed)) return trimmed.replace(/s$/i, '');
+  return trimmed;
+}
+
 // ============ CLIENT TEMPLATES ============
 
 const findBarberForService: BlogTemplate = {
@@ -55,10 +72,10 @@ const findBarberForService: BlogTemplate = {
   audienceLabel: 'For Clients',
   description: 'Guide for clients looking for a barber who specializes in a specific service',
   variables: [
-    { key: 'service', label: 'Service', type: 'select', options: SERVICE_OPTIONS, required: true },
+    { key: 'service', label: 'Service', type: 'select', options: SERVICE_OPTIONS, source: 'specialties', required: true },
   ],
   generate: (vars) => {
-    const s = vars.service;
+    const s = toSingular(vars.service);
     const sl = s.toLowerCase();
     return {
       title: `How to Find the Best ${s} Barber Near You`,
@@ -212,10 +229,10 @@ const serviceGuide: BlogTemplate = {
   audienceLabel: 'For Clients',
   description: 'In-depth guide to a specific barber service for clients',
   variables: [
-    { key: 'service', label: 'Service', type: 'select', options: SERVICE_OPTIONS, required: true },
+    { key: 'service', label: 'Service', type: 'select', options: SERVICE_OPTIONS, source: 'specialties', required: true },
   ],
   generate: (vars) => {
-    const s = vars.service;
+    const s = toSingular(vars.service);
     const sl = s.toLowerCase();
     return {
       title: `The Complete Guide to ${s}s at the Barbershop`,
@@ -332,10 +349,10 @@ const marketingForBarbers: BlogTemplate = {
   audienceLabel: 'For Barbers',
   description: 'Helps barbers market a specific service specialty to attract the right clients',
   variables: [
-    { key: 'service', label: 'Service Specialty', type: 'select', options: SERVICE_OPTIONS, required: true },
+    { key: 'service', label: 'Service Specialty', type: 'select', options: SERVICE_OPTIONS, source: 'specialties', required: true },
   ],
   generate: (vars) => {
-    const s = vars.service;
+    const s = toSingular(vars.service);
     const sl = s.toLowerCase();
     return {
       title: `How to Market Your ${s} Specialty and Attract Clients`,
@@ -497,10 +514,10 @@ const industryTrend: BlogTemplate = {
   audienceLabel: 'Industry',
   description: 'Industry trend piece about a service category and where it\'s heading',
   variables: [
-    { key: 'service', label: 'Service/Style', type: 'select', options: SERVICE_OPTIONS, required: true },
+    { key: 'service', label: 'Service/Style', type: 'select', options: SERVICE_OPTIONS, source: 'specialties', required: true },
   ],
   generate: (vars) => {
-    const s = vars.service;
+    const s = toSingular(vars.service);
     const sl = s.toLowerCase();
     return {
       title: `${s} Trends: What's Popular and What's Next`,

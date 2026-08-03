@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob';
+import { sanitizeUploadFilename } from '@/lib/upload-filename';
 
 /**
  * File type signatures (magic numbers) for validation
@@ -83,7 +84,7 @@ export async function uploadFile(
 
   // Generate a unique filename
   const timestamp = Date.now();
-  const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const sanitizedFilename = sanitizeUploadFilename(file.name);
   const filename = folder
     ? `${folder}/${timestamp}-${sanitizedFilename}`
     : `${timestamp}-${sanitizedFilename}`;

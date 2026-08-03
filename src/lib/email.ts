@@ -233,11 +233,23 @@ export function getLicenseApprovedEmailHtml(firstName: string) {
 
           <p>Your profile now displays a <strong>"✓ Verified"</strong> badge, which helps build trust with potential clients.</p>
 
+          <div style="background-color: #fef9ec; border-left: 4px solid #D4AF37; padding: 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; font-weight: bold; color: #8c6d1c;">Your credentials are ready</p>
+            <p style="margin: 8px 0 0 0; font-size: 14px;">
+              Apple Wallet pass, printable card, Certificate of Selection, and the Concierge
+              Privacy Agreement template are now available in your dashboard.
+            </p>
+            <div style="margin-top: 12px;">
+              <a href="${appUrl}/dashboard/credentials" style="color: #8c6d1c; font-weight: bold; text-decoration: underline;">Open Credentials &rarr;</a>
+            </div>
+          </div>
+
           <p><strong>Next steps to maximize your profile:</strong></p>
           <ul style="padding-left: 20px;">
             <li>Add portfolio images showcasing your best work</li>
             <li>List your services and pricing</li>
             <li>Complete your bio and specialty information</li>
+            <li>Download your wallet pass and credential card from the Credentials page</li>
           </ul>
 
           <div style="text-align: center; margin: 30px 0;">
@@ -754,6 +766,149 @@ export function getClaimInvitationEmailHtml(
       </body>
     </html>
   `;
+}
+
+// ─── CBR v2.0 — trial / license / re-verification lifecycle emails ────────────
+
+function darkLuxuryShell(headline: string, bodyHtml: string) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${headline}</title>
+      </head>
+      <body style="font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #F5F5F5; background-color: #0D0D0D; margin: 0; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #121212; border: 1px solid #1f1f1f; border-radius: 8px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #0D0D0D 0%, #1f1f1f 100%); padding: 32px; text-align: center; border-bottom: 1px solid #D4AF37;">
+            <h1 style="margin: 0; font-size: 26px; color: #D4AF37; font-family: Georgia, serif;">${headline}</h1>
+          </div>
+          <div style="padding: 32px; color: #E5E5E5;">
+            ${bodyHtml}
+          </div>
+          <div style="text-align: center; padding: 16px; color: #6b6b6b; font-size: 11px; border-top: 1px solid #1f1f1f;">
+            &copy; ${new Date().getFullYear()} Concierge Barber Registry &middot; Verified, by hand.
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendTrialExpiringEmail(
+  email: string,
+  firstName: string,
+  trialEndsAt: Date,
+  monthlyRateLabel: string
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const dashboardUrl = `${appUrl}/dashboard/subscription`;
+  const dateLabel = trialEndsAt.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const body = `
+    <p style="font-size: 17px;">Hi ${firstName},</p>
+    <p>Since your license was verified, you've been part of a select group of professionals on the Concierge Barber Registry.</p>
+    <p>Your <strong style="color:#D4AF37;">30-day Verified Member trial</strong> transitions to your standard subscription on <strong>${dateLabel}</strong>.</p>
+    <div style="background-color: #1a1a1a; border-left: 3px solid #D4AF37; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #D4AF37;">What stays active with your membership:</p>
+      <ul style="margin: 0; padding-left: 20px; color: #E5E5E5;">
+        <li>The Global Badge — your "Verified" status remains visible to high-net-worth clients.</li>
+        <li>The Travel Network — continued access to 10% referral royalties when your clients travel.</li>
+        <li>The Vault — secure storage for your clients' technical specs.</li>
+      </ul>
+    </div>
+    <p>No action required. Your subscription auto-activates on ${dateLabel} at your locked-in rate of <strong>${monthlyRateLabel}</strong>.</p>
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${dashboardUrl}" style="display: inline-block; background-color: #D4AF37; color: #0D0D0D; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Manage Your Plan</a>
+    </div>
+    <p style="margin-top: 24px;">Stay Elite,<br><strong>The Concierge Barber Registry Team</strong></p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Your Verified Status: 5 Days Remaining in Your Elite Trial',
+    html: darkLuxuryShell('Your Trial Ends in 5 Days', body),
+  });
+}
+
+export async function sendLicenseExpiredEmail(
+  email: string,
+  firstName: string,
+  expirationDate: Date | null
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const profileUrl = `${appUrl}/dashboard/profile`;
+  const expiredOn = expirationDate
+    ? expirationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'recently';
+
+  const body = `
+    <p style="font-size: 17px;">Hi ${firstName},</p>
+    <p>Your professional license on file expired on <strong>${expiredOn}</strong>. To maintain Verified status on the Registry, your profile has been temporarily hidden until you submit current credentials.</p>
+    <div style="background-color: #1a1a1a; border-left: 3px solid #EF4444; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #EF4444;">What this means right now:</p>
+      <ul style="margin: 0; padding-left: 20px; color: #E5E5E5;">
+        <li>Your profile is hidden from search and discovery.</li>
+        <li>Existing clients can still reach you via direct link.</li>
+        <li>Your subscription remains active — no billing change.</li>
+      </ul>
+    </div>
+    <p>Upload your renewed license to restore your Verified status. Re-verification is typically completed within 24&ndash;48 hours.</p>
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${profileUrl}" style="display: inline-block; background-color: #D4AF37; color: #0D0D0D; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Upload Renewed License</a>
+    </div>
+    <p style="margin-top: 24px;">— The Concierge Barber Registry Team</p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Action Required: Your Professional License Has Expired',
+    html: darkLuxuryShell('License Renewal Required', body),
+  });
+}
+
+export async function sendReverificationDueEmail(
+  email: string,
+  firstName: string,
+  verifiedAt: Date
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const profileUrl = `${appUrl}/dashboard/profile`;
+  const verifiedOn = verifiedAt.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const body = `
+    <p style="font-size: 17px;">Hi ${firstName},</p>
+    <p>It's been 12 months since your initial verification on <strong>${verifiedOn}</strong>. To preserve the integrity of the Registry, we ask every Verified Member to re-confirm their credentials annually.</p>
+    <div style="background-color: #1a1a1a; border-left: 3px solid #D4AF37; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #D4AF37;">What we need from you:</p>
+      <ul style="margin: 0; padding-left: 20px; color: #E5E5E5;">
+        <li>Confirm your license is still current (renew if it expires soon).</li>
+        <li>Re-upload the document if anything has changed.</li>
+        <li>Update your shop address or contact info if it has moved.</li>
+      </ul>
+    </div>
+    <p>This is a courtesy nudge — your Verified status remains active while you complete the review.</p>
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${profileUrl}" style="display: inline-block; background-color: #D4AF37; color: #0D0D0D; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Confirm Your Credentials</a>
+    </div>
+    <p style="margin-top: 24px;">— The Concierge Barber Registry Team</p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Annual Re-verification: Confirm Your Credentials',
+    html: darkLuxuryShell('Annual Re-verification', body),
+  });
 }
 
 export async function sendClaimInvitationEmail(params: {

@@ -77,7 +77,7 @@ export function withCsrfToken(response: NextResponse): NextResponse {
  * Add this as GET /api/csrf-token
  */
 export function createCsrfTokenEndpoint() {
-  return async (request: NextRequest) => {
+  return async (_request: NextRequest) => {
     const token = generateCsrfToken();
 
     const response = NextResponse.json({

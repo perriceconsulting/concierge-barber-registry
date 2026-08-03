@@ -1,25 +1,33 @@
+// One matcher per language, not three overlapping ones.
+//
+// This previously declared three separate globs that all matched the same .ts
+// files ('**/*.ts?(x)', '**/*.(ts|tsx|js)', '**/*.(ts|tsx)'). lint-staged runs
+// *matchers* concurrently, so a full `tsc --noEmit` and a jest worker pool
+// started at the same time and collided — the SIGKILL that made this hook
+// unusable on Windows and forced --no-verify on every commit. Commands inside
+// a single matcher run in sequence, so collapsing them fixes it without
+// dropping any check.
 module.exports = {
-  // Run type-check on changed TypeScript files
-  '**/*.ts?(x)': () => 'tsc --noEmit',
+  '**/*.{ts,tsx}': (filenames) => {
+    const posix = filenames.map((file) => file.replace(/\\/g, '/'));
 
-  // Run ESLint on changed files
-  '**/*.(ts|tsx|js)': (filenames) => [
-    `eslint ${filenames.map(f => `"${f}"`).join(' ')}`,
-  ],
-
-  // Run tests related to changed files (exclude integration/e2e tests that have ESM issues)
-  '**/*.(ts|tsx)': (filenames) => {
-    const testFiles = filenames
-      .map(file => file.replace(/\\/g, '/'))
-      .filter(file => !file.includes('__tests__'))
-      .filter(file => !file.includes('e2e/'))
-      .filter(file => !file.includes('playwright'))
-      .map(file => `--findRelatedTests "${file}"`)
+    // Test files don't need related-test discovery run against themselves.
+    const related = posix
+      .filter((file) => !file.includes('__tests__'))
+      .map((file) => `--findRelatedTests "${file}"`)
       .join(' ');
 
-    // Only run jest if there are files to test
-    if (!testFiles) return [];
-
-    return `jest ${testFiles} --testPathIgnorePatterns="integration|e2e" --passWithNoTests`;
+    return [
+      'tsc --noEmit',
+      `eslint ${filenames.map((file) => `"${file}"`).join(' ')}`,
+      // The integration suites used to be excluded here because they could not
+      // run at all. They run now (node environment, see jest.config.js), so
+      // related tests in either project are fair game.
+      ...(related ? [`jest ${related} --passWithNoTests`] : []),
+    ];
   },
+
+  '**/*.js': (filenames) => [
+    `eslint ${filenames.map((file) => `"${file}"`).join(' ')}`,
+  ],
 };

@@ -1,44 +1,48 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Barbershop Premium Theme - Tailwind v4 */
+/* CBR v2.0 — Dark Luxury / Nightclub Theme (Tailwind v4) */
 
 @theme {
-  /* Custom barbershop colors */
-  --color-barbershop-red: #b42e2e;
-  --color-barbershop-blue: #1e4d7b;
-  --color-barbershop-cream: #f5ede4;
-  --color-barbershop-gold: #d4af37;
-  --color-barbershop-burgundy: #4a1818;
-  --color-barbershop-leather: #3d2817;
+  /* Brand accents */
+  --color-cbr-obsidian: #0D0D0D;
+  --color-cbr-surface: #121212;
+  --color-cbr-elevated: #1a1a1a;
+  --color-cbr-gold: #D4AF37;
+  --color-cbr-gold-warm: #c5a028;
+  --color-cbr-platinum: #E5E4E2;
 
-  /* Background colors - warm cream */
-  --color-background: #faf8f6;
-  --color-foreground: #1a1a1a;
+  /* Semantic tokens — dark mode by default */
+  --color-background: #0D0D0D;
+  --color-foreground: #F5F5F5;
 
-  /* Card colors */
-  --color-card: #ffffff;
-  --color-card-foreground: #1a1a1a;
+  --color-card: #121212;
+  --color-card-foreground: #F5F5F5;
 
-  /* Primary - rich burgundy */
-  --color-primary: #4a1818;
-  --color-primary-foreground: #faf8f6;
+  /* Primary = champagne gold (chips, links, small CTA fills) */
+  --color-primary: #D4AF37;
+  --color-primary-foreground: #0D0D0D;
 
-  /* Secondary - luxury gold */
-  --color-secondary: #d4af37;
-  --color-secondary-foreground: #1a1a1a;
+  /* Role token — heading text. Same gold today, but decoupled from `primary`
+     so headings and interactive elements can diverge without a sweep.
+     See DOSI > Single Source in CLAUDE.md. */
+  --color-heading: var(--color-cbr-gold);
 
-  /* Accent - deep teal */
-  --color-accent: #2d6a5f;
-  --color-accent-foreground: #faf8f6;
+  /* Secondary = warm gold variant for layered emphasis (badges, gradient ends) */
+  --color-secondary: #c5a028;
+  --color-secondary-foreground: #0D0D0D;
+
+  /* Accent = elevated dark surface tinted with gold suggestion */
+  --color-accent: #1f1a10;
+  --color-accent-foreground: #D4AF37;
 
   /* Muted */
-  --color-muted: #ebe6e0;
-  --color-muted-foreground: #666666;
+  --color-muted: #1a1a1a;
+  --color-muted-foreground: #9a9a9a;
 
   /* Border & Input */
-  --color-border: #ddd5cc;
-  --color-input: #ddd5cc;
+  --color-border: #2a2a2a;
+  --color-input: #1a1a1a;
 
   /* Destructive */
   --color-destructive: #dc3545;
@@ -60,20 +64,26 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Serif headings for the heritage / private-club feel */
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+    letter-spacing: -0.01em;
+  }
 }
 
 @layer components {
-  /* Premium elevation shadows */
+  /* Premium elevation shadows — deeper for dark mode */
   .shadow-md {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.12), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.4), 0 2px 6px -2px rgb(0 0 0 / 0.3);
   }
 
   .shadow-lg {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.12), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+    box-shadow: 0 12px 24px -4px rgb(0 0 0 / 0.5), 0 6px 12px -4px rgb(0 0 0 / 0.35);
   }
 
   .shadow-xl {
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+    box-shadow: 0 24px 48px -8px rgb(0 0 0 / 0.6), 0 12px 20px -8px rgb(0 0 0 / 0.4);
   }
 
   /* Smooth transitions */
@@ -91,69 +101,48 @@
 
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 24px -8px rgb(0 0 0 / 0.2),
-                0 4px 8px -4px rgb(0 0 0 / 0.1);
+    box-shadow: 0 16px 32px -8px rgb(0 0 0 / 0.6),
+                0 8px 16px -4px rgba(212, 175, 55, 0.08);
   }
 
-  /* Barbershop gradient backgrounds */
-  .barbershop-gradient {
-    background: linear-gradient(135deg,
-      var(--color-barbershop-red) 0%,
-      var(--color-barbershop-burgundy) 50%,
-      var(--color-barbershop-blue) 100%);
+  /* Glassmorphism overlay — frosted dark glass */
+  .glass {
+    background: rgba(18, 18, 18, 0.6);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(212, 175, 55, 0.1);
   }
 
-  .barbershop-gradient-subtle {
-    background: linear-gradient(to bottom right,
-      var(--color-background) 0%,
-      var(--color-barbershop-cream) 100%);
+  /* Soft-glow spotlight for hero images and feature blocks */
+  .spotlight {
+    background:
+      radial-gradient(ellipse at top, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at center, rgba(212, 175, 55, 0.04) 0%, transparent 70%),
+      var(--color-background);
   }
 
-  /* Premium button with gold accent */
+  .spotlight-soft {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+      var(--color-background);
+  }
+
+  /* Premium gold button */
   .btn-premium {
     background: linear-gradient(135deg,
-      var(--color-barbershop-gold) 0%,
-      #c5a028 100%);
-    box-shadow: 0 4px 12px -2px rgba(212, 175, 55, 0.3);
+      var(--color-cbr-gold) 0%,
+      var(--color-cbr-gold-warm) 100%);
+    color: var(--color-cbr-obsidian);
+    box-shadow: 0 4px 16px -2px rgba(212, 175, 55, 0.3);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-premium:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px -4px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 8px 24px -4px rgba(212, 175, 55, 0.45);
   }
 
-  /* Vintage barbershop pole stripes */
-  .barber-pole {
-    background: repeating-linear-gradient(
-      45deg,
-      var(--color-barbershop-red),
-      var(--color-barbershop-red) 10px,
-      var(--color-barbershop-blue) 10px,
-      var(--color-barbershop-blue) 20px,
-      white 20px,
-      white 30px
-    );
-  }
-
-  /* Textured background for premium feel */
-  .textured-bg {
-    background-color: var(--color-background);
-    background-image:
-      radial-gradient(at 40% 20%, rgba(74, 24, 24, 0.03) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, rgba(45, 106, 95, 0.03) 0px, transparent 50%);
-  }
-
-  /* Leather texture effect */
-  .leather-texture {
-    background-color: var(--color-barbershop-leather);
-    background-image:
-      radial-gradient(circle at 20% 50%, rgba(0, 0, 0, 0.2) 0%, transparent 50%),
-      radial-gradient(circle at 80% 50%, rgba(0, 0, 0, 0.15) 0%, transparent 50%);
-  }
-
-  /* Gold shimmer effect */
+  /* Metallic shimmer for Verified badges */
   .gold-shimmer {
     position: relative;
     overflow: hidden;
@@ -169,10 +158,10 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.25),
       transparent
     );
-    animation: shimmer 3s infinite;
+    animation: shimmer 3.5s infinite;
   }
 
   @keyframes shimmer {
@@ -180,22 +169,45 @@
     50%, 100% { left: 100%; }
   }
 
-  /* Premium card with border accent */
+  /* Premium card with gold border accent */
   .premium-card {
-    border-top: 3px solid var(--color-secondary);
-    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.1);
+    background: var(--color-card);
+    border-top: 2px solid var(--color-cbr-gold);
+    box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.5);
   }
 
-  /* Status badge with barbershop colors */
+  /* Status badge with metallic gold gradient */
   .badge-verified {
     background: linear-gradient(135deg,
-      var(--color-barbershop-gold) 0%,
-      var(--color-secondary) 100%);
-    color: var(--color-secondary-foreground);
+      var(--color-cbr-gold) 0%,
+      var(--color-cbr-gold-warm) 100%);
+    color: var(--color-cbr-obsidian);
+  }
+
+  /* Subtle textured background for sections */
+  .textured-bg {
+    background-color: var(--color-background);
+    background-image:
+      radial-gradient(at 40% 20%, rgba(212, 175, 55, 0.04) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(212, 175, 55, 0.06) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(229, 228, 226, 0.02) 0px, transparent 50%);
   }
 }
 
-/* Blog prose styles — fallback if @tailwindcss/typography doesn't load */
+/* Blog prose styles — dark-mode tuned */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  color: var(--color-foreground);
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+.prose p,
+.prose li {
+  color: var(--color-foreground);
+}
+
 .prose h2 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -236,6 +248,7 @@
 
 .prose strong {
   font-weight: 700;
+  color: var(--color-foreground);
 }
 
 .prose em {
@@ -243,7 +256,7 @@
 }
 
 .prose a {
-  color: var(--color-secondary);
+  color: var(--color-cbr-gold);
   text-decoration: underline;
 }
 

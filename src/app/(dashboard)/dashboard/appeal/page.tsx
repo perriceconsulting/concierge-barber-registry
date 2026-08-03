@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,11 +38,7 @@ export default function AppealPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [licenseUploaded, setLicenseUploaded] = useState(false);
 
-  useEffect(() => {
-    fetchAppeals();
-  }, []);
-
-  const fetchAppeals = async () => {
+  const fetchAppeals = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await secureFetch('/api/barbers/appeals');
@@ -56,7 +52,11 @@ export default function AppealPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchAppeals();
+  }, [fetchAppeals]);
 
   const handleSubmit = async () => {
     if (appealText.length < 20) {

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { secureFetch } from '@/lib/csrf-client';
 import { useToast } from '@/components/ui/toast';
-import { BLOG_TEMPLATES, type BlogTemplate, type GeneratedPost } from '@/lib/blog-templates';
+import { BLOG_TEMPLATES, type BlogTemplate, type GeneratedPost, type TemplateVariable } from '@/lib/blog-templates';
 
 interface BlogPost {
   id: string;
@@ -43,6 +43,17 @@ function generateSlug(title: string): string {
     .slice(0, 200);
 }
 
+// Shared control styles — kept DRY so theme/contrast fixes live in one place
+// (this page was originally styled light-on-light; these are dark-theme correct).
+const BTN_PRIMARY =
+  'px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50';
+const BTN_OUTLINE = 'px-6 py-2 rounded-lg border hover:bg-white/5';
+const BTN_ACTION = 'text-xs px-2 py-1 rounded border hover:bg-white/10';
+const BTN_DANGER =
+  'text-xs px-2 py-1 rounded border border-red-500/40 text-red-400 hover:bg-red-500/10';
+const FIELD =
+  'w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground';
+
 export default function AdminBlogPage() {
   const { showToast } = useToast();
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -55,6 +66,15 @@ export default function AdminBlogPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<BlogTemplate | null>(null);
   const [templateVars, setTemplateVars] = useState<Record<string, string>>({});
   const [generatedPreview, setGeneratedPreview] = useState<GeneratedPost | null>(null);
+  // Live service taxonomy from the managed Specialty table — drives any
+  // `source: 'specialties'` dropdown. Empty until fetched; falls back to the
+  // template's static `options` so the generator works even if this fails.
+  const [serviceOptions, setServiceOptions] = useState<{ value: string; label: string }[]>([]);
+
+  // Effective options for a variable: live specialties when sourced from them
+  // (and loaded), otherwise the static fallback baked into the template.
+  const optionsFor = (v: TemplateVariable): { value: string; label: string }[] =>
+    v.source === 'specialties' && serviceOptions.length > 0 ? serviceOptions : v.options ?? [];
 
   // Form state
   const [form, setForm] = useState({
@@ -69,11 +89,44 @@ export default function AdminBlogPage() {
     author: 'Concierge Barber Registry',
   });
 
+  // Load the managed specialty taxonomy once; used for service dropdowns.
   useEffect(() => {
-    fetchPosts();
+    (async () => {
+      try {
+        const res = await fetch('/api/specialties');
+        const data = await res.json();
+        if (data.success) {
+          setServiceOptions(
+            (data.data.specialties as { name: string }[]).map((s) => ({
+              value: s.name,
+              label: s.name,
+            }))
+          );
+        }
+      } catch {
+        // Keep the static fallback (template `options`) on failure.
+      }
+    })();
   }, []);
 
-  const fetchPosts = async () => {
+  // If specialties arrive after a template is already selected, re-default any
+  // specialty-sourced var whose current value isn't in the live list.
+  useEffect(() => {
+    if (!selectedTemplate || serviceOptions.length === 0) return;
+    setTemplateVars((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      selectedTemplate.variables.forEach((v) => {
+        if (v.source === 'specialties' && !serviceOptions.some((o) => o.value === next[v.key])) {
+          next[v.key] = serviceOptions[0]?.value || '';
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [serviceOptions, selectedTemplate]);
+
+  const fetchPosts = useCallback(async () => {
     try {
       const res = await secureFetch('/api/admin/blog');
       if (res.ok) {
@@ -85,7 +138,11 @@ export default function AdminBlogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const resetForm = () => {
     setForm({
@@ -201,7 +258,7 @@ export default function AdminBlogPage() {
     setSelectedTemplate(template);
     const vars: Record<string, string> = {};
     template.variables.forEach(v => {
-      vars[v.key] = v.options?.[0]?.value || '';
+      vars[v.key] = optionsFor(v)[0]?.value || '';
     });
     setTemplateVars(vars);
     setGeneratedPreview(null);
@@ -322,7 +379,7 @@ export default function AdminBlogPage() {
                   slug: editingPost ? f.slug : generateSlug(e.target.value),
                 }));
               }}
-              className="w-full px-3 py-2 border rounded-lg"
+              className={FIELD}
               placeholder="How to Find a Good Barber Near You"
             />
           </div>
@@ -334,7 +391,7 @@ export default function AdminBlogPage() {
               type="text"
               value={form.slug}
               onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+              className={`${FIELD} font-mono text-sm`}
               placeholder="how-to-find-a-good-barber-near-you"
             />
           </div>
@@ -345,7 +402,7 @@ export default function AdminBlogPage() {
             <textarea
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg"
+              className={FIELD}
               rows={2}
               placeholder="A comprehensive guide to finding..."
             />
@@ -359,7 +416,7 @@ export default function AdminBlogPage() {
               <select
                 value={form.category}
                 onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg"
+                className={FIELD}
               >
                 {CATEGORIES.map(c => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -371,7 +428,7 @@ export default function AdminBlogPage() {
               <select
                 value={form.status}
                 onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg"
+                className={FIELD}
               >
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
@@ -383,7 +440,7 @@ export default function AdminBlogPage() {
                 type="number"
                 value={form.readingTime}
                 onChange={e => setForm(f => ({ ...f, readingTime: parseInt(e.target.value) || 5 }))}
-                className="w-full px-3 py-2 border rounded-lg"
+                className={FIELD}
                 min={1}
                 max={60}
               />
@@ -397,7 +454,7 @@ export default function AdminBlogPage() {
               type="text"
               value={form.keywords}
               onChange={e => setForm(f => ({ ...f, keywords: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg"
+              className={FIELD}
               placeholder="find barber near me, good barber, barber search"
             />
           </div>
@@ -408,7 +465,7 @@ export default function AdminBlogPage() {
             <textarea
               value={form.content}
               onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+              className={`${FIELD} font-mono text-sm`}
               rows={20}
               placeholder="<p>Your article content here...</p>"
             />
@@ -422,13 +479,13 @@ export default function AdminBlogPage() {
             <button
               onClick={handleSave}
               disabled={saving || !form.title || !form.slug || !form.content}
-              className="px-6 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-primary/90"
+              className={BTN_PRIMARY}
             >
               {saving ? 'Saving...' : editingPost ? 'Update Post' : 'Create Post'}
             </button>
             <button
               onClick={() => { setIsCreating(false); setEditingPost(null); }}
-              className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+              className={BTN_OUTLINE}
             >
               Cancel
             </button>
@@ -449,7 +506,7 @@ export default function AdminBlogPage() {
         <div className="flex gap-2">
           <button
             onClick={startCreate}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            className={BTN_OUTLINE}
           >
             New Post
           </button>
@@ -521,9 +578,9 @@ export default function AdminBlogPage() {
                       <select
                         value={templateVars[v.key] || ''}
                         onChange={e => setTemplateVars(prev => ({ ...prev, [v.key]: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className={FIELD}
                       >
-                        {v.options?.map(o => (
+                        {optionsFor(v).map(o => (
                           <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                       </select>
@@ -532,7 +589,7 @@ export default function AdminBlogPage() {
                         type="text"
                         value={templateVars[v.key] || ''}
                         onChange={e => setTemplateVars(prev => ({ ...prev, [v.key]: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className={FIELD}
                         placeholder={v.placeholder}
                       />
                     )}
@@ -541,7 +598,7 @@ export default function AdminBlogPage() {
                 <button
                   onClick={handleGeneratePreview}
                   disabled={selectedTemplate.variables.some(v => v.required && !templateVars[v.key])}
-                  className="px-6 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-primary/90"
+                  className={BTN_PRIMARY}
                 >
                   Generate Preview
                 </button>
@@ -557,7 +614,7 @@ export default function AdminBlogPage() {
                 <span className="text-xs px-2 py-1 rounded bg-secondary/10 text-secondary">
                   {selectedTemplate.audienceLabel}
                 </span>
-                <h2 className="text-2xl font-bold text-primary mt-3 mb-2">{generatedPreview.title}</h2>
+                <h2 className="text-2xl font-bold text-heading mt-3 mb-2">{generatedPreview.title}</h2>
                 <p className="text-muted-foreground mb-2">{generatedPreview.description}</p>
                 <div className="flex gap-3 text-xs text-muted-foreground mb-4">
                   <span>/blog/{generatedPreview.slug}</span>
@@ -565,7 +622,7 @@ export default function AdminBlogPage() {
                 </div>
                 <div className="flex flex-wrap gap-1 mb-4">
                   {generatedPreview.keywords.map(k => (
-                    <span key={k} className="text-xs px-2 py-0.5 bg-gray-100 rounded">{k}</span>
+                    <span key={k} className="text-xs px-2 py-0.5 bg-muted text-foreground rounded">{k}</span>
                   ))}
                 </div>
                 <div
@@ -578,19 +635,19 @@ export default function AdminBlogPage() {
                 <button
                   onClick={handlePublishGenerated}
                   disabled={saving}
-                  className="px-6 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-primary/90"
+                  className={BTN_PRIMARY}
                 >
                   {saving ? 'Publishing...' : 'Publish Now'}
                 </button>
                 <button
                   onClick={handleEditGenerated}
-                  className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                  className={BTN_OUTLINE}
                 >
                   Edit Before Publishing
                 </button>
                 <button
                   onClick={() => setGeneratedPreview(null)}
-                  className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                  className={BTN_OUTLINE}
                 >
                   Regenerate
                 </button>
@@ -612,8 +669,8 @@ export default function AdminBlogPage() {
             onClick={() => setFilter(f)}
             className={`px-3 py-1 rounded-full text-sm ${
               filter === f
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -629,7 +686,7 @@ export default function AdminBlogPage() {
       {/* Posts table */}
       <div className="border rounded-lg overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 text-sm">
+          <thead className="bg-muted text-sm">
             <tr>
               <th className="text-left px-4 py-3 font-medium">Title</th>
               <th className="text-left px-4 py-3 font-medium">Category</th>
@@ -640,7 +697,7 @@ export default function AdminBlogPage() {
           </thead>
           <tbody className="divide-y">
             {filteredPosts.map(post => (
-              <tr key={post.id} className="hover:bg-gray-50">
+              <tr key={post.id} className="hover:bg-white/5">
                 <td className="px-4 py-3">
                   <div className="font-medium text-sm">{post.title}</div>
                   <div className="text-xs text-muted-foreground">/blog/{post.slug}</div>
@@ -668,19 +725,19 @@ export default function AdminBlogPage() {
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={() => startEdit(post)}
-                      className="text-xs px-2 py-1 border rounded hover:bg-gray-100"
+                      className={BTN_ACTION}
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleToggleStatus(post)}
-                      className="text-xs px-2 py-1 border rounded hover:bg-gray-100"
+                      className={BTN_ACTION}
                     >
                       {post.status === 'published' ? 'Unpublish' : 'Publish'}
                     </button>
                     <button
                       onClick={() => handleDelete(post.id)}
-                      className="text-xs px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50"
+                      className={BTN_DANGER}
                     >
                       Delete
                     </button>

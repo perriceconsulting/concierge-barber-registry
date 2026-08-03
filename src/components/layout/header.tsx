@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import { BrandMark } from '@/components/layout/brand-mark';
 import { ROUTES, APP_CONFIG } from '@/config';
 import { secureFetch, clearCsrfToken } from '@/lib/csrf-client';
 import { createLogger } from '@/lib/logger';
@@ -13,15 +14,17 @@ import { createLogger } from '@/lib/logger';
 const logger = createLogger('HEADER');
 
 const navLinks = [
+  { name: 'For Pros', href: ROUTES.PRO },
+  { name: 'For Clients', href: ROUTES.CLIENT },
   { name: 'Find Barbers', href: ROUTES.SEARCH },
-  { name: 'Specialties', href: ROUTES.SPECIALTIES },
   { name: 'About', href: ROUTES.ABOUT },
   { name: 'Blog', href: ROUTES.BLOG },
 ];
 
 export function Header() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // null = auth check still in flight (render neutral placeholder, not "Sign In").
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -52,11 +55,21 @@ export function Header() {
         if (response.ok) {
           const data = await response.json();
           const user = data.data?.user;
+          // /api/auth/me returns 200 { user: null } for guests now (was 401);
+          // only flip to logged-in if there's actually a user object.
+          if (!user) {
+            setIsLoggedIn(false);
+            setUserName(null);
+            setAvatarUrl(null);
+            setUserRole(null);
+            setActualRole(null);
+            return;
+          }
           setIsLoggedIn(true);
-          setUserName(user?.firstName ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` : null);
-          setAvatarUrl(user?.avatarUrl || null);
-          setUserRole(user?.role || null);
-          setActualRole(user?.actualRole || user?.role || null);
+          setUserName(user.firstName ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` : null);
+          setAvatarUrl(user.avatarUrl || null);
+          setUserRole(user.role || null);
+          setActualRole(user.actualRole || user.role || null);
         } else {
           setIsLoggedIn(false);
           setUserName(null);
@@ -114,10 +127,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link href={ROUTES.HOME} className="flex items-center space-x-2 shrink-0">
-          <span className="text-xl sm:text-2xl font-bold text-primary">
-            {APP_CONFIG.name}
-          </span>
+        <Link href={ROUTES.HOME} className="shrink-0" aria-label={APP_CONFIG.name}>
+          <BrandMark size="md" />
         </Link>
 
         {/* Desktop Navigation */}
@@ -135,7 +146,14 @@ export function Header() {
 
         {/* Desktop Auth */}
         <div className="hidden md:flex items-center space-x-4">
-          {isLoggedIn ? (
+          {isLoggedIn === null ? (
+            // Auth check still in flight — render a neutral placeholder so we
+            // don't flash "Sign In / Get Started" to a logged-in user.
+            <div className="flex items-center gap-3" aria-busy="true" aria-label="Checking session">
+              <div className="h-8 w-8 rounded-full bg-muted/40 animate-pulse" />
+              <div className="h-4 w-20 rounded bg-muted/40 animate-pulse" />
+            </div>
+          ) : isLoggedIn ? (
             <>
               {(userRole === 'barber' || isAdmin) && (
                 <Link href={ROUTES.DASHBOARD}>
@@ -203,9 +221,11 @@ export function Header() {
           {isLoggedIn && (
             <div className="flex items-center gap-2">
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt={userName || 'User'}
+                  width={32}
+                  height={32}
                   className="h-8 w-8 rounded-full object-cover border"
                 />
               ) : (
@@ -261,7 +281,12 @@ export function Header() {
 
             {/* Auth actions */}
             <div className="pt-3 border-t space-y-2">
-              {isLoggedIn ? (
+              {isLoggedIn === null ? (
+                <div className="flex items-center gap-3 px-3 py-2" aria-busy="true">
+                  <div className="h-8 w-8 rounded-full bg-muted/40 animate-pulse" />
+                  <div className="h-4 w-24 rounded bg-muted/40 animate-pulse" />
+                </div>
+              ) : isLoggedIn ? (
                 <>
                   {(userRole === 'barber' || isAdmin) && (
                     <Link

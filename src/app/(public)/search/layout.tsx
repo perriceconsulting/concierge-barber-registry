@@ -14,6 +14,10 @@ export const metadata: Metadata = buildPageMetadata({
     'local barbers',
     'best barber near me',
   ],
+  // Search results are thin/duplicative/infinite — Google's own guidance is to
+  // keep them out of the index. follow:true still lets link equity flow to the
+  // barber profiles linked from results.
+  noindex: true,
 });
 
 export default function SearchLayout({ children }: { children: React.ReactNode }) {

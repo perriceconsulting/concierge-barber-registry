@@ -14,6 +14,7 @@ interface PromptModalProps {
   description: string;
   placeholder?: string;
   expectedValue?: string;
+  defaultValue?: string;
   confirmText?: string;
   cancelText?: string;
   variant?: 'default' | 'destructive';
@@ -27,11 +28,12 @@ export function PromptModal({
   description,
   placeholder = '',
   expectedValue,
+  defaultValue = '',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'default',
 }: PromptModalProps) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(defaultValue);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;

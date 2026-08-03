@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { secureFetch } from '@/lib/csrf-client';
+import { APP_CONFIG } from '@/config';
 
 type OutreachStatus =
   | 'not_contacted'
@@ -31,11 +32,18 @@ interface OutreachProfile {
   outreachEmail: string | null;
   outreachStatus: OutreachStatus;
   outreachUpdatedAt: string | null;
-  outreachNotes: string | null;
+  noteCount: number;
   claimStatus: 'unclaimed' | 'claim_sent';
   claimToken: string | null;
   dataSource: string;
   user: { firstName: string; lastName: string };
+}
+
+interface OutreachNoteEntry {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: { firstName: string; lastName: string } | null;
 }
 
 const STATUS_LABELS: Record<OutreachStatus, string> = {
@@ -50,14 +58,61 @@ const STATUS_LABELS: Record<OutreachStatus, string> = {
   bounced: 'Bounced',
 };
 
+type OutreachChannel = 'ig' | 'fb' | 'tiktok' | 'google';
+
+/**
+ * Single source for channel identity. These are brand colors (IG purple, FB
+ * blue, TikTok pink), not theme tokens — they intentionally sit outside the
+ * `@theme` palette because the color IS the meaning here. Tailwind can't see
+ * constructed class names, so each tint is a full literal.
+ */
+const OUTREACH_CHANNELS: Record<
+  OutreachChannel,
+  { emoji: string; tint: string; tintHover: string; label: (profile: OutreachProfile) => string }
+> = {
+  ig: {
+    emoji: '📷',
+    tint: 'bg-purple-100 text-purple-800',
+    tintHover: 'hover:bg-purple-200',
+    label: (profile) => (profile.instagramHandle ? 'Open IG' : 'Find on IG'),
+  },
+  fb: {
+    emoji: '📘',
+    tint: 'bg-blue-100 text-blue-800',
+    tintHover: 'hover:bg-blue-200',
+    label: () => 'Find on FB',
+  },
+  tiktok: {
+    emoji: '🎵',
+    tint: 'bg-pink-100 text-pink-800',
+    tintHover: 'hover:bg-pink-200',
+    label: () => 'Find on TikTok',
+  },
+  google: {
+    emoji: '🌐',
+    // eslint-disable-next-line no-restricted-syntax -- channel identity, not a theme role: Google/web is the neutral chip in this set
+    tint: 'bg-gray-100 text-gray-800',
+    tintHover: 'hover:bg-gray-200',
+    label: () => 'Google',
+  },
+};
+
+const CHANNEL_ORDER: OutreachChannel[] = ['ig', 'fb', 'tiktok', 'google'];
+
+const CHANNEL_LINK_CLASS =
+  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors';
+
+// Statuses that mirror a channel derive their tint from OUTREACH_CHANNELS;
+// the rest are lifecycle states with their own meaning.
 const STATUS_BADGE_CLASS: Record<OutreachStatus, string> = {
   not_contacted: 'bg-amber-100 text-amber-800',
-  messaged_ig: 'bg-purple-100 text-purple-800',
-  messaged_fb: 'bg-blue-100 text-blue-800',
-  messaged_tiktok: 'bg-pink-100 text-pink-800',
+  messaged_ig: OUTREACH_CHANNELS.ig.tint,
+  messaged_fb: OUTREACH_CHANNELS.fb.tint,
+  messaged_tiktok: OUTREACH_CHANNELS.tiktok.tint,
   messaged_email: 'bg-cyan-100 text-cyan-800',
   messaged_phone: 'bg-emerald-100 text-emerald-800',
   responded: 'bg-green-100 text-green-800',
+  // eslint-disable-next-line no-restricted-syntax -- neutral chip in the status palette, deliberately colorless
   not_interested: 'bg-gray-200 text-gray-700',
   bounced: 'bg-red-100 text-red-800',
 };
@@ -74,7 +129,7 @@ const STATUS_OPTIONS: OutreachStatus[] = [
   'bounced',
 ];
 
-function buildSearchUrl(platform: 'ig' | 'fb' | 'tiktok' | 'google', profile: OutreachProfile) {
+function buildSearchUrl(platform: OutreachChannel, profile: OutreachProfile) {
   const name = profile.displayName;
   const location = `${profile.city} ${profile.state}`;
   switch (platform) {
@@ -133,37 +188,70 @@ function isLikelyPersonName(name: string | undefined): boolean {
   const trimmed = name.trim();
   if (!trimmed) return false;
   if (trimmed.length < 2 || trimmed.length > 20) return false;
-  if (/[\s\d]/.test(trimmed)) return false; // multi-word or has digits = not a first name
+  // Real first names are letters only (allow internal hyphen/apostrophe for
+  // names like "Mary-Jane" or "O'Brien"). This rejects IG handles stored as
+  // firstName ("@datightest"), business names with spaces/digits, and any
+  // symbol-laden value — all of which should fall through to the no-greeting
+  // founder opener rather than producing a bot-tell "Hey @handle!".
+  if (!/^[a-zA-Z][a-zA-Z'-]*$/.test(trimmed)) return false;
   return !NON_PERSON_NAME_TOKENS.has(trimmed.toLowerCase());
 }
 
-function buildDmTemplate(profile: OutreachProfile): string {
-  const baseUrl =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://conciergebarberregistry.com';
+/**
+ * Greeting prefix for the DM. Only greet by name when we have a genuine first
+ * name — returns "Hey {Name}! " (trailing space, prepended to the intro).
+ *
+ * For handle-only or shop-only imports we return an empty string and let the
+ * message open straight into the founder intro. "Hey @handle!" is the
+ * signature of automated IG DM bots, so greeting a handle actively signals
+ * "this is scripted" — worse than no greeting. The handle/shop still appears
+ * in the body ("reserved a profile under X"), where it reads natural.
+ */
+function buildSalutation(profile: OutreachProfile): string {
+  const first = profile.user.firstName?.trim();
+  return isLikelyPersonName(first) ? `Hey ${first}! ` : '';
+}
+
+
+function buildDmTemplate(profile: OutreachProfile, personalNote?: string): string {
+  // Outreach claim links must ALWAYS point at the live production domain —
+  // never window.location.origin (which would be localhost / the LAN dev IP /
+  // a Vercel preview URL depending on where the admin is working). A barber
+  // can only claim on the real site. APP_CONFIG.domain is a hardcoded
+  // constant ('conciergebarberregistry.com'), independent of NEXT_PUBLIC_APP_URL.
+  const baseUrl = `https://${APP_CONFIG.domain}`;
   const claimUrl = profile.claimToken
     ? `${baseUrl}/claim/${profile.claimToken}`
     : `${baseUrl}/barbers/${profile.slug}`;
 
   const businessLabel = profile.shopName || profile.displayName;
-  const salutation = isLikelyPersonName(profile.user.firstName)
-    ? `Hey ${profile.user.firstName}!`
-    : 'Hey there!';
+  const salutation = buildSalutation(profile);
 
-  return `${salutation} I'm Percy from Concierge Barber Registry — local NJ founder.
+  // Graceful location handling — many IG/manual imports have no city/state.
+  // Never render empty commas ("in , .") which looks broken/spammy.
+  const city = profile.city?.trim();
+  const state = profile.state?.trim();
+  const locationClause = city && state ? ` in ${city}, ${state}` : state ? ` in ${state}` : '';
+  // "when {city} clients search" → "when local clients search" when city unknown
+  const searchPrefix = city ? `${city} ` : 'local ';
 
-[Personalize here: 1–2 sentences about something specific to ${businessLabel} — a recent post, a new hire, a style you saw, anything real. Skip if you have nothing genuine to say.]
+  // Optional personalization — injected only when the admin has typed a real
+  // note for this profile. When empty, the block is omitted entirely so no
+  // placeholder instruction text can ever leak into a sent message.
+  const note = personalNote?.trim();
+  const personalBlock = note ? `\n\n${note}` : '';
 
-I'm building a license-verified directory specifically for independent barbers and reserved a profile under ${businessLabel} in ${profile.city}, ${profile.state}. Three things it actually solves:
+  return `${salutation}I'm Percy from Concierge Barber Registry — a local NJ founder.${personalBlock}
+
+I'm building a license-verified directory for independent barbers and barbershops, and I reserved a profile under ${businessLabel}${locationClause}. Three things it actually solves:
 
 → Trust signal that converts: clients see your verified-license badge, your portfolio, and real reviews — not "DM for prices" guessing.
 
-→ No middleman cut: I don't process payments or take a commission. Clients message you direct. You keep 100% of every cut.
+→ No middleman cut: I don't process payments or take a commission. Clients come to you direct — and you keep what you earn.
 
-→ Findable by specialty: when ${profile.city} clients search "fade barber" or "hot towel shave," your profile surfaces — not just whoever paid for the ad slot.
+→ Findable by specialty: when ${searchPrefix}clients search "fade barber" or "hot towel shave," your profile surfaces — not just whoever paid for the ad slot.
 
-Free forever on the Starter tier, no credit card. Claim it here: ${claimUrl}
+Free to claim — no credit card to get started. Claim it here: ${claimUrl}
 
 Or tell me to take the listing down — no hard feelings.`;
 }
@@ -178,7 +266,22 @@ export default function AdminOutreachPage() {
   const [claimFilter, setClaimFilter] = useState<'all' | 'unclaimed' | 'claim_sent'>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
+  // Outreach notes are an append-only thread per profile. Entries are lazy-
+  // loaded (and cached) when a card's notes panel is first expanded.
+  const [threads, setThreads] = useState<Record<string, OutreachNoteEntry[]>>({});
+  const [threadLoading, setThreadLoading] = useState<Set<string>>(new Set());
+  const [newEntry, setNewEntry] = useState<Record<string, string>>({});
+  const [addingId, setAddingId] = useState<string | null>(null);
+  // Optional per-profile personalization line injected into the copied DM.
+  // Transient (not persisted) — typed at send time when there's something
+  // genuine to say. Empty = the DM omits the personalization block entirely.
+  const [dmNotes, setDmNotes] = useState<Record<string, string>>({});
+  // Which profile's DM was just copied — drives the transient "✓ Copied"
+  // button state (reverts after ~2s). Avoids a toast for a low-stakes action.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Same lightweight pattern for a just-added note entry — the Add button
+  // flips to "✓ Added" for ~2s instead of firing a success toast.
+  const [addedId, setAddedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -243,47 +346,84 @@ export default function AdminOutreachPage() {
     }
   };
 
-  const saveNotes = async (id: string) => {
-    const notes = draftNotes[id] ?? '';
-    setUpdatingId(id);
+  const loadThread = async (id: string) => {
+    setThreadLoading((prev) => new Set(prev).add(id));
     try {
-      const response = await secureFetch(`/api/admin/outreach/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ outreachNotes: notes || null }),
-      });
+      const response = await fetch(`/api/admin/outreach/${id}/notes`);
       const data = await response.json();
       if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || 'Update failed');
+        throw new Error(data.error?.message || 'Failed to load notes');
       }
-      setProfiles((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? { ...p, outreachNotes: notes || null, outreachUpdatedAt: data.data.outreachUpdatedAt }
-            : p
-        )
-      );
-      showToast({ title: 'Notes saved', variant: 'success' });
+      setThreads((prev) => ({ ...prev, [id]: data.data.entries }));
     } catch (err) {
       showToast({
-        title: 'Failed to save notes',
+        title: 'Failed to load notes',
         description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'error',
       });
     } finally {
-      setUpdatingId(null);
+      setThreadLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  const addNote = async (id: string) => {
+    const body = (newEntry[id] ?? '').trim();
+    if (!body) return;
+    setAddingId(id);
+    try {
+      const response = await secureFetch(`/api/admin/outreach/${id}/notes`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || 'Failed to add note');
+      }
+      const entry: OutreachNoteEntry = data.data.entry;
+      // Append to the local thread (chronological), clear the input, and bump
+      // the card's count + last-updated so the list reflects the new entry.
+      setThreads((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), entry] }));
+      setNewEntry((prev) => ({ ...prev, [id]: '' }));
+      setProfiles((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? { ...p, noteCount: p.noteCount + 1, outreachUpdatedAt: entry.createdAt }
+            : p
+        )
+      );
+      // Inline "✓ Added" feedback (~2s) instead of a toast. Panel stays open —
+      // a thread invites adding several entries in a row.
+      setAddedId(id);
+      window.setTimeout(() => setAddedId((cur) => (cur === id ? null : cur)), 2000);
+    } catch (err) {
+      showToast({
+        title: 'Failed to add note',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'error',
+      });
+    } finally {
+      setAddingId(null);
     }
   };
 
   const copyDmTemplate = async (profile: OutreachProfile) => {
-    const text = buildDmTemplate(profile);
+    const text = buildDmTemplate(profile, dmNotes[profile.id]);
     try {
       await navigator.clipboard.writeText(text);
-      showToast({
-        title: 'DM template copied',
-        description: 'Paste it into IG/FB/SMS and send.',
-        variant: 'success',
-      });
+      // Lightweight inline feedback — the button flips to "✓ Copied" for ~2s
+      // instead of firing a toast. Copy is a low-stakes action; a modal is
+      // heavier than it warrants.
+      setCopiedId(profile.id);
+      window.setTimeout(
+        () => setCopiedId((cur) => (cur === profile.id ? null : cur)),
+        2000,
+      );
     } catch {
+      // A silent copy failure WOULD be confusing — keep the toast for errors.
       showToast({
         title: 'Could not copy',
         description: 'Select and copy manually.',
@@ -292,14 +432,18 @@ export default function AdminOutreachPage() {
     }
   };
 
-  const toggleNotes = (id: string, current: string | null) => {
+  const toggleNotes = (id: string) => {
+    const willOpen = !expandedNotes.has(id);
     setExpandedNotes((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-    setDraftNotes((prev) => ({ ...prev, [id]: current || '' }));
+    // Lazy-load the thread the first time the panel opens; cache thereafter.
+    if (willOpen && threads[id] === undefined && !threadLoading.has(id)) {
+      void loadThread(id);
+    }
   };
 
   const totalCount = useMemo(
@@ -310,7 +454,7 @@ export default function AdminOutreachPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Outreach Helper</h1>
+        <h1 className="text-3xl font-bold text-heading">Outreach Helper</h1>
         <p className="mt-2 text-muted-foreground">
           For each unclaimed/claim-sent profile: search them on social, copy a DM
           template with their unique claim link, and track status.
@@ -421,39 +565,35 @@ export default function AdminOutreachPage() {
                     </select>
                   </div>
 
+                  {/* Optional DM personalization — only fill when you have
+                      something genuine to say. Left blank, the DM omits the
+                      block entirely (no placeholder text leaks). */}
+                  <div className="mb-3">
+                    <Input
+                      value={dmNotes[profile.id] ?? ''}
+                      onChange={(e) =>
+                        setDmNotes((prev) => ({ ...prev, [profile.id]: e.target.value }))
+                      }
+                      placeholder="Optional: 1 genuine personal line for the DM (e.g. 'Loved your fade work on that last reel')"
+                      className="text-sm"
+                    />
+                  </div>
+
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <a
-                      href={buildSearchUrl('ig', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                    >
-                      📷 {profile.instagramHandle ? 'Open IG' : 'Find on IG'}
-                    </a>
-                    <a
-                      href={buildSearchUrl('fb', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
-                    >
-                      📘 Find on FB
-                    </a>
-                    <a
-                      href={buildSearchUrl('tiktok', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-pink-100 text-pink-800 hover:bg-pink-200 transition-colors"
-                    >
-                      🎵 Find on TikTok
-                    </a>
-                    <a
-                      href={buildSearchUrl('google', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
-                    >
-                      🌐 Google
-                    </a>
+                    {CHANNEL_ORDER.map((channel) => {
+                      const { emoji, tint, tintHover, label } = OUTREACH_CHANNELS[channel];
+                      return (
+                        <a
+                          key={channel}
+                          href={buildSearchUrl(channel, profile)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${CHANNEL_LINK_CLASS} ${tint} ${tintHover}`}
+                        >
+                          {emoji} {label(profile)}
+                        </a>
+                      );
+                    })}
                     {profile.websiteUrl && (
                       <a
                         href={profile.websiteUrl}
@@ -468,15 +608,16 @@ export default function AdminOutreachPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => copyDmTemplate(profile)}
+                      className={copiedId === profile.id ? 'text-green-600 border-green-600' : ''}
                     >
-                      📋 Copy DM
+                      {copiedId === profile.id ? '✓ Copied' : '📋 Copy DM'}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => toggleNotes(profile.id, profile.outreachNotes)}
+                      onClick={() => toggleNotes(profile.id)}
                     >
-                      📝 {isExpanded ? 'Hide notes' : profile.outreachNotes ? 'Edit notes' : 'Add notes'}
+                      📝 {isExpanded ? 'Hide notes' : `Notes (${profile.noteCount})`}
                     </Button>
                     <a
                       href={`/barbers/${profile.slug}`}
@@ -489,27 +630,68 @@ export default function AdminOutreachPage() {
                   </div>
 
                   {isExpanded && (
-                    <div className="space-y-2 mt-3 border-t pt-3">
-                      <Textarea
-                        value={draftNotes[profile.id] ?? ''}
-                        onChange={(e) =>
-                          setDraftNotes((prev) => ({
-                            ...prev,
-                            [profile.id]: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                        placeholder="Notes (e.g., 'IG handle is @theirhandle, prefers texts')"
-                        disabled={updatingId === profile.id}
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveNotes(profile.id)}
-                          disabled={updatingId === profile.id}
-                        >
-                          {updatingId === profile.id ? 'Saving...' : 'Save notes'}
-                        </Button>
+                    <div className="mt-3 border-t pt-3 space-y-3">
+                      {/* Append-only, author-attributed thread (oldest first). */}
+                      {threadLoading.has(profile.id) &&
+                      threads[profile.id] === undefined ? (
+                        <p className="text-sm text-muted-foreground">Loading notes…</p>
+                      ) : (threads[profile.id]?.length ?? 0) === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No notes yet — add the first one below.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {threads[profile.id]?.map((entry) => (
+                            <li key={entry.id} className="text-sm">
+                              <div className="text-xs text-muted-foreground">
+                                {entry.author
+                                  ? `${entry.author.firstName} ${entry.author.lastName}`.trim()
+                                  : 'Unknown'}
+                                {' · '}
+                                {new Date(entry.createdAt).toLocaleString()}
+                              </div>
+                              <p className="whitespace-pre-wrap text-foreground">
+                                {entry.body}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <div className="space-y-2">
+                        <Textarea
+                          value={newEntry[profile.id] ?? ''}
+                          onChange={(e) =>
+                            setNewEntry((prev) => ({
+                              ...prev,
+                              [profile.id]: e.target.value,
+                            }))
+                          }
+                          rows={2}
+                          placeholder="Add a note (e.g., 'DMed on IG — no reply yet')"
+                          disabled={addingId === profile.id}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => addNote(profile.id)}
+                            disabled={
+                              addingId === profile.id ||
+                              !(newEntry[profile.id] ?? '').trim()
+                            }
+                            className={
+                              addedId === profile.id
+                                ? 'bg-green-700 hover:bg-green-700 text-white'
+                                : ''
+                            }
+                          >
+                            {addingId === profile.id
+                              ? 'Adding…'
+                              : addedId === profile.id
+                                ? '✓ Added'
+                                : 'Add note'}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}

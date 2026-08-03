@@ -5,6 +5,13 @@ import { verifyAccessToken, verifyRefreshToken, generateAccessToken, TokenExpire
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Short marketing alias used on the barber-acquisition ads
+  // (conciergebarberregistry.com/join) — hard-redirect straight to barber
+  // signup to match the "Get Registered" CTA.
+  if (pathname === '/join') {
+    return NextResponse.redirect(new URL('/register?role=barber', request.url));
+  }
+
   // Create response
   const response = await handleProtectedRoutes(request);
 
@@ -20,6 +27,30 @@ async function handleProtectedRoutes(request: NextRequest): Promise<NextResponse
   // Protected routes that require authentication
   const protectedRoutes = ['/dashboard', '/admin'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+
+  // CBR v2.0 — /black-label is gated separately: invitation-only, but on a miss
+  // we redirect to the public request-access form instead of /login (preserves
+  // marketing funnel for someone who lands on the URL without an account).
+  // The /black-label/request-access route itself is always public.
+  const isBlackLabelGated =
+    pathname === '/black-label' || pathname.startsWith('/black-label/');
+  const isBlackLabelPublic = pathname.startsWith('/black-label/request-access');
+
+  if (isBlackLabelGated && !isBlackLabelPublic) {
+    const accessToken = request.cookies.get('accessToken')?.value;
+    if (!accessToken) {
+      return NextResponse.redirect(new URL('/black-label/request-access', request.url));
+    }
+    try {
+      const payload = await verifyAccessToken(accessToken);
+      if (payload.role !== 'hnwi' && payload.role !== 'admin') {
+        return NextResponse.redirect(new URL('/black-label/request-access', request.url));
+      }
+      return NextResponse.next();
+    } catch {
+      return NextResponse.redirect(new URL('/black-label/request-access', request.url));
+    }
+  }
 
   if (isProtectedRoute) {
     const accessToken = request.cookies.get('accessToken')?.value;

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROUTES } from '@/config';
@@ -23,24 +24,28 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect already-authenticated users to their dashboard
+  // Redirect already-authenticated users to their dashboard.
+  // /api/auth/me returns 200 { user: null } for guests (so we don't pollute
+  // the browser console with 401s), so we must check for a real user object,
+  // not just a successful response — otherwise guests get bounced off /login.
   useEffect(() => {
     async function checkAuth() {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          const role = data.data?.user?.role;
-          if (role === 'admin') {
-            window.location.href = ROUTES.ADMIN;
-          } else if (role === 'barber') {
-            window.location.href = ROUTES.DASHBOARD;
-          } else {
-            window.location.href = ROUTES.HOME;
-          }
+        if (!res.ok) return;
+        const data = await res.json();
+        const user = data.data?.user;
+        if (!user) return; // guest — stay on login
+        const role = user.role;
+        if (role === 'admin') {
+          window.location.href = ROUTES.ADMIN;
+        } else if (role === 'barber') {
+          window.location.href = ROUTES.DASHBOARD;
+        } else {
+          window.location.href = ROUTES.HOME;
         }
       } catch {
-        // Not authenticated — stay on login page
+        // Network failure — stay on login page
       }
     }
     checkAuth();
@@ -127,9 +132,8 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}

@@ -8,7 +8,9 @@ import { handleApiError } from '@/lib/api/errors';
 const createBlogSchema = z.object({
   title: z.string().min(5).max(200),
   slug: z.string().min(3).max(200).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase with hyphens'),
-  description: z.string().min(10).max(500),
+  // 200 is the PRD cap and also roughly where search engines truncate a meta
+  // description. The column allows 500; this is the tighter, intentional limit.
+  description: z.string().min(10).max(200),
   content: z.string().min(50),
   keywords: z.array(z.string()).min(1).max(15),
   category: z.enum(['for_clients', 'for_barbers', 'industry']),

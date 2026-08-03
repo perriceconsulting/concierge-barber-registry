@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { ROUTES, SPECIALTIES } from '@/config';
 import { slugify } from '@/lib/slug';
+import { FAQS } from '@/lib/copy/faqs';
+import { FaqSection } from '@/components/seo/faq-section';
 
 const FEATURED_SPECIALTIES = [
   'Fades',
@@ -105,7 +107,7 @@ export default function ForClientsPage() {
           <div className="mx-auto max-w-2xl text-center mb-16">
             <h2
               id="why-choose-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Why Choose Concierge Barber Registry
             </h2>
@@ -117,7 +119,7 @@ export default function ForClientsPage() {
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-3">
             {WHY_CHOOSE.map((item) => (
               <div key={item.title} className="text-center">
-                <h3 className="text-xl font-semibold text-primary">{item.title}</h3>
+                <h3 className="text-xl font-semibold text-heading">{item.title}</h3>
                 <p className="mt-3 text-muted-foreground">{item.body}</p>
               </div>
             ))}
@@ -131,7 +133,7 @@ export default function ForClientsPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="how-it-works-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               How It Works
             </h2>
@@ -160,7 +162,7 @@ export default function ForClientsPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="explore-specialties-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Explore by Specialty
             </h2>
@@ -195,7 +197,7 @@ export default function ForClientsPage() {
       <section className="py-20 bg-primary/5">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-heading sm:text-4xl">
               Every Barber is License-Verified
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -206,7 +208,7 @@ export default function ForClientsPage() {
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto text-left">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">License-Verified</h3>
+                  <h3 className="font-semibold text-heading mb-2">License-Verified</h3>
                   <p className="text-sm text-muted-foreground">
                     Every profile is credentialed before approval
                   </p>
@@ -214,7 +216,7 @@ export default function ForClientsPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">Zero Booking Fees</h3>
+                  <h3 className="font-semibold text-heading mb-2">Zero Booking Fees</h3>
                   <p className="text-sm text-muted-foreground">
                     Contact barbers directly — you&apos;re not charged to book
                   </p>
@@ -222,7 +224,7 @@ export default function ForClientsPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">Authentic Reviews</h3>
+                  <h3 className="font-semibold text-heading mb-2">Authentic Reviews</h3>
                   <p className="text-sm text-muted-foreground">
                     Real feedback from real client interactions, no paid placements
                   </p>
@@ -233,8 +235,15 @@ export default function ForClientsPage() {
         </Container>
       </section>
 
+      {/* FAQs — AEO/SGE answers for top-funnel client queries */}
+      <FaqSection
+        items={FAQS.forClients}
+        background="transparent"
+        lede="What clients ask before searching the Concierge Barber Registry."
+      />
+
       {/* FINAL CTA */}
-      <section className="bg-primary py-16 text-primary-foreground">
+      <section className="bg-card border-y border-border py-16 text-foreground spotlight-soft">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">Ready for a Great Cut?</h2>

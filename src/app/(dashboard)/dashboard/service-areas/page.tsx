@@ -255,7 +255,7 @@ export default function ServiceAreasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Service Areas & Travel</h1>
+        <h1 className="text-3xl font-bold text-heading">Service Areas & Travel</h1>
         <p className="text-muted-foreground mt-2">
           Define where you serve clients and announce upcoming travel
         </p>

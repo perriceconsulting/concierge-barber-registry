@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { secureFetch } from '@/lib/csrf-client';
 import { SUSPENSION_REASONS } from '@/lib/suspension';
 import type { SuspensionReason } from '@prisma/client';
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('ADMIN_BARBERS');
@@ -28,7 +29,7 @@ interface BarberResponse {
   slug: string;
   city: string;
   state: string;
-  verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
+  verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended' | 'expired';
   suspensionReason?: SuspensionReason | null;
   licenseNumber?: string;
   licenseState?: string;
@@ -37,6 +38,11 @@ interface BarberResponse {
   submittedForVerificationAt?: string;
   isHidden?: boolean;
   vacationMode?: boolean;
+  // CBR v2.0 — verification paywall
+  setupFeePaidAt?: string | null;
+  setupFeeAmountCents?: number | null;
+  foundingMember?: boolean;
+  subscriptionWaivedUntil?: string | null;
   createdAt: string;
   appeals?: PendingAppeal[];
   user?: {
@@ -53,7 +59,7 @@ interface Barber {
   email: string;
   city: string;
   state: string;
-  verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended';
+  verificationStatus: 'pending' | 'approved' | 'rejected' | 'suspended' | 'expired';
   suspensionReason?: SuspensionReason | null;
   isHidden?: boolean;
   vacationMode?: boolean;
@@ -63,6 +69,10 @@ interface Barber {
   licenseExpirationDate?: string;
   licenseDocumentUrl?: string;
   submittedAt: string;
+  // CBR v2.0 — verification paywall
+  setupFeePaidAt?: string | null;
+  setupFeeAmountCents?: number | null;
+  foundingMember?: boolean;
   user?: {
     email: string;
     firstName: string;
@@ -83,11 +93,7 @@ export default function AdminBarbersPage() {
   const [selectedReason, setSelectedReason] = useState<SuspensionReason | ''>('');
   const [suspendNotes, setSuspendNotes] = useState('');
 
-  useEffect(() => {
-    fetchBarbers();
-  }, [filter, searchQuery]);
-
-  const fetchBarbers = async () => {
+  const fetchBarbers = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -118,6 +124,9 @@ export default function AdminBarbersPage() {
           licenseExpirationDate: b.licenseExpirationDate,
           licenseDocumentUrl: b.licenseDocumentUrl,
           submittedAt: new Date(b.submittedForVerificationAt || b.createdAt).toLocaleDateString(),
+          setupFeePaidAt: b.setupFeePaidAt ?? null,
+          setupFeeAmountCents: b.setupFeeAmountCents ?? null,
+          foundingMember: Boolean(b.foundingMember),
           user: b.user,
         })));
       } else {
@@ -129,7 +138,17 @@ export default function AdminBarbersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filter, searchQuery]);
+
+  useEffect(() => {
+    fetchBarbers();
+  }, [fetchBarbers]);
+
+  // Refetch when the tab regains focus — keeps the list in sync with barber-side
+  // actions (license uploads, setup-fee payments, profile edits) happening in another tab.
+  useVisibilityRefetch(() => {
+    fetchBarbers();
+  });
 
   const appealsCount = barbers.filter(b => b.pendingAppeal).length;
 
@@ -170,8 +189,8 @@ export default function AdminBarbersPage() {
         fetchBarbers();
       } else {
         showToast({
-          title: 'Error',
-          description: data.message || 'Failed to approve barber',
+          title: 'Cannot approve',
+          description: data?.error?.message || data.message || 'Failed to approve barber',
           variant: 'error',
         });
       }
@@ -340,6 +359,50 @@ export default function AdminBarbersPage() {
     });
   };
 
+  // CBR v2.0 — toggle Founding Member status (FEAT-001)
+  const handleToggleFoundingMember = async (barberId: string, currentlyFounding: boolean) => {
+    const next = !currentlyFounding;
+    const verb = next ? 'Grant' : 'Revoke';
+    showConfirm({
+      title: `${verb} Founding Member status`,
+      description: next
+        ? 'This barber will be exempt from the verification setup fee and the post-trial Verified Member subscription. Limited to 10 active seats.'
+        : 'Founding Member status will be revoked. The barber will need to pay the setup fee (if not already paid) and a recurring sub will resume.',
+      confirmText: verb,
+      variant: next ? undefined : 'destructive',
+      onConfirm: async () => {
+        try {
+          const response = await secureFetch(`/api/admin/barbers/${barberId}/founding-member`, {
+            method: 'PATCH',
+            body: JSON.stringify({ foundingMember: next }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            showToast({
+              title: 'Updated',
+              description: data.message || `Founding Member status ${next ? 'granted' : 'revoked'}.`,
+              variant: 'success',
+            });
+            fetchBarbers();
+          } else {
+            showToast({
+              title: 'Failed',
+              description: data?.error?.message || 'Could not update status.',
+              variant: 'error',
+            });
+          }
+        } catch (err) {
+          logger.error('Founding Member toggle failed:', err);
+          showToast({
+            title: 'Failed',
+            description: 'Could not update status. Please try again.',
+            variant: 'error',
+          });
+        }
+      },
+    });
+  };
+
   const handleAppealReview = async (appealId: string, status: 'approved' | 'denied') => {
     const action = status === 'approved' ? 'approve' : 'deny';
     showPrompt({
@@ -474,7 +537,7 @@ export default function AdminBarbersPage() {
                 onClick={() => setFilter('appeals')}
               >
                 Appeals {appealsCount > 0 && (
-                  <span className="ml-1 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                  <span className="ml-1 bg-amber-500 text-amber-950 text-xs rounded-full px-1.5 py-0.5">
                     {appealsCount}
                   </span>
                 )}
@@ -526,7 +589,7 @@ export default function AdminBarbersPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-1.5 items-center">
+                  <div className="flex gap-1.5 items-center flex-wrap">
                     <Badge variant={getStatusBadgeVariant(barber.verificationStatus)}>
                       {barber.verificationStatus}
                     </Badge>
@@ -535,6 +598,14 @@ export default function AdminBarbersPage() {
                     )}
                     {barber.vacationMode && (
                       <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">Vacation</Badge>
+                    )}
+                    {/* CBR v2.0 — verification paywall status (FEAT-001) */}
+                    {barber.foundingMember ? (
+                      <Badge className="badge-verified gold-shimmer text-xs">Founding Member</Badge>
+                    ) : barber.setupFeePaidAt ? (
+                      <Badge variant="success" className="text-xs">Setup Fee Paid</Badge>
+                    ) : (
+                      <Badge variant="warning" className="text-xs">Setup Fee Unpaid</Badge>
                     )}
                   </div>
                 </div>
@@ -545,6 +616,23 @@ export default function AdminBarbersPage() {
                   {!barber.licenseDocumentUrl && (
                     <p className="text-sm text-muted-foreground italic">No license document uploaded</p>
                   )}
+
+                  {/* CBR v2.0 — Founding Member toggle (FEAT-001) */}
+                  <div className="flex gap-2 items-center text-xs">
+                    <Button
+                      size="sm"
+                      variant={barber.foundingMember ? 'destructive' : 'outline'}
+                      onClick={() => handleToggleFoundingMember(barber.id, Boolean(barber.foundingMember))}
+                    >
+                      {barber.foundingMember ? 'Revoke Founding Member' : 'Grant Founding Member'}
+                    </Button>
+                    {barber.setupFeePaidAt && barber.setupFeeAmountCents != null && (
+                      <span className="text-muted-foreground">
+                        Paid ${(barber.setupFeeAmountCents / 100).toFixed(2)} on{' '}
+                        {new Date(barber.setupFeePaidAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 flex-wrap items-center">
@@ -744,6 +832,9 @@ export default function AdminBarbersPage() {
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4 flex items-center justify-center" style={{ minHeight: '60vh' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- uploaded
+                  license scans have no known intrinsic dimensions and are shown
+                  fit-to-viewport in an admin-only modal; not on any LCP path. */}
               <img
                 src={viewingLicense}
                 alt="License document"

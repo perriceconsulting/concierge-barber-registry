@@ -166,7 +166,7 @@ export default function HelpPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Help Center</h1>
+        <h1 className="text-3xl font-bold text-heading">Help Center</h1>
         <p className="text-muted-foreground mt-2">
           Find answers to common questions about managing your barber profile
         </p>

@@ -195,7 +195,7 @@ export default function ServicesPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-primary">Services</h1>
+        <h1 className="text-3xl font-bold text-heading">Services</h1>
         <p className="text-muted-foreground">Loading services...</p>
       </div>
     );
@@ -205,7 +205,7 @@ export default function ServicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Services</h1>
+          <h1 className="text-3xl font-bold text-heading">Services</h1>
           <p className="text-muted-foreground mt-2">
             Manage the services you offer ({services.length}/{maxServices})
           </p>

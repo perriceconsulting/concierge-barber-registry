@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Container } from '@/components/layout/container';
 import { useToast } from '@/components/ui/toast';
+import { StarRating } from '@/components/ui/star-rating';
 import { BarberStructuredData } from '@/components/seo/barber-structured-data';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { RemovalRequestForm } from '@/components/barber/removal-request-form';
@@ -124,18 +125,12 @@ export default function BarberProfilePage() {
       } else {
         setIsAuthenticated(false);
       }
-    } catch (error) {
+    } catch {
       setIsAuthenticated(false);
     }
   };
 
-  useEffect(() => {
-    if (slug) {
-      fetchBarberProfile();
-    }
-  }, [slug]);
-
-  const fetchBarberProfile = async () => {
+  const fetchBarberProfile = useCallback(async () => {
     try {
       const response = await fetch(`/api/barbers/${slug}`);
       const data = await response.json();
@@ -149,15 +144,13 @@ export default function BarberProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
 
-  const renderStars = (rating: number) => {
-    return [...Array(5)].map((_, i) => (
-      <span key={i} className={i < rating ? 'text-yellow-400' : 'text-gray-300'}>
-        ★
-      </span>
-    ));
-  };
+  useEffect(() => {
+    if (slug) {
+      fetchBarberProfile();
+    }
+  }, [slug, fetchBarberProfile]);
 
   const handleContactClick = () => {
     if (!isAuthenticated) {
@@ -328,7 +321,7 @@ export default function BarberProfilePage() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold text-primary">{barber.displayName}</h1>
+                <h1 className="text-4xl font-bold text-heading">{barber.displayName}</h1>
                 <TierBadge tier={barberTier} />
               </div>
               {barber.tagline && (
@@ -338,7 +331,7 @@ export default function BarberProfilePage() {
                 {barber.averageRating > 0 && (
                   <>
                     <div className="flex items-center gap-1">
-                      <div className="flex">{renderStars(Math.round(barber.averageRating))}</div>
+                      <StarRating rating={barber.averageRating} />
                       <span className="font-semibold ml-1">{barber.averageRating.toFixed(1)}</span>
                       <span className="text-muted-foreground">({barber.reviews?.length || 0} reviews)</span>
                     </div>
@@ -470,7 +463,7 @@ export default function BarberProfilePage() {
                           <span className="font-medium">
                             {review.client.firstName} {review.client.lastName}
                           </span>
-                          <div className="flex">{renderStars(review.rating)}</div>
+                          <StarRating rating={review.rating} />
                         </div>
                         <p className="text-muted-foreground">{review.comment}</p>
                         <p className="text-xs text-muted-foreground mt-2">

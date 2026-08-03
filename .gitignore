@@ -12,6 +12,14 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+# local build artifacts (smoke PDFs, mkcert output, etc.)
+/tmp
+/certificates
 
 # next.js
 /.next/
@@ -41,3 +49,10 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Raw photo source for blog images (full-res, pre-crop).
+# Kept locally for re-cropping; not committed because everything needed to
+# rebuild the published images is: assets/blog-masters/ holds the normalized
+# masters and scripts/watermark-blog-images.ts regenerates public/blog/ from
+# them. Lives outside public/ so Next never serves it.
+/assets/blog-sources/

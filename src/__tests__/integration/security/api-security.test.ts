@@ -2,10 +2,10 @@ import { NextRequest } from 'next/server';
 import {
   generateCsrfToken,
   verifyCsrfToken,
-  setCsrfToken,
 } from '@/lib/api/csrf';
 import { rateLimit, rateLimiters } from '@/lib/api/rate-limit';
 import { RateLimitError, ApiError } from '@/lib/api/errors';
+import { loginSchema } from '@/lib/validations/auth';
 
 describe('API Security - CSRF Protection', () => {
   describe('CSRF Token Generation', () => {
@@ -312,9 +312,15 @@ describe('API Security - Input Validation', () => {
     it('should sanitize email input', () => {
       const maliciousEmail = "<script>alert('xss')</script>@example.com";
 
-      // Email validation should reject this
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      expect(emailRegex.test(maliciousEmail)).toBe(false);
+      // Assert against the validator the product actually uses. This test used
+      // to declare its own permissive regex inline and assert on that, which
+      // tested a literal in this file and told us nothing about login input.
+      const result = loginSchema.safeParse({
+        email: maliciousEmail,
+        password: 'ValidPassword123!',
+      });
+
+      expect(result.success).toBe(false);
     });
   });
 

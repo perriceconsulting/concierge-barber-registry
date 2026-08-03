@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ROUTES } from '@/config';
 
 type NotificationSeverity = 'info' | 'success' | 'warning' | 'error';

@@ -16,7 +16,8 @@ const deleteAccountHandler = async (request: AuthRequest) => {
     const userId = request.userId;
     const body = await request.json();
 
-    const validatedData = deleteAccountSchema.parse(body);
+    // Throws if the caller didn't type DELETE; the parse *is* the guard.
+    deleteAccountSchema.parse(body);
 
     // Delete user account (cascading deletes will handle related records)
     await prisma.user.delete({

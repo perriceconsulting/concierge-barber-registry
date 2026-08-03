@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { SUBSCRIPTION } from '@/config';
 import { TIER_LIMITS } from '@/lib/subscription';
-import { FAQStructuredData } from '@/components/seo/faq-structured-data';
+import { FAQS } from '@/lib/copy/faqs';
+import { FaqSection } from '@/components/seo/faq-section';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'For Barbers — Keep 100% of Your Cut',
@@ -78,38 +79,6 @@ const HOW_IT_WORKS = [
   },
 ];
 
-const FAQS = [
-  {
-    question: 'How much does it cost to join?',
-    answer:
-      'Registration is free and our Starter tier is free forever. Professional is $29/mo and Elite is $59/mo — both come with a 14-day free trial.',
-  },
-  {
-    question: 'Do you take a cut of my bookings?',
-    answer:
-      "No. We don't process payments or take commission on bookings. Clients contact you directly and you keep 100% of every cut.",
-  },
-  {
-    question: 'What does "license-verified" mean?',
-    answer:
-      "Every barber on the registry uploads their professional license during onboarding. We verify it's active and valid before approving the profile. This signals to clients that you're the real deal.",
-  },
-  {
-    question: 'Can I offer mobile services?',
-    answer:
-      'Yes. You can mark your profile as accepting walk-ins, by appointment, or offering mobile service with a service radius. Perfect for independent and concierge-style barbers.',
-  },
-  {
-    question: 'How do clients contact me?',
-    answer:
-      'Every profile has a contact form. Clients fill it out with their preferred date, time, and service — you see the request in your dashboard and respond directly. No intermediary, no platform fees.',
-  },
-  {
-    question: 'What if I already have a website or Instagram?',
-    answer:
-      "Link them from your profile. The registry complements your existing presence with a verified badge, searchable listing, and centralized reviews — things social media can't give you.",
-  },
-];
 
 const PROFESSIONAL_PRICE = SUBSCRIPTION.PRICES.PROFESSIONAL_MONTHLY_CENTS / 100;
 const ELITE_PRICE = SUBSCRIPTION.PRICES.ELITE_MONTHLY_CENTS / 100;
@@ -168,7 +137,6 @@ const PRICING_TIERS = [
 export default function ForBarbersPage() {
   return (
     <>
-      <FAQStructuredData items={FAQS} />
       {/* HERO */}
       <section className="relative bg-gradient-to-br from-primary/10 via-background to-accent/5 py-24 md:py-32">
         <Container>
@@ -232,7 +200,7 @@ export default function ForBarbersPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="comparison-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               The Old Way vs Concierge Barber Registry
             </h2>
@@ -274,7 +242,7 @@ export default function ForBarbersPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="how-it-works-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               How It Works
             </h2>
@@ -307,7 +275,7 @@ export default function ForBarbersPage() {
             <div className="text-center mb-10">
               <h2
                 id="verification-heading"
-                className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+                className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
               >
                 Why License Verification Matters
               </h2>
@@ -319,7 +287,7 @@ export default function ForBarbersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Clients Pay More for Proof
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -331,7 +299,7 @@ export default function ForBarbersPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Search Rewards Verification
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -343,7 +311,7 @@ export default function ForBarbersPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Filter Out Tire-Kickers
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -354,7 +322,7 @@ export default function ForBarbersPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Stand Out in Your City
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -375,7 +343,7 @@ export default function ForBarbersPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="pricing-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Simple, Transparent Pricing
             </h2>
@@ -400,7 +368,7 @@ export default function ForBarbersPage() {
                   </div>
                 )}
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-bold text-primary">{tier.name}</h3>
+                  <h3 className="text-xl font-bold text-heading">{tier.name}</h3>
                   <div className="mt-4 flex items-baseline gap-2">
                     <span className="text-4xl font-extrabold">{tier.price}</span>
                     <span className="text-sm text-muted-foreground">{tier.cadence}</span>
@@ -440,38 +408,16 @@ export default function ForBarbersPage() {
         </Container>
       </section>
 
-      {/* FAQ */}
-      <section className="py-20 bg-muted/30" aria-labelledby="faq-heading">
-        <Container>
-          <div className="mx-auto max-w-3xl">
-            <div className="text-center mb-12">
-              <h2
-                id="faq-heading"
-                className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
-              >
-                Questions Barbers Ask
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Everything you need to know before you sign up
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {FAQS.map((faq) => (
-                <Card key={faq.question}>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold text-primary mb-2">{faq.question}</h3>
-                    <p className="text-muted-foreground">{faq.answer}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </Container>
-      </section>
+      {/* FAQs — AEO/SGE answers for top-funnel barber-recruitment queries */}
+      <FaqSection
+        items={FAQS.forBarbers}
+        background="card"
+        heading="Questions Barbers Ask"
+        lede="Everything independent barbers ask before applying for verification."
+      />
 
       {/* FINAL CTA */}
-      <section className="bg-primary py-20 text-primary-foreground">
+      <section className="bg-card border-y border-border py-20 text-foreground spotlight-soft">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">

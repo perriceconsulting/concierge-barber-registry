@@ -18,6 +18,7 @@ interface PromptOptions {
   description: string;
   placeholder?: string;
   expectedValue?: string;
+  defaultValue?: string;
   confirmText?: string;
   cancelText?: string;
   variant?: 'default' | 'destructive';
@@ -91,6 +92,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
           description={promptModal.description}
           placeholder={promptModal.placeholder}
           expectedValue={promptModal.expectedValue}
+          defaultValue={promptModal.defaultValue}
           confirmText={promptModal.confirmText}
           cancelText={promptModal.cancelText}
           variant={promptModal.variant}

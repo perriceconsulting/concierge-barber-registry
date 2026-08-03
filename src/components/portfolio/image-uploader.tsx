@@ -47,7 +47,7 @@ export function ImageUploader({ onUpload, maxSizeMB = 5, disabled }: ImageUpload
           setIsUploading(false);
         };
         reader.readAsDataURL(file);
-      } catch (err) {
+      } catch {
         setError('Failed to upload image');
         setIsUploading(false);
       }

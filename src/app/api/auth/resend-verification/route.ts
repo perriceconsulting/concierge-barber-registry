@@ -1,4 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { hashToken } from '@/lib/auth/password';

@@ -28,8 +28,11 @@ export async function getAuthUser(request: NextRequest) {
 
   // Fallback to Authorization header for API clients
   if (!token) {
+    // RFC 7235: the auth scheme is case-insensitive, so `bearer` and `Bearer`
+    // are the same credential. The token itself stays case-sensitive.
     const authHeader = request.headers.get('authorization');
-    token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
+    token = bearerMatch?.[1];
   }
 
   if (!token) {

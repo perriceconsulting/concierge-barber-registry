@@ -46,12 +46,7 @@ export default function PortfolioPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchPortfolio();
-    fetchSubscriptionLimits();
-  }, [fetchSubscriptionLimits]);
-
-  const fetchPortfolio = async () => {
+  const fetchPortfolio = useCallback(async () => {
     try {
       const response = await fetch('/api/barbers/portfolio', {
         credentials: 'include',
@@ -86,7 +81,12 @@ export default function PortfolioPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchPortfolio();
+    fetchSubscriptionLimits();
+  }, [fetchPortfolio, fetchSubscriptionLimits]);
 
   const handleUpload = async (dataUrl: string) => {
     try {
@@ -216,7 +216,7 @@ export default function PortfolioPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Portfolio</h1>
+          <h1 className="text-3xl font-bold text-heading">Portfolio</h1>
           <p className="text-muted-foreground mt-2">Loading portfolio...</p>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function PortfolioPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Portfolio</h1>
+        <h1 className="text-3xl font-bold text-heading">Portfolio</h1>
         <p className="text-muted-foreground mt-2">
           Showcase your best work ({images.length}/{maxImages} images)
         </p>

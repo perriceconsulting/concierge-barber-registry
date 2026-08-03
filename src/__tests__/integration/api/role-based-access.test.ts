@@ -409,8 +409,22 @@ describe('Role-Based Access Control (RBAC)', () => {
         role: 'client',
       });
 
-      // Attempt to modify the token (in practice, this would invalidate the signature)
-      const tamperedToken = validToken.replace('client', 'admin');
+      // Actually tamper with the payload. A string replace of 'client' is a
+      // no-op — the payload is base64url-encoded, so that substring never
+      // appears in the token, and the "tampered" token stays byte-identical
+      // and valid. Decode the claims, escalate the role, re-encode, and keep
+      // the original signature so verification has something to reject.
+      const [header, payload, signature] = validToken.split('.');
+      const claims = JSON.parse(
+        Buffer.from(payload, 'base64url').toString('utf8')
+      );
+      claims.role = 'admin';
+      const forgedPayload = Buffer.from(JSON.stringify(claims))
+        .toString('base64url')
+        .replace(/=+$/, '');
+      const tamperedToken = `${header}.${forgedPayload}.${signature}`;
+
+      expect(tamperedToken).not.toBe(validToken);
 
       const request = new NextRequest('http://localhost:3000/api/admin/test', {
         method: 'GET',

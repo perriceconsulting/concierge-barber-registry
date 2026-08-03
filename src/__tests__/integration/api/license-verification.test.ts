@@ -1,18 +1,34 @@
 import { NextRequest } from 'next/server';
 import { PATCH } from '@/app/api/admin/barbers/[id]/verify/route';
 import { prisma } from '@/lib/db';
-import { generateAccessToken } from '@/lib/auth/jwt';
 import * as emailLib from '@/lib/email';
+import { generateAccessToken } from '@/lib/auth/jwt';
 
 // Mock the modules
-jest.mock('@/lib/db');
 jest.mock('@/lib/email');
+
+// The route is wrapped in withAuth, which enforces CSRF on state-changing
+// verbs. This suite is about verification logic, not CSRF — that is covered
+// directly in integration/security/api-security.test.ts — so neutralize the
+// check here rather than hand-rolling tokens in every case.
+jest.mock('@/lib/api/csrf');
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockEmail = emailLib as jest.Mocked<typeof emailLib>;
 
 describe('License Verification Workflow', () => {
-  const adminToken = 'valid-admin-token';
+  // A real signed token, not a placeholder string: withAuth verifies it via
+  // getAuthUser, so a fake value fails at the auth boundary before any
+  // verification logic runs.
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await generateAccessToken({
+      userId: 'admin-123',
+      email: 'admin@example.com',
+      role: 'admin',
+    });
+  });
   const barberProfileId = 'barber-profile-123';
 
   const mockBarberProfile = {
@@ -26,7 +42,12 @@ describe('License Verification Workflow', () => {
     licenseNumber: 'NY-12345',
     licenseState: 'NY',
     licenseExpirationDate: new Date('2025-12-31'),
-    licenseDocumentUrl: '/uploads/licenses/license-123.pdf',
+    licenseDocumentUrl: 'https://example.public.blob.vercel-storage.com/licenses/license-123.pdf',
+    // CBR v2.0 (FEAT-001) gates approval on the setup fee unless the barber is
+    // a Founding Member. Without one of these the route returns 400
+    // SETUP_FEE_UNPAID before any verification logic runs.
+    setupFeePaidAt: new Date('2026-01-15'),
+    foundingMember: false,
     licenseVerified: false,
     verificationStatus: 'pending' as const,
     verificationNotes: null,
@@ -53,10 +74,6 @@ describe('License Verification Workflow', () => {
         body: JSON.stringify(body),
       }
     );
-
-    // Attach userId and userRole (simulating withAuth middleware)
-    (request as any).userId = 'admin-123';
-    (request as any).userRole = 'admin';
 
     return request;
   };
@@ -136,7 +153,9 @@ describe('License Verification Workflow', () => {
       expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           actorUserId: 'admin-123',
-          action: 'barber_verification',
+          // Action names are per-outcome now (approve/reject/suspend), not one
+          // generic 'barber_verification'. See actionMap in the verify route.
+          action: 'barber.verification_approve',
           entityType: 'barber_profile',
           entityId: barberProfileId,
           details: expect.objectContaining({
@@ -290,6 +309,9 @@ describe('License Verification Workflow', () => {
       const request = createRequest({
         status: 'suspended',
         notes: 'License suspended due to violations',
+        // The schema refine requires a structured reason for suspensions,
+        // validated against the SuspensionReason enum in schema.prisma.
+        suspensionReason: 'expired_license',
       });
 
       const context = { params: Promise.resolve({ id: barberProfileId }) };

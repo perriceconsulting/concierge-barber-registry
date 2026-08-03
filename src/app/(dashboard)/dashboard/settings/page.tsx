@@ -209,7 +209,7 @@ export default function SettingsPage() {
     try {
       const response = await secureFetch('/api/user/delete', {
         method: 'DELETE',
-        body: JSON.stringify({ confirmation: 'DELETE' }),
+        body: JSON.stringify({ confirmation }),
       });
 
       const data = await response.json();
@@ -271,7 +271,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Settings</h1>
+        <h1 className="text-3xl font-bold text-heading">Settings</h1>
         <p className="text-muted-foreground mt-2">
           Manage your account settings and preferences
         </p>

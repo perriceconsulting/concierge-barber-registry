@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/config';
 import { secureFetch } from '@/lib/csrf-client';
 import NotificationBanners from '@/components/dashboard/notification-banners';
+import { ReferralCard } from '@/components/dashboard/referral-card';
 
 interface ContactRequestItem {
   id: string;
@@ -135,7 +136,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-heading">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
           Welcome back! Here&apos;s an overview of your profile activity.
         </p>
@@ -192,6 +193,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Referral Royalties (CBR v2.0) */}
+      <ReferralCard />
 
       {/* Recent Activity */}
       <div className="grid gap-6 md:grid-cols-2">
