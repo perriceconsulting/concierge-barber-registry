@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
+import { StarRating } from '@/components/ui/star-rating';
 import { UpgradeBanner } from '@/components/subscription/upgrade-banner';
 import { secureFetch } from '@/lib/csrf-client';
 
@@ -72,14 +73,6 @@ export default function ReviewsPage() {
     },
   };
 
-  const renderStars = (rating: number) => {
-    return [...Array(5)].map((_, i) => (
-      <span key={i} className={i < rating ? 'text-yellow-400' : 'text-gray-300'}>
-        ★
-      </span>
-    ));
-  };
-
   const handleReply = async (reviewId: string) => {
     if (!replyText.trim()) return;
 
@@ -132,7 +125,7 @@ export default function ReviewsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Reviews</h1>
+        <h1 className="text-3xl font-bold text-heading">Reviews</h1>
         <p className="text-muted-foreground mt-2">
           See what clients are saying about your services
         </p>
@@ -235,9 +228,7 @@ export default function ReviewsPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex">
-                      {renderStars(review.rating)}
-                    </div>
+                    <StarRating rating={review.rating} />
                     <span className="text-sm text-muted-foreground">
                       {review.createdAt}
                     </span>

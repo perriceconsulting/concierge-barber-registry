@@ -58,11 +58,56 @@ const STATUS_LABELS: Record<OutreachStatus, string> = {
   bounced: 'Bounced',
 };
 
+type OutreachChannel = 'ig' | 'fb' | 'tiktok' | 'google';
+
+/**
+ * Single source for channel identity. These are brand colors (IG purple, FB
+ * blue, TikTok pink), not theme tokens — they intentionally sit outside the
+ * `@theme` palette because the color IS the meaning here. Tailwind can't see
+ * constructed class names, so each tint is a full literal.
+ */
+const OUTREACH_CHANNELS: Record<
+  OutreachChannel,
+  { emoji: string; tint: string; tintHover: string; label: (profile: OutreachProfile) => string }
+> = {
+  ig: {
+    emoji: '📷',
+    tint: 'bg-purple-100 text-purple-800',
+    tintHover: 'hover:bg-purple-200',
+    label: (profile) => (profile.instagramHandle ? 'Open IG' : 'Find on IG'),
+  },
+  fb: {
+    emoji: '📘',
+    tint: 'bg-blue-100 text-blue-800',
+    tintHover: 'hover:bg-blue-200',
+    label: () => 'Find on FB',
+  },
+  tiktok: {
+    emoji: '🎵',
+    tint: 'bg-pink-100 text-pink-800',
+    tintHover: 'hover:bg-pink-200',
+    label: () => 'Find on TikTok',
+  },
+  google: {
+    emoji: '🌐',
+    tint: 'bg-gray-100 text-gray-800',
+    tintHover: 'hover:bg-gray-200',
+    label: () => 'Google',
+  },
+};
+
+const CHANNEL_ORDER: OutreachChannel[] = ['ig', 'fb', 'tiktok', 'google'];
+
+const CHANNEL_LINK_CLASS =
+  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors';
+
+// Statuses that mirror a channel derive their tint from OUTREACH_CHANNELS;
+// the rest are lifecycle states with their own meaning.
 const STATUS_BADGE_CLASS: Record<OutreachStatus, string> = {
   not_contacted: 'bg-amber-100 text-amber-800',
-  messaged_ig: 'bg-purple-100 text-purple-800',
-  messaged_fb: 'bg-blue-100 text-blue-800',
-  messaged_tiktok: 'bg-pink-100 text-pink-800',
+  messaged_ig: OUTREACH_CHANNELS.ig.tint,
+  messaged_fb: OUTREACH_CHANNELS.fb.tint,
+  messaged_tiktok: OUTREACH_CHANNELS.tiktok.tint,
   messaged_email: 'bg-cyan-100 text-cyan-800',
   messaged_phone: 'bg-emerald-100 text-emerald-800',
   responded: 'bg-green-100 text-green-800',
@@ -82,7 +127,7 @@ const STATUS_OPTIONS: OutreachStatus[] = [
   'bounced',
 ];
 
-function buildSearchUrl(platform: 'ig' | 'fb' | 'tiktok' | 'google', profile: OutreachProfile) {
+function buildSearchUrl(platform: OutreachChannel, profile: OutreachProfile) {
   const name = profile.displayName;
   const location = `${profile.city} ${profile.state}`;
   switch (platform) {
@@ -407,7 +452,7 @@ export default function AdminOutreachPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Outreach Helper</h1>
+        <h1 className="text-3xl font-bold text-heading">Outreach Helper</h1>
         <p className="mt-2 text-muted-foreground">
           For each unclaimed/claim-sent profile: search them on social, copy a DM
           template with their unique claim link, and track status.
@@ -533,38 +578,20 @@ export default function AdminOutreachPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <a
-                      href={buildSearchUrl('ig', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                    >
-                      📷 {profile.instagramHandle ? 'Open IG' : 'Find on IG'}
-                    </a>
-                    <a
-                      href={buildSearchUrl('fb', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
-                    >
-                      📘 Find on FB
-                    </a>
-                    <a
-                      href={buildSearchUrl('tiktok', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-pink-100 text-pink-800 hover:bg-pink-200 transition-colors"
-                    >
-                      🎵 Find on TikTok
-                    </a>
-                    <a
-                      href={buildSearchUrl('google', profile)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
-                    >
-                      🌐 Google
-                    </a>
+                    {CHANNEL_ORDER.map((channel) => {
+                      const { emoji, tint, tintHover, label } = OUTREACH_CHANNELS[channel];
+                      return (
+                        <a
+                          key={channel}
+                          href={buildSearchUrl(channel, profile)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${CHANNEL_LINK_CLASS} ${tint} ${tintHover}`}
+                        >
+                          {emoji} {label(profile)}
+                        </a>
+                      );
+                    })}
                     {profile.websiteUrl && (
                       <a
                         href={profile.websiteUrl}

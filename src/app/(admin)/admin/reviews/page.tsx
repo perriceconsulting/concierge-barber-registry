@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
+import { StarRating } from '@/components/ui/star-rating';
 import { useModal } from '@/components/ui/modal';
 import { secureFetch } from '@/lib/csrf-client';
 import { createLogger } from '@/lib/logger';
@@ -192,14 +193,6 @@ export default function AdminReviewsPage() {
     });
   };
 
-  const renderStars = (rating: number) => {
-    return [...Array(5)].map((_, i) => (
-      <span key={i} className={i < rating ? 'text-yellow-400' : 'text-gray-300'}>
-        ★
-      </span>
-    ));
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -290,7 +283,7 @@ export default function AdminReviewsPage() {
                   <CardDescription>
                     For: {review.barberName} • {review.createdAt}
                   </CardDescription>
-                  <div className="flex mt-2">{renderStars(review.rating)}</div>
+                  <StarRating rating={review.rating} className="mt-2" />
                 </div>
               </div>
             </CardHeader>
