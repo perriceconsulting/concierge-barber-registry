@@ -86,7 +86,7 @@ export function AdminHelpContent() {
             waives the recurring Verified Member subscription forever
             (<code className="text-xs bg-muted px-1 rounded">subscriptionWaivedUntil = 2099-12-31</code>)
           </li>
-          <li>displays a gold "Founding Member" badge on the barber's row</li>
+          <li>displays a gold &quot;Founding Member&quot; badge on the barber&apos;s row</li>
         </ul>
         <p className="mt-3 text-muted-foreground leading-relaxed">
           Hard cap of <strong className="text-foreground">10 active seats</strong>{' '}
@@ -136,7 +136,7 @@ export function AdminHelpContent() {
         </h3>
         <p className="text-muted-foreground leading-relaxed">
           v2 ships with a <strong className="text-foreground">single flat
-          "Verified Member" subscription</strong> that activates after the 30-day
+          &quot;Verified Member&quot; subscription</strong> that activates after the 30-day
           post-approval trial. The legacy <code className="text-xs bg-muted px-1 rounded">starter</code>,
           {' '}<code className="text-xs bg-muted px-1 rounded">professional</code>, and{' '}
           <code className="text-xs bg-muted px-1 rounded">elite</code> tiers

@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { PATCH } from '@/app/api/admin/barbers/[id]/verify/route';
 import { prisma } from '@/lib/db';
-import { generateAccessToken } from '@/lib/auth/jwt';
 import * as emailLib from '@/lib/email';
 
 // Mock the modules

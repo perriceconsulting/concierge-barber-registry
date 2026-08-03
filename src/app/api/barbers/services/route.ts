@@ -13,10 +13,6 @@ const serviceSchema = z.object({
   sortOrder: z.number().int().optional().default(0),
 });
 
-const updateServiceSchema = serviceSchema.partial().extend({
-  id: z.string().uuid(),
-});
-
 const bulkUpdateSchema = z.object({
   services: z.array(z.object({
     id: z.string().uuid().optional(),

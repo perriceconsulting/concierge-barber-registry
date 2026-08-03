@@ -125,7 +125,7 @@ export default function BarberProfilePage() {
       } else {
         setIsAuthenticated(false);
       }
-    } catch (error) {
+    } catch {
       setIsAuthenticated(false);
     }
   };

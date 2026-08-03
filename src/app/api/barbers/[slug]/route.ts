@@ -20,7 +20,7 @@ async function getKVClient() {
     try {
       const { kv } = await import('@vercel/kv');
       return kv;
-    } catch (error) {
+    } catch {
       return null;
     }
   }

@@ -29,7 +29,7 @@ export function BarberHelpContent() {
           <li>
             Click <strong className="text-foreground">Submit for Review</strong>.
             Our team verifies within 24–48 hours and you get an email when
-            you're approved.
+            you&apos;re approved.
           </li>
         </ol>
       </section>
@@ -54,7 +54,7 @@ export function BarberHelpContent() {
           </li>
         </ul>
         <p className="mt-3 text-muted-foreground leading-relaxed italic">
-          Already paid? Your dashboard shows a green "✓ Paid" card with the
+          Already paid? Your dashboard shows a green &quot;✓ Paid&quot; card with the
           amount and date. Founding Members are exempt — see below.
         </p>
       </section>
@@ -71,7 +71,7 @@ export function BarberHelpContent() {
           <em>not</em> charged during the trial.
         </p>
         <p className="mt-3 text-muted-foreground leading-relaxed">
-          On day 25, you'll get an email reminding you the trial is ending. On
+          On day 25, you&apos;ll get an email reminding you the trial is ending. On
           day 30, the recurring subscription begins automatically — no action
           needed unless you want to cancel. You can manage or cancel anytime
           from <strong className="text-foreground">Subscription</strong>.
@@ -84,7 +84,7 @@ export function BarberHelpContent() {
         </h3>
         <p className="text-muted-foreground leading-relaxed">
           A status reserved for the first 10 barbers we hand-select. If an admin
-          flags you as a Founding Member, you'll see a gold badge on your
+          flags you as a Founding Member, you&apos;ll see a gold badge on your
           profile and:
         </p>
         <ul className="mt-3 space-y-1 list-disc list-inside text-muted-foreground">
@@ -93,8 +93,8 @@ export function BarberHelpContent() {
           <li>you keep the Founding Member badge as a permanent recognition</li>
         </ul>
         <p className="mt-3 text-muted-foreground italic">
-          Founding Member status is admin-granted, not requestable. If you've
-          been invited as one, you'll know.
+          Founding Member status is admin-granted, not requestable. If you&apos;ve
+          been invited as one, you&apos;ll know.
         </p>
       </section>
 
@@ -105,7 +105,7 @@ export function BarberHelpContent() {
         <p className="text-muted-foreground leading-relaxed">
           A clear photo or PDF of your professional barber license, max 5MB.
           Used for verification only — never shown publicly. After your license
-          is approved, you can't replace it without contacting an admin (this
+          is approved, you can&apos;t replace it without contacting an admin (this
           prevents accidental swaps after verification).
         </p>
       </section>
@@ -117,15 +117,15 @@ export function BarberHelpContent() {
         <ul className="space-y-2 text-muted-foreground">
           <li>
             <strong className="text-foreground">pending</strong> — default. Either
-            you haven't submitted yet, or you have and we're reviewing.
+            you haven&apos;t submitted yet, or you have and we&apos;re reviewing.
           </li>
           <li>
-            <strong className="text-foreground">approved</strong> — you're live
+            <strong className="text-foreground">approved</strong> — you&apos;re live
             in the directory with a verified badge. Clients can find and contact you.
           </li>
           <li>
             <strong className="text-foreground">rejected</strong> — your license
-            couldn't be verified. Check the email we sent for the reason; fix
+            couldn&apos;t be verified. Check the email we sent for the reason; fix
             and resubmit.
           </li>
           <li>
@@ -147,7 +147,7 @@ export function BarberHelpContent() {
         </h3>
         <p className="text-muted-foreground leading-relaxed">
           <strong className="text-foreground">Vacation mode</strong> (in
-          Settings) tells clients you're temporarily unavailable but keeps your
+          Settings) tells clients you&apos;re temporarily unavailable but keeps your
           profile listed with a vacation indicator. Use for short breaks.
         </p>
         <p className="mt-3 text-muted-foreground leading-relaxed">

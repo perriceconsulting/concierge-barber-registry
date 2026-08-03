@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import {
   generateCsrfToken,
   verifyCsrfToken,
-  setCsrfToken,
 } from '@/lib/api/csrf';
 import { rateLimit, rateLimiters } from '@/lib/api/rate-limit';
 import { RateLimitError, ApiError } from '@/lib/api/errors';

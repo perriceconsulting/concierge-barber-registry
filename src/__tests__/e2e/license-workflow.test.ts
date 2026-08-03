@@ -57,7 +57,7 @@ describe('E2E: Complete License Verification Workflow', () => {
     },
   };
 
-  const createMockFile = (name: string, type: string, size: number): File => {
+  const createMockFile = (name: string, type: string, _size: number): File => {
     const blob = new Blob(['test content'], { type });
     return new File([blob], name, { type });
   };

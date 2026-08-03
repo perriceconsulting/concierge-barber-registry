@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/barbers/license-upload/route';
 import { prisma } from '@/lib/db';
 
@@ -360,11 +359,6 @@ describe('File Upload Security', () => {
     it('should only allow barbers to upload', async () => {
       // This is enforced by withAuth middleware with requiredRole: 'barber'
       // The route handler expects the user to have barber role
-      const request = {
-        userId: 'client-user-123', // Client trying to upload
-        formData: async () => new FormData(),
-      };
-
       mockPrisma.barberProfile.findUnique.mockResolvedValue(null);
 
       const file = createMockFile('license.jpg', 'image/jpeg', 1024 * 100);
@@ -372,7 +366,6 @@ describe('File Upload Security', () => {
       uploadRequest.userId = 'client-user-123';
 
       const response = await POST(uploadRequest as any);
-      const data = await response.json();
 
       expect(response.status).toBe(404);
     });

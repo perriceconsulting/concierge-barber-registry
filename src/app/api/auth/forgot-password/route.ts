@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { forgotPasswordSchema } from '@/lib/validations/auth';
 import { generateToken, hashToken } from '@/lib/auth/password';
-import { handleApiError, successResponse, ResourceErrors } from '@/lib/api/errors';
+import { handleApiError, successResponse } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { createLogger } from '@/lib/logger';

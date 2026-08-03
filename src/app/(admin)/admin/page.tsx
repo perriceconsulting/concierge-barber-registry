@@ -88,7 +88,6 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refetch on tab focus — keeps stats + pending verifications fresh after

@@ -145,9 +145,40 @@ Left alone deliberately: the light-on-dark look of the outreach badge palette
 (`bg-amber-100 text-amber-800` and friends) is a design decision for a dark-themed admin surface,
 not a DOSI question. Flag it if you want it restyled.
 
-Also left alone: 253 pre-existing lint problems, mostly `no-explicit-any` (193) and unused vars
-(24). Real debt, but a separate job from DOSI — clearing it blind would mean typing `any`s without
-knowing the shapes they stand for.
+### ⚠ The integration and e2e suites do not run
+
+[jest.config.js](jest.config.js) sets `testMatch: ['**/__tests__/unit/**/*.(test|spec).[jt]s?(x)']`.
+Only the 6 unit suites execute. Everything under `src/__tests__/integration/` and
+`src/__tests__/e2e/` — including `file-upload`, `api-security`, and `license-verification` — is
+never run by `npm test`. `npm run test:integration` resolves to 0 matches, so it reports success
+without executing anything.
+
+So a green 95/95 says nothing about the security tests. Two independent things must change before
+it does: point `testMatch` at those directories, then fix what breaks (they've never run, so
+assume they fail).
+
+At least one is vacuous on its own terms: `createMockFile(name, type, size)` in
+[file-upload.test.ts](src/__tests__/integration/security/file-upload.test.ts) ignores its `size`
+argument entirely — every mock file is 12 bytes of `'test content'`. The whole "File Size
+Validation" block asserts on a limit it never approaches. ESLint didn't flag that `size` because
+it's followed by a used parameter, and the default `args: after-used` only reports trailing ones.
+
+This is a Single Source failure with teeth: the test names are the only place claiming this
+behavior is covered, and they're wrong.
+
+### Lint debt: 253 → 13
+
+The 193 `no-explicit-any` were all `as any` mock casts in files tsconfig already excludes, so the
+fix was scoping ESLint to match tsconfig (derived from `tsconfig.exclude`, not a second list) —
+not typing them. The `_`-prefix convention the repo already used is now configured rather than
+re-litigated at each site. Mechanical work cleared the rest: 18 JSX entity escapes, dead imports,
+unused catch bindings via optional catch (`} catch {`), one stale `eslint-disable`.
+
+The 13 remaining are deliberately open, because each needs a decision rather than a rule:
+6 `exhaustive-deps` (all the same `useEffect` → `fetchX` stale-closure shape, fix is `useCallback`),
+6 `<img>` → `next/image` (measure LCP first — see the O caveat), and 1 real error,
+`Cannot access refs during render` in
+[useVisibilityRefetch.ts:39](src/hooks/useVisibilityRefetch.ts#L39).
 - **S:** no multi-tenant scoping module exists (the app is single-tenant today). If tenancy lands,
   it gets exactly one accessor module and all queries route through it.
 

@@ -209,7 +209,7 @@ export default function SettingsPage() {
     try {
       const response = await secureFetch('/api/user/delete', {
         method: 'DELETE',
-        body: JSON.stringify({ confirmation: 'DELETE' }),
+        body: JSON.stringify({ confirmation }),
       });
 
       const data = await response.json();
