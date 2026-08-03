@@ -1429,14 +1429,54 @@ export const blogPosts: BlogPostWithContent[] = [
 
       <h2>The Process Step by Step</h2>
       <ol>
-        <li><strong>Pre-shave oil:</strong> Applied to soften the beard and protect the skin</li>
-        <li><strong>First hot towel:</strong> A steaming towel wraps your face, opening pores and softening hair (2-3 minutes)</li>
-        <li><strong>Lather:</strong> Rich shaving cream is applied with a brush in circular motions</li>
-        <li><strong>First pass:</strong> The barber shaves with the grain using a straight razor</li>
-        <li><strong>Second hot towel:</strong> Another steaming towel to re-soften for the second pass</li>
-        <li><strong>Second pass:</strong> Against the grain for the closest possible shave</li>
-        <li><strong>Cold towel:</strong> Closes pores and soothes the skin</li>
-        <li><strong>Aftershave:</strong> Applied to hydrate and protect freshly shaved skin</li>
+        <li><strong>Pre-shave oil:</strong> Applied to soften the beard and protect the skin
+          <figure>
+            <img src="/blog/hot-towel-shave/step-1-pre-shave-oil.jpeg" alt="A barber holds a bottle of pre-shave oil and works it into a reclining client's jawline." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 1 — pre-shave oil softens the beard before any blade touches skin.</figcaption>
+          </figure>
+        </li>
+        <li><strong>First hot towel:</strong> A steaming towel wraps your face, opening pores and softening hair (2-3 minutes)
+          <figure>
+            <img src="/blog/hot-towel-shave/step-2-first-hot-towel.jpeg" alt="A steaming towel wrapped over a client's face, held in place by the barber's hands." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 2 — the first hot towel opens the pores and softens the hair.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Lather:</strong> Rich shaving cream is applied with a brush in circular motions
+          <figure>
+            <img src="/blog/hot-towel-shave/step-3-lather.jpeg" alt="A barber works shaving lather into a reclining client's beard with a badger-hair brush." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 3 — lather is built on the skin with a brush, not smeared from a can.</figcaption>
+          </figure>
+        </li>
+        <li><strong>First pass:</strong> The barber shaves with the grain using a straight razor
+          <figure>
+            <img src="/blog/hot-towel-shave/step-4-first-pass-with-grain.jpeg" alt="A barber draws a straight razor down a lathered cheek, skin held taut." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 4 — the first pass follows the grain, taking the bulk of the hair.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Second hot towel:</strong> Another steaming towel to re-soften for the second pass
+          <figure>
+            <img src="/blog/hot-towel-shave/step-5-second-hot-towel.jpeg" alt="A second steaming towel laid across a partially shaved face." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 5 — a second hot towel re-softens what's left before the closer pass.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Second pass:</strong> Against the grain for the closest possible shave
+          <figure>
+            <img src="/blog/hot-towel-shave/step-6-second-pass-against-grain.jpeg" alt="A barber steadies a client's chin and works a straight razor across the lathered jaw." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 6 — the second pass goes against the grain for the closest finish.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Cold towel:</strong> Closes pores and soothes the skin
+          <figure>
+            <img src="/blog/hot-towel-shave/step-7-cold-towel.jpeg" alt="A barber presses a cool, pale-blue towel against a freshly shaved face." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 7 — a cold towel closes the pores and calms the skin.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Aftershave:</strong> Applied to hydrate and protect freshly shaved skin
+          <figure>
+            <img src="/blog/hot-towel-shave/step-8-aftershave.jpeg" alt="A barber holds a bottle of bay rum aftershave while palming it onto a clean-shaven cheek." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Step 8 — aftershave to hydrate and protect. The ritual is done.</figcaption>
+          </figure>
+        </li>
       </ol>
 
       <h2>Why It's Better Than Shaving at Home</h2>
@@ -1457,7 +1497,16 @@ export const blogPosts: BlogPostWithContent[] = [
       <h2>Who Should Try It?</h2>
       <p>Everyone, honestly. But it's especially valuable for:</p>
       <ul>
-        <li>Men who struggle with razor burn or ingrown hairs</li>
+        <li>Men who struggle with razor burn or ingrown hairs
+          <figure>
+            <img src="/blog/hot-towel-shave/razor-burn-front.jpeg" alt="A man with inflamed razor burn and ingrown hairs across his jawline and neck." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Razor burn and ingrown hairs along the jaw and neck — the pattern a proper prep-and-technique shave is meant to prevent.</figcaption>
+          </figure>
+          <figure>
+            <img src="/blog/hot-towel-shave/razor-burn-profile.jpeg" alt="A man seen in profile with raised, inflamed ingrown hairs concentrated along his jaw and upper neck." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Coarse or curly hair is the most prone to this: hairs curl back into the skin instead of growing out, and repeated dry passes with a cartridge razor make it worse.</figcaption>
+          </figure>
+        </li>
         <li>Anyone preparing for a special event (wedding, interview, date)</li>
         <li>People who've never experienced traditional barbering</li>
         <li>Those looking for a unique gift experience</li>
@@ -1479,21 +1528,66 @@ export const blogPosts: BlogPostWithContent[] = [
     content: `
       <p>Health and safety in barbershops isn't just a regulatory requirement — it directly affects your health. Knowing what to look for helps you choose shops that take hygiene seriously and avoid those that cut corners.</p>
 
+      <figure>
+        <img src="/blog/barbershop-health-safety/sanitized-tools.jpeg" alt="A masked barber in disposable gloves passes a UV sanitizing wand over combs, shears and clippers laid out on a metal tray, beside a jar of blue disinfectant." width="1376" height="768" loading="lazy" decoding="async" />
+        <figcaption>What a shop that takes hygiene seriously looks like: gloves, a barbicide jar, tools laid out on a clean tray, and sanitation posted where clients can read it.</figcaption>
+      </figure>
+
       <h2>Tool Sanitation</h2>
       <p>This is the most critical area. Watch for:</p>
       <ul>
-        <li><strong>Barbicide jar:</strong> The blue liquid solution where combs and tools soak. It should be present at every station</li>
-        <li><strong>Fresh blades:</strong> Straight razors and shavettes should use new disposable blades for each client</li>
-        <li><strong>Clipper spray:</strong> Barbers should spray disinfectant on clippers between clients</li>
-        <li><strong>UV sterilizers:</strong> Some shops use ultraviolet sterilization cabinets for extra sanitation</li>
+        <li><strong>Barbicide jar:</strong> The blue liquid solution where combs and tools soak. It should be present at every station
+          <figure>
+            <img src="/blog/barbershop-health-safety/barbicide-jar.jpeg" alt="A barbicide disinfecting jar of blue solution with combs and shears submerged, standing on a barber's station counter next to clippers on a mat." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Tools fully submerged, not just resting on top — and one jar per station, not one shared jar for the whole shop.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Fresh blades:</strong> Straight razors and shavettes should use new disposable blades for each client
+          <figure>
+            <img src="/blog/barbershop-health-safety/fresh-blades.jpeg" alt="A gloved hand holding a new disposable razor blade above a tray holding a straight razor, a box of blades and individually wrapped blade packets." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>The blade should come out of a sealed packet in front of you. If you don't see that happen, ask.</figcaption>
+          </figure>
+        </li>
+        <li><strong>Clipper spray:</strong> Barbers should spray disinfectant on clippers between clients
+          <figure>
+            <img src="/blog/barbershop-health-safety/clipper-spray.jpeg" alt="A gloved barber spraying clipper disinfectant onto the blades of a clipper held over a stainless tray." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Between every client, not just at the end of the day — and on the blades themselves, not a quick mist over the housing.</figcaption>
+          </figure>
+        </li>
+        <li><strong>UV sterilizers:</strong> Some shops use ultraviolet sterilization cabinets for extra sanitation
+          <figure>
+            <img src="/blog/barbershop-health-safety/uv-sterilizer.jpeg" alt="A stainless steel UV sterilizing cabinet glowing blue, its shelves holding shears, combs and folded towels, on a sanitation station counter." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>A nice extra, not a substitute. UV supplements barbicide and fresh blades — it doesn't replace either.</figcaption>
+          </figure>
+        </li>
       </ul>
 
       <h2>Personal Protective Equipment</h2>
       <ul>
-        <li>Fresh neck strip or towel for each client</li>
-        <li>Clean cape — not visibly soiled from previous clients</li>
-        <li>Barber washes hands or uses sanitizer before starting</li>
-        <li>Gloves used during straight razor shaves and any service involving potential skin contact</li>
+        <li>Fresh neck strip or towel for each client
+          <figure>
+            <img src="/blog/barbershop-health-safety/neck-strip.jpeg" alt="A barber fastening a paper neck strip around a seated client's neck, over a folded white towel and a navy cape." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>The neck strip is what keeps the cape off your skin. It should be torn fresh in front of you and thrown away after.</figcaption>
+          </figure>
+        </li>
+        <li>Clean cape — not visibly soiled from previous clients
+          <figure>
+            <img src="/blog/barbershop-health-safety/clean-cape.jpeg" alt="A freshly laundered navy barber cape hanging on a hook, beside a stack of folded white towels." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Capes get changed or wiped between clients in a good shop. Hair clinging to the shoulders from the last cut is the tell.</figcaption>
+          </figure>
+        </li>
+        <li>Barber washes hands or uses sanitizer before starting
+          <figure>
+            <img src="/blog/barbershop-health-safety/hand-washing.jpeg" alt="A masked barber lathering his hands at a shop sink, with an antibacterial soap dispenser and paper towels mounted on the wall beside him." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Between clients, at a sink with soap and paper towels — not a squirt of sanitizer on the way back from the register.</figcaption>
+          </figure>
+        </li>
+        <li>Gloves used during straight razor shaves and any service involving potential skin contact
+          <figure>
+            <img src="/blog/barbershop-health-safety/gloves.jpeg" alt="A gloved barber holding a straight razor against a reclining client's lathered jaw, the client's shoulders draped in a fresh towel." width="1376" height="768" loading="lazy" decoding="async" />
+            <figcaption>Any service where a blade meets skin means gloves. It protects you and the barber both.</figcaption>
+          </figure>
+        </li>
       </ul>
 
       <h2>Shop Cleanliness</h2>

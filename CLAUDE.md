@@ -52,6 +52,7 @@ from it.
 | Pricing & marketing copy | [src/lib/copy/v2.ts](src/lib/copy/v2.ts), [src/lib/copy/faqs.ts](src/lib/copy/faqs.ts) |
 | Specialty / niche content | [src/data/specialty-content.ts](src/data/specialty-content.ts) |
 | SEO metadata & canonicals | [src/lib/seo/](src/lib/seo/) |
+| Blog post content | [src/content/blog/index.ts](src/content/blog/index.ts) → `blog_posts` table (see below) |
 | API errors & rate limits | [src/lib/api/](src/lib/api/) |
 | Design tokens | `@theme` block in [src/app/globals.css](src/app/globals.css) |
 
@@ -218,6 +219,64 @@ record why it's correct with a disable comment that names the reason.
   it gets exactly one accessor module and all queries route through it.
 
 ---
+
+### ⚠ Blog content lives in two places
+
+The site renders posts from the **`blog_posts` table**, not from
+[src/content/blog/index.ts](src/content/blog/index.ts). That file is the seed source, and
+[scripts/seed-blog.ts](scripts/seed-blog.ts) **skips any slug that already has a row**.
+
+So editing the TS file changes nothing on the site once a post exists. That skip is the right
+default — the admin UI edits rows directly, and a blanket re-seed would clobber that work — but it
+means the two copies drift silently and the file looks authoritative when it isn't.
+
+To publish a source-file edit, name the post explicitly:
+
+```
+npx tsx scripts/sync-blog-post.ts <slug>
+```
+
+It overwrites only that post's content fields, and deliberately leaves `status` and `publishedAt`
+alone so a sync can never publish a draft or move a publication date. Check for drift before
+running it if the post may have been edited in the admin UI — the sync is last-write-wins.
+
+### Blog images: masters in, stamped copies out
+
+Blog photos are watermarked with the brand mark for IP. The pipeline is
+one-directional and that's what keeps it safe to re-run:
+
+```
+assets/blog-sources/   raw full-res photos (gitignored, local only)
+        ↓ crop to 1376x768, quality 82
+assets/blog-masters/   normalized, UNstamped — committed
+        ↓ npx tsx scripts/watermark-blog-images.ts
+public/blog/           stamped, what the site serves — committed
+```
+
+**Add new photos to `assets/blog-masters/`, never to `public/blog/`.** The script
+reads masters and writes public, so it never reads its own output — re-running it
+after a logo change restamps from clean originals instead of layering a second
+watermark on the first. Anything dropped only into `public/blog/` gets
+overwritten silently.
+
+The mark itself is `assets/brand-mark.png`, a circular badge built from
+`public/brandlogo.jpeg`. Circular was chosen deliberately: the logo is a JPEG with
+no alpha, and a round crop makes the dark background read as part of the badge
+instead of a rectangle pasted onto the photo.
+
+### Two brand marks, on purpose
+
+`APP_CONFIG.logo` (`/brandlogo.jpeg`) drives the on-page logo and the blog
+watermark. The favicon, PWA icons and OG image are generated from a *different*
+file, `public/brand-logo.jpeg`, by `scripts/generate-icons.mjs`, and are
+intentionally still on the older mark. This is not drift — don't "fix" it by
+pointing both at one file without asking.
+
+One trap if you ever do swap a logo's contents while keeping its filename: Next's
+image optimizer caches derivatives per source URL and holds them in memory.
+Clearing `.next/cache/images` is not enough; the dev server needs a restart, and
+in production the optimizer can serve the old mark until its cache turns over.
+Changing the *path* avoids this entirely.
 
 ### Product defects the revived suites found
 
