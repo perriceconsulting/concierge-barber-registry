@@ -150,7 +150,7 @@ export default async function BlogPostPage({
           {/* Content */}
           <div
             className="prose prose-lg max-w-none
-              prose-headings:text-primary prose-headings:font-bold
+              prose-headings:text-heading prose-headings:font-bold
               prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
               prose-p:text-muted-foreground prose-p:leading-relaxed
               prose-li:text-muted-foreground
