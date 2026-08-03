@@ -6,8 +6,10 @@ Next.js 16 (App Router) · React 19 · TypeScript · Prisma 6 · Neon PostgreSQL
 
 ## DOSI — the code standard
 
-Four pillars. Each carries a caveat that stops it from biting when taken too literally. When
-DOSI and a shortcut disagree, DOSI wins; when two pillars disagree, the caveats decide.
+Four pillars, and the caveats are the fifth thing — not decoration on the pillars but the part
+that decides cases. A pillar tells you what to want; its caveat tells you when wanting it harder
+makes the code worse. When DOSI and a shortcut disagree, DOSI wins. When two pillars disagree,
+the caveats decide. A change that satisfies a pillar while violating its caveat is not compliant.
 
 ### D — DRY
 
@@ -31,8 +33,11 @@ and context scoped as narrowly as it will go. Watch for N+1 queries: prefer one 
 **Caveat:** optimize where instrumented, never by guess. A profile, a query log, or a bundle-size
 delta justifies the change; a hunch does not.
 
-*Current baseline: 60 of 121 `.tsx` files carry `"use client"`. That number is the metric — it should
-go down over time, and any PR that raises it should say why.*
+*Current baseline: 56 of 120 `.tsx` files carry `"use client"` (was 60). That number is the metric —
+it should go down over time, and any PR that raises it should say why. The audit that produced it
+looks for files with the directive but no hook call, no `on*` handler, no browser API, no context
+provider, no timer, and no `fetch` — those are client components by accident, which is a semantic
+error before it's a performance one.*
 
 ### S — Single Source
 
@@ -62,7 +67,10 @@ from it.
    Today that is exactly one: `text-heading` (headings) vs `text-primary` (links, chips, CTA
    fills). Both are gold right now; they are separate tokens so either can move without a sweep.
 
-Never raw palette classes — `text-slate-400`, `text-gray-300`, `bg-gray-200`.
+Never raw palette classes — `text-slate-400`, `text-gray-300`, `bg-gray-200`. **This is enforced**
+by a `no-restricted-syntax` rule in [eslint.config.mjs](eslint.config.mjs), which also blocks
+`text-muted`. Brand colors that carry meaning are the legitimate exception: disable inline with a
+comment naming the brand, as the outreach console does.
 
 **Do not add `text-body`** — `text-foreground` already means that, and renaming it would be the
 "better word that matches nothing" case pillar I warns about. **Do not add `text-muted`** —
@@ -81,10 +89,13 @@ parameter and return types rather than leaning on inference. Prefer self-documen
 dense or clever abstractions; a reader who knows barbering but not this codebase should be able to
 follow the happy path.
 
-**Caveat (proposed — confirm or replace):** semantic naming describes the domain as it is, not as we
-wish it were. Don't invent domain vocabulary that doesn't exist in the product, and don't rename an
-established concept mid-refactor just because a better word exists — a name that matches the UI, the
-DB column, and the team's speech beats a more elegant one that matches nothing.
+**Caveat:** semantic naming describes the domain as it is, not as we wish it were. Don't invent
+domain vocabulary the product doesn't use, and don't rename an established concept mid-refactor
+just because a better word exists — a name that matches the UI, the DB column, and how the team
+actually talks beats a more elegant one that matches nothing. The corollary that bites most often:
+a name that no longer matches the domain is a deletion candidate, not a rename candidate. If the
+product stopped selling tiered plans, a `PricingTable` describing tiers doesn't need better
+names — it needs to be gone.
 
 ---
 
@@ -107,6 +118,21 @@ DB column, and the team's speech beats a more elegant one that matches nothing.
   once inline across four near-identical `<a>` elements. Now one `OUTREACH_CHANNELS` map that both
   derive from, iterated via `CHANNEL_ORDER`.
 
+- **O — four components were client-side by accident.** `"use client"` removed from
+  [src/app/(public)/layout.tsx](<src/app/(public)/layout.tsx>) (renders `ToastProvider`, which is
+  its own client boundary — the layout never needed to be one),
+  [password-requirements.tsx](src/components/ui/password-requirements.tsx), and
+  [upgrade-banner.tsx](src/components/subscription/upgrade-banner.tsx). All three are pure
+  props-to-JSX with no hooks, handlers, or browser APIs. 60 → 56.
+- **I — `PricingTable` deleted.** It rendered a Starter/Professional/Elite ladder at $29/$59, a
+  pricing model CBR v2.0 replaced with the flat Verified Member tier (FEAT-001). It was also
+  imported by nothing. Wiring its hand-copied `TIERS` array to the canonical `TIER_LIMITS` would
+  have been the wrong fix — making a component that describes a product you no longer sell
+  accurate about a product you no longer sell.
+- **Enforcement added** so the color work can't silently regress: see the ESLint rule above.
+  Repo-wide lint baseline is 253 pre-existing problems, unrelated to this work; the DOSI rule
+  adds zero on top of it.
+
 ### Standing note: brand color ≠ theme token
 
 The outreach console's `bg-purple-100` (IG), `bg-blue-100` (FB), `bg-pink-100` (TikTok) are **not**
@@ -118,6 +144,10 @@ that file, both channel-scoped.
 Left alone deliberately: the light-on-dark look of the outreach badge palette
 (`bg-amber-100 text-amber-800` and friends) is a design decision for a dark-themed admin surface,
 not a DOSI question. Flag it if you want it restyled.
+
+Also left alone: 253 pre-existing lint problems, mostly `no-explicit-any` (193) and unused vars
+(24). Real debt, but a separate job from DOSI — clearing it blind would mean typing `any`s without
+knowing the shapes they stand for.
 - **S:** no multi-tenant scoping module exists (the app is single-tenant today). If tenancy lands,
   it gets exactly one accessor module and all queries route through it.
 

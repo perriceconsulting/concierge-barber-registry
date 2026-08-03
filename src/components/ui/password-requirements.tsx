@@ -1,5 +1,3 @@
-'use client';
-
 import { PASSWORD_REQUIREMENTS } from '@/lib/validations/auth';
 import { cn } from '@/lib/utils';
 

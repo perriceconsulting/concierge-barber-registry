@@ -90,6 +90,7 @@ const OUTREACH_CHANNELS: Record<
   },
   google: {
     emoji: '🌐',
+    // eslint-disable-next-line no-restricted-syntax -- channel identity, not a theme role: Google/web is the neutral chip in this set
     tint: 'bg-gray-100 text-gray-800',
     tintHover: 'hover:bg-gray-200',
     label: () => 'Google',
@@ -111,6 +112,7 @@ const STATUS_BADGE_CLASS: Record<OutreachStatus, string> = {
   messaged_email: 'bg-cyan-100 text-cyan-800',
   messaged_phone: 'bg-emerald-100 text-emerald-800',
   responded: 'bg-green-100 text-green-800',
+  // eslint-disable-next-line no-restricted-syntax -- neutral chip in the status palette, deliberately colorless
   not_interested: 'bg-gray-200 text-gray-700',
   bounced: 'bg-red-100 text-red-800',
 };
