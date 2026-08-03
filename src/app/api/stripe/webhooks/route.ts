@@ -20,15 +20,33 @@ function getPeriodDates(sub: Stripe.Subscription) {
 }
 
 /**
- * Extract subscription ID from an invoice.
- * In Stripe API 2026-02-25, invoice.subscription moved to invoice.parent.subscription_details.
+ * Extract subscription ID from an invoice, tolerating both payload shapes.
+ *
+ * In Stripe API 2026-02-25, `invoice.subscription` moved to
+ * `invoice.parent.subscription_details.subscription`. The shape we receive is
+ * decided by the API version pinned on the *webhook endpoint* in Stripe, which
+ * is set independently of the version this app sends on outbound calls — so the
+ * two can drift apart without any deploy.
+ *
+ * Reading only the new path means an endpoint on an older version yields null
+ * here, and the payment-failed / payment-recovered handlers below silently do
+ * nothing. That failure is invisible: no error, no log, just a barber stuck in
+ * past_due after they have already fixed their card. Accept either shape.
  */
 function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
   const details = invoice.parent?.subscription_details;
-  if (!details) return null;
-  return typeof details.subscription === 'string'
-    ? details.subscription
-    : details.subscription?.id ?? null;
+  const fromParent =
+    typeof details?.subscription === 'string'
+      ? details.subscription
+      : details?.subscription?.id ?? null;
+
+  if (fromParent) return fromParent;
+
+  // Pre-2026-02-25 shape: invoice.subscription, absent from current typings.
+  const legacy = (invoice as unknown as { subscription?: string | { id: string } })
+    .subscription;
+  if (!legacy) return null;
+  return typeof legacy === 'string' ? legacy : legacy.id;
 }
 
 export async function POST(request: NextRequest) {
