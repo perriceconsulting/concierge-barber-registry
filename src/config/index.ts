@@ -16,6 +16,35 @@ export const APP_CONFIG = {
   logo: '/brandlogo.jpeg',
 } as const;
 
+/**
+ * Official social profiles. Single source with two consumers: the About page
+ * renders them, and the Organization schema emits them as `sameAs`, which is
+ * how search engines tie these accounts to the brand entity. Adding a profile
+ * here does both — don't paste a URL into a component.
+ */
+export const SOCIAL_LINKS = [
+  {
+    name: 'Instagram',
+    url: 'https://www.instagram.com/conciergebarberregistry/',
+    handle: '@conciergebarberregistry',
+  },
+  {
+    name: 'X',
+    url: 'https://x.com/ConBarReg',
+    handle: '@ConBarReg',
+  },
+  {
+    name: 'TikTok',
+    url: 'https://www.tiktok.com/@conciergebarberregistry',
+    handle: '@conciergebarberregistry',
+  },
+  {
+    name: 'Facebook',
+    url: 'https://www.facebook.com/people/Concierge-Barber-Registry/100091148377746/',
+    handle: 'Concierge Barber Registry',
+  },
+] as const;
+
 export const ROUTES = {
   HOME: '/',
   SEARCH: '/search',

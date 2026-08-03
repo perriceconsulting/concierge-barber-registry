@@ -1,4 +1,4 @@
-import { APP_CONFIG } from '@/config';
+import { APP_CONFIG, SOCIAL_LINKS } from '@/config';
 import { JsonLd } from './json-ld';
 
 export function OrganizationSchema() {
@@ -7,9 +7,11 @@ export function OrganizationSchema() {
     '@type': 'Organization',
     name: APP_CONFIG.name,
     url: APP_CONFIG.url,
-    logo: `${APP_CONFIG.url}/favicon.svg`,
+    // icon-512.png, not favicon.svg — that file does not exist and this field
+    // was advertising a 404 to every crawler that read it.
+    logo: `${APP_CONFIG.url}/icon-512.png`,
     description: APP_CONFIG.description,
-    sameAs: [],
+    sameAs: SOCIAL_LINKS.map((profile) => profile.url),
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',

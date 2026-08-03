@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
 import { buildPageMetadata } from '@/lib/seo/metadata';
+import { SOCIAL_LINKS } from '@/config';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'About Us',
@@ -53,6 +54,30 @@ export default function AboutPage() {
               and searching by location and specialty. Your next great haircut is just a
               search away.
             </p>
+
+            <h2 className="text-2xl font-bold text-heading mt-8 mb-4">Follow Us</h2>
+            <p className="text-muted-foreground">
+              Cuts, barber spotlights and platform news — find us wherever you already are.
+            </p>
+            <ul className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 list-none pl-0">
+              {SOCIAL_LINKS.map((profile) => (
+                <li key={profile.name}>
+                  {/* rel="me" is the other half of sameAs — it lets a profile
+                      claim this site back, which is what verifies the link. */}
+                  <a
+                    href={profile.url}
+                    target="_blank"
+                    rel="me noopener noreferrer"
+                    className="flex items-baseline gap-2 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/50"
+                  >
+                    <span className="font-medium text-heading">{profile.name}</span>
+                    <span className="text-sm text-muted-foreground truncate">
+                      {profile.handle}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </Container>
