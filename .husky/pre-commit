@@ -1,1 +1,4 @@
-npx lint-staged
+# --concurrent false: belt-and-braces against the Windows SIGKILL. The config
+# no longer has overlapping matchers, but this also serializes multiple
+# languages (.ts and .js) so tsc/jest can never share a core with eslint.
+npx lint-staged --concurrent false

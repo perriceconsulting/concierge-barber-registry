@@ -145,26 +145,39 @@ Left alone deliberately: the light-on-dark look of the outreach badge palette
 (`bg-amber-100 text-amber-800` and friends) is a design decision for a dark-themed admin surface,
 not a DOSI question. Flag it if you want it restyled.
 
-### ⚠ The integration and e2e suites do not run
+### The test suite
 
-[jest.config.js](jest.config.js) sets `testMatch: ['**/__tests__/unit/**/*.(test|spec).[jt]s?(x)']`.
-Only the 6 unit suites execute. Everything under `src/__tests__/integration/` and
-`src/__tests__/e2e/` — including `file-upload`, `api-security`, and `license-verification` — is
-never run by `npm test`. `npm run test:integration` resolves to 0 matches, so it reports success
-without executing anything.
+`npm test` runs **two jest projects**, defined in [jest.config.js](jest.config.js):
 
-So a green 95/95 says nothing about the security tests. Two independent things must change before
-it does: point `testMatch` at those directories, then fix what breaks (they've never run, so
-assume they fail).
+| Project | Environment | Scope |
+|---|---|---|
+| `unit` | jsdom | `src/__tests__/unit/**` |
+| `integration` | **node** | `src/__tests__/integration/**` |
 
-At least one is vacuous on its own terms: `createMockFile(name, type, size)` in
-[file-upload.test.ts](src/__tests__/integration/security/file-upload.test.ts) ignores its `size`
-argument entirely — every mock file is 12 bytes of `'test content'`. The whole "File Size
-Validation" block asserts on a limit it never approaches. ESLint didn't flag that `size` because
-it's followed by a used parameter, and the default `args: after-used` only reports trailing ones.
+The environment split is not cosmetic. Route handlers and middleware need real Web Fetch globals
+(`Request`/`Response`/`Headers`); jsdom doesn't provide them, and that alone made every API suite
+fail to load with `ReferenceError: Request is not defined`.
 
-This is a Single Source failure with teeth: the test names are the only place claiming this
-behavior is covered, and they're wrong.
+**212 tests across 13 suites.** Keep it there. Until 2026-08-03 the config matched only
+`__tests__/unit`, so the integration suites — `api-security`, `license-verification`,
+`role-based-access`, `login`, both `auth-protection` — had *never executed*. `npm run
+test:integration` matched 0 tests and exited clean, which is worse than failing.
+
+Real E2E is the Playwright suite in top-level [e2e/](e2e/), run separately via
+`npm run test:e2e` against a live server. There is no jest "e2e" directory anymore; the one that
+existed mocked the database, email, and filesystem, so nothing about it was end-to-end.
+
+Coverage is scoped to `src/lib` and `src/hooks` — the code these suites actually exercise —
+because measuring all of `src` counted API routes and React pages that only Playwright touches,
+which made the 80% threshold unreachable and `npm run test:ci` fail at the gate regardless of test
+state. Thresholds are a **ratchet** set just under measured coverage. Raise them as coverage
+grows; never lower them to make a build pass.
+
+**Lesson worth keeping:** a test that has never run is not a safety net, it's an unvalidated
+claim. Reviving these found four product defects (see the ledger) — and three tests whose
+assertions were simply wrong, including one that would have pressured the login route into leaking
+an account-enumeration oracle. When a never-run test disagrees with shipped behavior, the test does
+not automatically win.
 
 ### Lint debt: 253 → 13
 
@@ -202,9 +215,29 @@ record why it's correct with a disable comment that names the reason.
 
 ---
 
+### Product defects the revived suites found
+
+- **`lib/upload-filename.ts`** — the sanitizer replaced path separators but left `..` intact, so
+  `../../../etc/passwd.jpg` became `.._.._.._etc_passwd.jpg`. Not exploitable against Vercel Blob
+  (keys aren't filesystem paths), but the function shouldn't depend on the storage backend to be
+  safe, and this path *was* filesystem-backed. Now its own module so a pure string function no
+  longer drags the Blob SDK into every importer.
+- **`lib/api/rate-limit.ts`** — the cleanup `setInterval` wasn't `unref`'d and held the event loop
+  open, hanging any Node process that imported it.
+- **`lib/api/middleware.ts`** — `Bearer` was matched case-sensitively; RFC 7235 makes the scheme
+  case-insensitive, so `bearer <token>` was rejected outright.
+- **`jest.setup.js`** — the Prisma mock hand-listed 4 of the schema's 26 models. Replaced with a
+  Proxy that vivifies on access, so `schema.prisma` stays the only source and there's no mirror to
+  drift.
+
 ## Working agreements
 
-- Run the test suite before any commit or push (`npm test`).
+- Run the test suite before any commit or push (`npm test`). This is now a meaningful check.
+- **The pre-commit hook works — don't reach for `--no-verify`.** It used to SIGKILL on Windows
+  because [.lintstagedrc.js](.lintstagedrc.js) declared three overlapping globs over the same
+  `.ts` files, and lint-staged runs *matchers* concurrently — a full `tsc --noEmit` and a jest
+  worker pool starting together. Collapsed to one matcher per language (commands within a matcher
+  run in sequence), plus `--concurrent false` in the hook.
 - `schema.prisma` is ahead of migration history — `prisma migrate dev` will try to reset. Use the
   diff workaround for new schema changes.
 - Route handlers wrapped in `withAuth()` need an optional context param:
