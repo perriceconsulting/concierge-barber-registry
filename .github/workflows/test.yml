@@ -30,9 +30,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
+      # Playwright is intentionally NOT run here. The e2e suite drives a live
+      # server against seeded data, and this job has neither: /certificates is
+      # gitignored (private keys), so the HTTPS dev server can't start, and
+      # DATABASE_URL below points at a Postgres that no service container
+      # provides. It failed on every run for months, which taught everyone to
+      # ignore this build. Run e2e locally with `npm run test:e2e`.
+      #
+      # To bring e2e back: add a postgres service, run `prisma migrate deploy`
+      # plus a seed, and start the plain-HTTP dev server rather than dev:https.
       - name: Run linter
         run: npm run lint
 

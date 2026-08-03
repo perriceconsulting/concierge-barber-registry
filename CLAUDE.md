@@ -164,8 +164,13 @@ fail to load with `ReferenceError: Request is not defined`.
 `role-based-access`, `login`, both `auth-protection` — had *never executed*. `npm run
 test:integration` matched 0 tests and exited clean, which is worse than failing.
 
-Real E2E is the Playwright suite in top-level [e2e/](e2e/), run separately via
-`npm run test:e2e` against a live server. One of those specs,
+Real E2E is the Playwright suite in top-level [e2e/](e2e/), run **locally** via
+`npm run test:e2e` against a live server — it is deliberately not part of CI.
+[.github/workflows/test.yml](.github/workflows/test.yml) has no Postgres service
+and can't start the HTTPS dev server (`/certificates` is gitignored, correctly),
+so the e2e step failed on every run for months. A permanently red build is worse
+than a smaller green one: nobody reads it. CI runs lint + jest; e2e is a local
+gate until someone adds a service container and a seed. One of those specs,
 [effect-refetch-loops.spec.ts](e2e/effect-refetch-loops.spec.ts), exists because a broken effect
 dependency is invisible to tsc, eslint *and* jest — the types check, the lint rule is satisfied,
 and nothing asserts. It only shows up as a browser hammering an endpoint, so that's where it's
