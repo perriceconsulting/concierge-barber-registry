@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { Container } from '@/components/layout/container';
 import { buildPageMetadata } from '@/lib/seo/metadata';
-import { SOCIAL_LINKS } from '@/config';
+import { SocialLinks } from '@/components/layout/social-links';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'About Us',
@@ -18,7 +18,11 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold text-heading mb-6">About Us</h1>
 
-          <div className="prose prose-lg max-w-none space-y-6">
+          {/* prose-headings:text-heading — without it Typography's own heading
+              colour beats the text-heading utility on the h2s below, so they
+              rendered white while identical headings outside prose rendered
+              gold. Same fix as the blog article page. */}
+          <div className="prose prose-lg max-w-none space-y-6 prose-headings:text-heading">
             <p className="text-lg text-muted-foreground">
               Welcome to Concierge Barber Registry, the premier platform connecting clients
               with verified, top-rated barbers across the country.
@@ -55,29 +59,17 @@ export default function AboutPage() {
               search away.
             </p>
 
-            <h2 className="text-2xl font-bold text-heading mt-8 mb-4">Follow Us</h2>
-            <p className="text-muted-foreground">
+          </div>
+
+          {/* Deliberately outside the prose wrapper above — Typography styles
+              bare a/li elements and turns these cards into an underlined
+              bulleted list. */}
+          <div className="mt-12 border-t border-border pt-8">
+            <h2 className="text-2xl font-bold text-heading mb-2">Follow Us</h2>
+            <p className="text-muted-foreground mb-5">
               Cuts, barber spotlights and platform news — find us wherever you already are.
             </p>
-            <ul className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 list-none pl-0">
-              {SOCIAL_LINKS.map((profile) => (
-                <li key={profile.name}>
-                  {/* rel="me" is the other half of sameAs — it lets a profile
-                      claim this site back, which is what verifies the link. */}
-                  <a
-                    href={profile.url}
-                    target="_blank"
-                    rel="me noopener noreferrer"
-                    className="flex items-baseline gap-2 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/50"
-                  >
-                    <span className="font-medium text-heading">{profile.name}</span>
-                    <span className="text-sm text-muted-foreground truncate">
-                      {profile.handle}
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <SocialLinks />
           </div>
         </div>
       </Container>

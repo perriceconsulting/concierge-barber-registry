@@ -194,12 +194,17 @@
   }
 }
 
-/* Blog prose styles — dark-mode tuned */
+/* Blog prose styles — dark-mode tuned.
+   These rules are unlayered, so they outrank both Tailwind utilities and
+   Typography's :where() defaults. That makes this the real heading colour for
+   any prose block — a `text-heading` class on a heading inside .prose does
+   nothing. Use the token here so there is one answer site-wide rather than
+   three competing ones. */
 .prose h1,
 .prose h2,
 .prose h3,
 .prose h4 {
-  color: var(--color-foreground);
+  color: var(--color-heading);
   font-family: var(--font-serif), Georgia, serif;
 }
 
