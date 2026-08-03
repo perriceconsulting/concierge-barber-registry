@@ -23,9 +23,9 @@ export function BrandMark({
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       {/* next/image optimizes the 2048px source down to the rendered size, so the
-          full-res brand-logo.jpeg never ships at full weight. */}
+          full-res logo never ships at full weight. */}
       <Image
-        src="/brand-logo.jpeg"
+        src={APP_CONFIG.logo}
         alt={APP_CONFIG.name}
         width={mark}
         height={mark}

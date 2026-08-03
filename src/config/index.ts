@@ -3,6 +3,17 @@ export const APP_CONFIG = {
   domain: 'conciergebarberregistry.com',
   description: 'Discover and connect with verified, top-rated barbers in your area. Browse portfolios, read reviews, and find your perfect cut.',
   url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  /**
+   * The brand mark shown in the UI (header, footer, anywhere BrandMark renders).
+   * Single source — components read this rather than hardcoding a path.
+   *
+   * Deliberately NOT the same asset as the favicon and PWA icons: those are
+   * generated from `public/brand-logo.jpeg` by `scripts/generate-icons.mjs` and
+   * are intentionally left on the older mark. Changing this constant changes the
+   * on-page logo only. The blog watermark is derived from this same file via
+   * `scripts/watermark-blog-images.ts`.
+   */
+  logo: '/brandlogo.jpeg',
 } as const;
 
 export const ROUTES = {
