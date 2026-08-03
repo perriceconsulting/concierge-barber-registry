@@ -105,7 +105,7 @@ export function HelpDrawer({
         {/* Header */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <div>
-            <h2 className="font-serif text-2xl font-bold text-primary">{title}</h2>
+            <h2 className="font-serif text-2xl font-bold text-heading">{title}</h2>
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
             )}

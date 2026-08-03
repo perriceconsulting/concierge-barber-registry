@@ -132,7 +132,7 @@ export default async function BarbersPage() {
         <Breadcrumb items={breadcrumbItems} className="mb-6" />
 
         <div className="mx-auto max-w-2xl text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl mb-4">
+          <h1 className="text-4xl font-bold tracking-tight text-heading sm:text-5xl mb-4">
             Browse Barbers
           </h1>
           <p className="text-lg text-muted-foreground">

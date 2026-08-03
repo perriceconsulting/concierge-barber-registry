@@ -200,7 +200,7 @@ export default function ForBarbersPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="comparison-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               The Old Way vs Concierge Barber Registry
             </h2>
@@ -242,7 +242,7 @@ export default function ForBarbersPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="how-it-works-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               How It Works
             </h2>
@@ -275,7 +275,7 @@ export default function ForBarbersPage() {
             <div className="text-center mb-10">
               <h2
                 id="verification-heading"
-                className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+                className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
               >
                 Why License Verification Matters
               </h2>
@@ -287,7 +287,7 @@ export default function ForBarbersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Clients Pay More for Proof
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -299,7 +299,7 @@ export default function ForBarbersPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Search Rewards Verification
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -311,7 +311,7 @@ export default function ForBarbersPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Filter Out Tire-Kickers
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -322,7 +322,7 @@ export default function ForBarbersPage() {
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-2">
+                  <h3 className="font-semibold text-heading mb-2">
                     Stand Out in Your City
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -343,7 +343,7 @@ export default function ForBarbersPage() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="pricing-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Simple, Transparent Pricing
             </h2>
@@ -368,7 +368,7 @@ export default function ForBarbersPage() {
                   </div>
                 )}
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-bold text-primary">{tier.name}</h3>
+                  <h3 className="text-xl font-bold text-heading">{tier.name}</h3>
                   <div className="mt-4 flex items-baseline gap-2">
                     <span className="text-4xl font-extrabold">{tier.price}</span>
                     <span className="text-sm text-muted-foreground">{tier.cadence}</span>

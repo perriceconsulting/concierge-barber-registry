@@ -230,7 +230,7 @@ export default function ReferralsAdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl font-bold text-primary">Referral Royalties</h1>
+        <h1 className="font-serif text-3xl font-bold text-heading">Referral Royalties</h1>
         <p className="text-muted-foreground mt-1">
           Honor-system ledger of cross-barber referrals. Approve to authorize payout, then batch
           monthly. The CSV export is what your bookkeeper actually pays.

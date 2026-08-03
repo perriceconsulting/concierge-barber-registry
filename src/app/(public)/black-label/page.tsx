@@ -61,7 +61,7 @@ export default function BlackLabelPage() {
       <section id="included" className="bg-card border-y border-border py-20">
         <Container>
           <div className="mx-auto max-w-3xl text-center mb-16">
-            <h2 className="font-serif text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold tracking-tight text-heading sm:text-4xl">
               What&rsquo;s Included
             </h2>
             <p className="mt-4 text-lg text-muted-foreground italic">
@@ -72,7 +72,7 @@ export default function BlackLabelPage() {
             {BLACK_LABEL_INCLUSIONS.map((item) => (
               <Card key={item.title} className="premium-card glass">
                 <CardContent className="p-8">
-                  <h3 className="font-serif text-xl font-semibold text-primary">{item.title}</h3>
+                  <h3 className="font-serif text-xl font-semibold text-heading">{item.title}</h3>
                   <p className="mt-3 text-muted-foreground leading-relaxed text-sm">{item.body}</p>
                 </CardContent>
               </Card>
@@ -86,7 +86,7 @@ export default function BlackLabelPage() {
         <Container>
           <div className="mx-auto max-w-3xl">
             <div className="text-center mb-16">
-              <h2 className="font-serif text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+              <h2 className="font-serif text-3xl font-bold tracking-tight text-heading sm:text-4xl">
                 The Core Value Shift
               </h2>
             </div>
@@ -121,7 +121,7 @@ export default function BlackLabelPage() {
       <section className="bg-card border-y border-border py-20 spotlight-soft">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-serif text-3xl font-bold sm:text-4xl text-primary">
+            <h2 className="font-serif text-3xl font-bold sm:text-4xl text-heading">
               Request Membership
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">

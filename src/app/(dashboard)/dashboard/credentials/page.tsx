@@ -105,7 +105,7 @@ export default function CredentialsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl font-bold text-primary">Credentials</h1>
+        <h1 className="font-serif text-3xl font-bold text-heading">Credentials</h1>
         <p className="text-muted-foreground mt-1">
           Your professional Wallet pass, printable card, certificate, and the Concierge Privacy
           Agreement template.

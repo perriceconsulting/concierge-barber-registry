@@ -11,7 +11,7 @@ export function BarberHelpContent() {
   return (
     <>
       <section id="help-section-getting-started">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Getting started
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -35,7 +35,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-setup-fee">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           The setup fee
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -60,7 +60,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-trial">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           The 30-day trial
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -79,7 +79,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-founding">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Founding Member
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -99,7 +99,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-license-doc">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           License document
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -111,7 +111,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-status">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Profile status
         </h3>
         <ul className="space-y-2 text-muted-foreground">
@@ -142,7 +142,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-hide-vacation">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Hide vs. vacation
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -159,7 +159,7 @@ export function BarberHelpContent() {
       </section>
 
       <section id="help-section-shortcuts">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Keyboard
         </h3>
         <ul className="space-y-1 text-muted-foreground">

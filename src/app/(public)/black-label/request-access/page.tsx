@@ -22,7 +22,7 @@ export default function RequestAccessPage() {
             <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold rounded-full border border-cbr-gold text-cbr-gold uppercase tracking-[0.3em]">
               Black Label
             </span>
-            <h1 className="font-serif text-4xl font-extrabold tracking-tight sm:text-5xl text-primary">
+            <h1 className="font-serif text-4xl font-extrabold tracking-tight sm:text-5xl text-heading">
               Request Membership
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -35,7 +35,7 @@ export default function RequestAccessPage() {
           <section aria-labelledby="bl-included-heading" className="mb-10">
             <h2
               id="bl-included-heading"
-              className="font-serif text-2xl font-bold text-primary mb-4 text-center"
+              className="font-serif text-2xl font-bold text-heading mb-4 text-center"
             >
               What Black Label Includes
             </h2>
@@ -63,7 +63,7 @@ export default function RequestAccessPage() {
           <section aria-labelledby="bl-form-heading">
             <h2
               id="bl-form-heading"
-              className="font-serif text-2xl font-bold text-primary mb-4 text-center"
+              className="font-serif text-2xl font-bold text-heading mb-4 text-center"
             >
               Submit Your Request
             </h2>

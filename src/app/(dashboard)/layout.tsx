@@ -138,7 +138,7 @@ export default function DashboardLayout({
             )}
           >
             <div className="flex-1 p-6 overflow-y-auto">
-              <h2 className="text-lg font-semibold text-primary mb-4">
+              <h2 className="text-lg font-semibold text-heading mb-4">
                 {isLoadingProfile ? ' ' : isOnboarding ? 'Getting Started' : 'Barber Dashboard'}
               </h2>
               {isLoadingProfile ? (
@@ -210,7 +210,7 @@ export default function DashboardLayout({
                 <Card className="max-w-lg w-full">
                   <CardContent className="py-12 text-center">
                     <div className="text-5xl mb-4">👋</div>
-                    <h1 className="text-2xl font-bold text-primary mb-2">Welcome! Let&apos;s set up your profile</h1>
+                    <h1 className="text-2xl font-bold text-heading mb-2">Welcome! Let&apos;s set up your profile</h1>
                     <p className="text-muted-foreground mb-6">
                       Complete your barber profile to unlock the full dashboard — add services, upload portfolio photos, manage subscriptions, and more.
                     </p>

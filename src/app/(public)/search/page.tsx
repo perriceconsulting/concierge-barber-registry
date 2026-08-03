@@ -101,7 +101,7 @@ export default function SearchPage() {
       <Container>
         {/* Search Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-4">Find Your Barber</h1>
+          <h1 className="text-3xl font-bold text-heading mb-4">Find Your Barber</h1>
           <div className="flex gap-4">
             <Input
               type="search"

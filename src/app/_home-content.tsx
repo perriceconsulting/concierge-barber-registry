@@ -134,7 +134,7 @@ export default function HomeContent({ viewerRole }: HomeContentProps) {
           <div className="mx-auto max-w-2xl text-center mb-16">
             <h2
               id="why-barbers-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Why Independent Barbers Choose the Registry
             </h2>
@@ -146,7 +146,7 @@ export default function HomeContent({ viewerRole }: HomeContentProps) {
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-3">
             {WHY_BARBERS_CHOOSE.map((item) => (
               <div key={item.title} className="text-center">
-                <h3 className="text-xl font-semibold text-primary">{item.title}</h3>
+                <h3 className="text-xl font-semibold text-heading">{item.title}</h3>
                 <p className="mt-3 text-muted-foreground">{item.body}</p>
               </div>
             ))}
@@ -166,7 +166,7 @@ export default function HomeContent({ viewerRole }: HomeContentProps) {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="how-it-works-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               How It Works
             </h2>
@@ -204,7 +204,7 @@ export default function HomeContent({ viewerRole }: HomeContentProps) {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="explore-specialties-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Explore by Specialty
             </h2>
@@ -343,7 +343,7 @@ function ClientHomeContent() {
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2
               id="explore-specialties-heading"
-              className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               Explore by Specialty
             </h2>

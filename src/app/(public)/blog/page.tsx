@@ -135,7 +135,7 @@ export default async function BlogPage({
         <div className="max-w-5xl mx-auto">
           <Breadcrumb items={breadcrumbItems} className="mb-6" />
 
-          <h1 className="font-serif text-4xl font-bold text-primary mb-2">{headline}</h1>
+          <h1 className="font-serif text-4xl font-bold text-heading mb-2">{headline}</h1>
           <p className="text-lg text-muted-foreground mb-8 max-w-3xl">{lede}</p>
 
           {/* Category filters */}
@@ -173,7 +173,7 @@ export default async function BlogPage({
                   <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-secondary/10 text-secondary mb-3">
                     {CATEGORY_LABELS[post.category] || post.category}
                   </span>
-                  <h2 className="font-serif text-lg font-bold text-primary group-hover:text-secondary transition-colors mb-2">
+                  <h2 className="font-serif text-lg font-bold text-heading group-hover:text-secondary transition-colors mb-2">
                     {post.title}
                   </h2>
                   <p className="text-sm text-muted-foreground line-clamp-3 mb-4">

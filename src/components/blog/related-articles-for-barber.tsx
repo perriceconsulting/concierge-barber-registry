@@ -81,7 +81,7 @@ export async function RelatedArticlesForBarber({ barberSlug }: Props) {
         <div className="mx-auto max-w-2xl text-center mb-10">
           <h2
             id="helpful-guides-heading"
-            className="text-2xl font-bold tracking-tight text-primary sm:text-3xl"
+            className="text-2xl font-bold tracking-tight text-heading sm:text-3xl"
           >
             Helpful Guides
           </h2>
@@ -100,7 +100,7 @@ export async function RelatedArticlesForBarber({ barberSlug }: Props) {
                 <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-secondary/10 text-secondary mb-3">
                   {CATEGORY_LABELS[post.category] || post.category}
                 </span>
-                <h3 className="text-base font-bold text-primary group-hover:text-secondary transition-colors mb-2">
+                <h3 className="text-base font-bold text-heading group-hover:text-secondary transition-colors mb-2">
                   {post.title}
                 </h3>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">

@@ -252,7 +252,7 @@ export default function ProfilePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Edit Profile</h1>
+          <h1 className="text-3xl font-bold text-heading">Edit Profile</h1>
           <p className="text-muted-foreground mt-2">Loading your profile...</p>
         </div>
       </div>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">{isNewProfile ? 'Set Up Your Profile' : 'Edit Profile'}</h1>
+        <h1 className="text-3xl font-bold text-heading">{isNewProfile ? 'Set Up Your Profile' : 'Edit Profile'}</h1>
         <p className="text-muted-foreground mt-2">
           {isNewProfile
             ? 'Fill in your details to get started — fields marked * are required'

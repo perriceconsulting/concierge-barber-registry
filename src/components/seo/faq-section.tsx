@@ -45,7 +45,7 @@ export function FaqSection({
           <div className="mb-10 text-center">
             <h2
               id={`${id}-heading`}
-              className="font-serif text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+              className="font-serif text-3xl font-bold tracking-tight text-heading sm:text-4xl"
             >
               {heading}
             </h2>

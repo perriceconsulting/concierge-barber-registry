@@ -63,7 +63,7 @@ export default function ContactPage() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-4xl min-h-[calc(100vh-16rem)]">
       <div className="space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-primary">Contact Us</h1>
+          <h1 className="text-4xl font-bold text-heading">Contact Us</h1>
           <p className="text-lg text-muted-foreground">
             Have a question or feedback? We&apos;d love to hear from you.
           </p>

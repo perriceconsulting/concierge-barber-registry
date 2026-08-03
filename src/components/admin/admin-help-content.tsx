@@ -10,7 +10,7 @@ export function AdminHelpContent() {
   return (
     <>
       <section id="help-section-verification">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Verification flow
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -48,7 +48,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-suspend-vs-reject">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Suspend vs. reject
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -71,7 +71,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-founding">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Founding Member
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -97,7 +97,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-setup-fee">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Verification setup fee
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -131,7 +131,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-tiers">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Subscription tiers
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -147,7 +147,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-hide-show">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Hide / Show
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -161,7 +161,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-roles">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           User roles
         </h3>
         <ul className="space-y-2 text-muted-foreground">
@@ -187,7 +187,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-audit">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Audit log
         </h3>
         <p className="text-muted-foreground leading-relaxed">
@@ -200,7 +200,7 @@ export function AdminHelpContent() {
       </section>
 
       <section id="help-section-shortcuts">
-        <h3 className="font-serif text-lg font-semibold text-primary mb-2">
+        <h3 className="font-serif text-lg font-semibold text-heading mb-2">
           Keyboard
         </h3>
         <ul className="space-y-1 text-muted-foreground">

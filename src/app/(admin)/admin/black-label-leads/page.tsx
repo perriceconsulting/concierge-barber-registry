@@ -145,7 +145,7 @@ export default function BlackLabelLeadsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl font-bold text-primary">Black Label Leads</h1>
+        <h1 className="font-serif text-3xl font-bold text-heading">Black Label Leads</h1>
         <p className="text-muted-foreground mt-1">
           Membership requests submitted via the public waitlist form.
         </p>

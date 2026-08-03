@@ -614,7 +614,7 @@ export default function AdminBlogPage() {
                 <span className="text-xs px-2 py-1 rounded bg-secondary/10 text-secondary">
                   {selectedTemplate.audienceLabel}
                 </span>
-                <h2 className="text-2xl font-bold text-primary mt-3 mb-2">{generatedPreview.title}</h2>
+                <h2 className="text-2xl font-bold text-heading mt-3 mb-2">{generatedPreview.title}</h2>
                 <p className="text-muted-foreground mb-2">{generatedPreview.description}</p>
                 <div className="flex gap-3 text-xs text-muted-foreground mb-4">
                   <span>/blog/{generatedPreview.slug}</span>

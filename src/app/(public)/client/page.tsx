@@ -86,7 +86,7 @@ export default function ClientPage() {
       <section className="py-20">
         <Container>
           <div className="mx-auto max-w-3xl text-center mb-16">
-            <h2 className="font-serif text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold tracking-tight text-heading sm:text-4xl">
               The Concierge Standard
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -97,7 +97,7 @@ export default function ClientPage() {
             {WHY_CLIENT_BLOCKS.map((item) => (
               <Card key={item.title} className="premium-card">
                 <CardContent className="p-8">
-                  <h3 className="font-serif text-xl font-semibold text-primary">{item.title}</h3>
+                  <h3 className="font-serif text-xl font-semibold text-heading">{item.title}</h3>
                   <p className="mt-3 text-muted-foreground leading-relaxed">{item.body}</p>
                 </CardContent>
               </Card>
@@ -113,7 +113,7 @@ export default function ClientPage() {
             <span className="inline-block px-3 py-1 mb-4 text-xs font-semibold rounded-full bg-secondary/10 text-secondary uppercase tracking-widest">
               Featured
             </span>
-            <h2 className="font-serif text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold tracking-tight text-heading sm:text-4xl">
               The Grooming Passport
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -138,7 +138,7 @@ export default function ClientPage() {
       <section className="py-20">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-serif text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold tracking-tight text-heading sm:text-4xl">
               Discretion by Default
             </h2>
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
@@ -165,7 +165,7 @@ export default function ClientPage() {
       <section className="bg-card border-y border-border py-20 spotlight-soft">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-serif text-3xl font-bold sm:text-4xl text-primary">
+            <h2 className="font-serif text-3xl font-bold sm:text-4xl text-heading">
               Find Your Master
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">

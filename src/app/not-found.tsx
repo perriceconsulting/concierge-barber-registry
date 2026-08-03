@@ -8,7 +8,7 @@ export default function NotFound() {
       <Card className="max-w-md w-full">
         <CardContent className="pt-6 text-center space-y-4">
           <div className="space-y-2">
-            <h1 className="text-6xl font-bold text-primary">404</h1>
+            <h1 className="text-6xl font-bold text-heading">404</h1>
             <h2 className="text-2xl font-semibold">Page Not Found</h2>
             <p className="text-muted-foreground">
               Sorry, we couldn&apos;t find the page you&apos;re looking for. The barber you&apos;re searching for might have moved or doesn&apos;t exist.

@@ -31,7 +31,7 @@ export async function FeaturedArticles() {
         <div className="mx-auto max-w-2xl text-center mb-12">
           <h2
             id="featured-articles-heading"
-            className="text-3xl font-bold tracking-tight text-primary sm:text-4xl"
+            className="text-3xl font-bold tracking-tight text-heading sm:text-4xl"
           >
             From the Blog
           </h2>
@@ -50,7 +50,7 @@ export async function FeaturedArticles() {
                 <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-secondary/10 text-secondary mb-3">
                   {CATEGORY_LABELS[post.category] || post.category}
                 </span>
-                <h3 className="text-lg font-bold text-primary group-hover:text-secondary transition-colors mb-2">
+                <h3 className="text-lg font-bold text-heading group-hover:text-secondary transition-colors mb-2">
                   {post.title}
                 </h3>
                 <p className="text-sm text-muted-foreground line-clamp-3 mb-4">

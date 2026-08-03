@@ -216,7 +216,7 @@ export default function PortfolioPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Portfolio</h1>
+          <h1 className="text-3xl font-bold text-heading">Portfolio</h1>
           <p className="text-muted-foreground mt-2">Loading portfolio...</p>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function PortfolioPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary">Portfolio</h1>
+        <h1 className="text-3xl font-bold text-heading">Portfolio</h1>
         <p className="text-muted-foreground mt-2">
           Showcase your best work ({images.length}/{maxImages} images)
         </p>

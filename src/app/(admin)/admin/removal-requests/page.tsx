@@ -91,7 +91,7 @@ export default function AdminRemovalRequestsPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Removal Requests</h1>
+        <h1 className="text-3xl font-bold text-heading">Removal Requests</h1>
         <p className="mt-2 text-muted-foreground">
           Review and act on barber profile removal requests. Approve to delete the
           profile (and the stub user if applicable). Dismiss to keep the profile and
