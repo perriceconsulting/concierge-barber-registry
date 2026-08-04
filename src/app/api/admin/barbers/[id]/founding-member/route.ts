@@ -17,11 +17,19 @@ const toggleSchema = z.object({
  *
  * Granting Founding Member status:
  *   - waives the verification setup fee (admin can approve immediately)
- *   - waives the post-trial Verified Member subscription indefinitely
- *     (subscriptionWaivedUntil is set far in the future)
+ *   - gives the first year of membership free — approval provisions the normal
+ *     subscription with FOUNDING_TRIAL_DAYS (365) instead of the standard 30,
+ *     so it converts to paid dues by itself on day 366
  *
- * Revoking it reverses both — the barber would need to pay the setup fee
- * (if not already paid) and a recurring sub would resume on next trial-lifecycle pass.
+ * This is now an OVERRIDE, not the primary mechanism. Founding status is
+ * normally derived from the fee paid: the intro rate is only offered while
+ * founding seats remain, so paying it sets `foundingMember` in the setup-fee
+ * webhook. Use this endpoint to grant status to someone who never paid (a
+ * comped barber) or to correct a mistake.
+ *
+ * It no longer writes `subscriptionWaivedUntil = 2099-12-31`. That column
+ * expressed "never pays", which the one-year trial replaces, and nothing ever
+ * read it for access — access state comes from the Stripe subscription.
  *
  * Reserved for the first 10 approved barbers (the source PRD's "Founding 10").
  */
@@ -76,7 +84,9 @@ const toggleFoundingMemberHandler = async (
       where: { id: barberId },
       data: {
         foundingMember,
-        subscriptionWaivedUntil: foundingMember ? new Date('2099-12-31T00:00:00Z') : null,
+        // Always cleared. The perk is now a 365-day trial on the real
+        // subscription, not an indefinite waiver.
+        subscriptionWaivedUntil: null,
       },
       select: {
         id: true,

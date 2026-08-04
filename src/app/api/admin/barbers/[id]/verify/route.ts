@@ -7,7 +7,8 @@ import { auditVerificationEvent } from '@/lib/audit';
 import { getStripe } from '@/lib/stripe';
 import { isAppealable } from '@/lib/suspension';
 import { SUBSCRIPTION_PRICES, VERIFIED_TRIAL_DAYS } from '@/lib/subscription';
-import { SuspensionReason } from '@prisma/client';
+import { FOUNDING_TRIAL_DAYS } from '@/lib/copy/v2';
+import { SuspensionReason, BillingPlan } from '@prisma/client';
 import { z } from 'zod';
 import { createLogger } from '@/lib/logger';
 
@@ -165,16 +166,26 @@ const verifyBarberHandler = async (
       }
     );
 
-    // CBR v2.0 — On approval, auto-create the Verified Member trial subscription.
-    // Founding Members skip the recurring sub entirely (subscriptionWaivedUntil is set
-    // far in the future via the founding-member admin endpoint).
-    if (status === 'approved' && !updatedProfile.foundingMember) {
+    // On approval, provision the Verified Member subscription — for everyone.
+    // Founding Members are no longer a separate branch: they take the same path
+    // with a 365-day trial instead of 30, so their first year is included and
+    // then converts by itself. Previously they skipped this entirely and were
+    // marked waived until 2099, which meant they never converted at all.
+    if (status === 'approved') {
       try {
-        await ensureVerifiedTrialSubscription(barberId, updatedProfile.user.email, {
-          firstName: updatedProfile.user.firstName,
-          lastName: updatedProfile.user.lastName,
-          userId: updatedProfile.user.id,
-        });
+        await ensureVerifiedTrialSubscription(
+          barberId,
+          updatedProfile.user.email,
+          {
+            firstName: updatedProfile.user.firstName,
+            lastName: updatedProfile.user.lastName,
+            userId: updatedProfile.user.id,
+          },
+          {
+            foundingMember: updatedProfile.foundingMember,
+            selectedPlan: updatedProfile.selectedPlan,
+          },
+        );
       } catch (subError) {
         // Log but don't block approval — admin can re-trigger sub creation later.
         logger.error('Failed to auto-create verified trial subscription on approval', {
@@ -229,10 +240,28 @@ export const PATCH = withAuth(verifyBarberHandler, { requiredRole: 'admin' });
  * If the verified-tier price IDs aren't configured in env, this throws —
  * the caller logs and continues so the verification approval itself still succeeds.
  */
+/**
+ * Provision the Verified Member subscription on approval.
+ *
+ * One path for every barber. Founding and standard members differ by exactly
+ * two values — the trial length and nothing else:
+ *
+ *   founding (paid the intro rate)  →  FOUNDING_TRIAL_DAYS (365)
+ *   standard                        →  VERIFIED_TRIAL_DAYS (30)
+ *
+ * Founding members used to skip this function entirely and carry
+ * `subscriptionWaivedUntil = 2099-12-31`, i.e. they never paid at all. That was
+ * a second, parallel mechanism for "has access" that no code actually read.
+ * A longer trial expresses the same perk using the machinery Stripe already
+ * runs: the trial converts by itself, the existing day-25 reminder fires from
+ * trialEndsAt, and access state comes from the subscription rather than a date
+ * column nobody checks.
+ */
 async function ensureVerifiedTrialSubscription(
   barberProfileId: string,
   email: string,
   user: { firstName: string; lastName: string; userId: string },
+  cohort: { foundingMember: boolean; selectedPlan: BillingPlan },
 ) {
   const existing = await prisma.subscription.findUnique({
     where: { barberProfileId },
@@ -246,12 +275,18 @@ async function ensureVerifiedTrialSubscription(
     return;
   }
 
-  const verifiedMonthlyPriceId = SUBSCRIPTION_PRICES.verified.monthly;
-  if (!verifiedMonthlyPriceId) {
+  const isAnnual = cohort.selectedPlan === BillingPlan.annual;
+  const priceId = isAnnual
+    ? SUBSCRIPTION_PRICES.verified.annual
+    : SUBSCRIPTION_PRICES.verified.monthly;
+
+  if (!priceId) {
     throw new Error(
-      'STRIPE_PRICE_VERIFIED_MONTHLY env var is not configured — cannot auto-create trial subscription. Create the Verified Member product in Stripe Dashboard and set the price ID.',
+      `STRIPE_PRICE_VERIFIED_${isAnnual ? 'ANNUAL' : 'MONTHLY'} env var is not configured — cannot auto-create the trial subscription. Run scripts/setup-stripe-products.ts and set the price IDs, then npm run verify:stripe.`,
     );
   }
+
+  const trialDays = cohort.foundingMember ? FOUNDING_TRIAL_DAYS : VERIFIED_TRIAL_DAYS;
 
   const stripe = getStripe();
 
@@ -268,8 +303,8 @@ async function ensureVerifiedTrialSubscription(
 
   const stripeSub = await stripe.subscriptions.create({
     customer: customerId,
-    items: [{ price: verifiedMonthlyPriceId }],
-    trial_period_days: VERIFIED_TRIAL_DAYS,
+    items: [{ price: priceId }],
+    trial_period_days: trialDays,
     metadata: { barberProfileId, source: 'cbr_v2_admin_approval' },
   });
 
@@ -283,7 +318,7 @@ async function ensureVerifiedTrialSubscription(
       barberProfileId,
       stripeCustomerId: customerId,
       stripeSubscriptionId: stripeSub.id,
-      stripePriceId: verifiedMonthlyPriceId,
+      stripePriceId: priceId,
       tier: 'verified',
       status: stripeSub.status === 'trialing' ? 'trialing' : 'active',
       currentPeriodStart: periodStart,
@@ -292,7 +327,7 @@ async function ensureVerifiedTrialSubscription(
     },
     update: {
       stripeSubscriptionId: stripeSub.id,
-      stripePriceId: verifiedMonthlyPriceId,
+      stripePriceId: priceId,
       tier: 'verified',
       status: stripeSub.status === 'trialing' ? 'trialing' : 'active',
       currentPeriodStart: periodStart,

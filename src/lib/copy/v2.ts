@@ -58,6 +58,33 @@ export const VETTING_FEE_PRICING = {
 export const VERIFIED_TRIAL_DAYS = 30;
 
 /**
+ * Founding Members get their first full year included with the ${VETTING_FEE_PRICING.intro}
+ * application fee.
+ *
+ * Same code path as everyone else — approval creates one subscription on the
+ * plan the barber chose, and the trial length is the only difference between
+ * cohorts. This replaces the old arrangement where founding members skipped
+ * subscription creation entirely and carried
+ * `subscriptionWaivedUntil = 2099-12-31`, meaning they never paid at all.
+ *
+ * Founding status is derived from the fee they paid, not granted separately —
+ * see the setup-fee webhook. Paying the intro rate IS what makes someone a
+ * Founding Member.
+ */
+export const FOUNDING_TRIAL_DAYS = 365;
+
+/** Monthly and annual membership dues, after the trial ends. */
+export const MEMBERSHIP_PRICING = {
+  monthly: 39,
+  annual: 299,
+} as const;
+
+/** Rounded saving from paying annually — used to justify the default. */
+export const ANNUAL_SAVING_PERCENT = Math.round(
+  (1 - MEMBERSHIP_PRICING.annual / (MEMBERSHIP_PRICING.monthly * 12)) * 100,
+);
+
+/**
  * Accepted payment methods. Single source — every surface that states this rule
  * derives from here: Stripe Checkout's `custom_text` (shown on Stripe's own
  * payment page, beside the card field), the pricing copy on /pro, and Terms.

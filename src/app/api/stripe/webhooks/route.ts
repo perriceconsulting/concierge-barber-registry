@@ -363,12 +363,21 @@ async function handleSetupFeeCompleted(
     return;
   }
 
+  // Founding status is DERIVED from the rate they paid, not granted separately.
+  // The intro rate is only offered while founding seats remain
+  // (resolveSetupFeeAmountCents), so paying it is what makes someone a Founding
+  // Member. Previously this was an independent admin toggle, which meant a
+  // barber could pay the founding rate and never receive the perk because
+  // nobody clicked the button — two sources for one fact, free to disagree.
+  const paidFoundingRate = session.metadata?.tier === 'intro';
+
   await prisma.barberProfile.update({
     where: { id: barberProfileId },
     data: {
       setupFeePaidAt: new Date(),
       setupFeeAmountCents: session.amount_total ?? null,
       setupFeeStripePaymentIntentId: paymentIntentId,
+      ...(paidFoundingRate && { foundingMember: true }),
     },
   });
 

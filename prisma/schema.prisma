@@ -134,6 +134,14 @@ model BarberProfile {
   setupFeeAmountCents           Int?      @map("setup_fee_amount_cents")
   setupFeeStripePaymentIntentId String?   @unique @map("setup_fee_stripe_pi_id") @db.VarChar(255)
   foundingMember                Boolean   @default(false) @map("founding_member")
+  /// Billing plan chosen at application checkout. Annual is the default and the
+  /// headline offer; monthly is the opt-out. Captured before payment so approval
+  /// can provision the subscription without asking again.
+  selectedPlan                  BillingPlan @default(annual) @map("selected_plan")
+  /// DEPRECATED — never gated access. It was written as 2099-12-31 to mean
+  /// "founding members never pay", which the one-year founding trial replaces.
+  /// Access state now comes from the Stripe subscription (status + trial_end).
+  /// Retained only so existing rows are not silently dropped.
   subscriptionWaivedUntil       DateTime? @map("subscription_waived_until")
 
   createdAt             DateTime               @default(now()) @map("created_at")
@@ -436,6 +444,12 @@ enum ContactRequestStatus {
   read
   responded
   archived
+}
+
+/// Which cadence a barber picked at application checkout.
+enum BillingPlan {
+  annual
+  monthly
 }
 
 enum SubscriptionTier {
