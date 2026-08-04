@@ -6,6 +6,13 @@ Next.js 16 (App Router) · React 19 · TypeScript · Prisma 6 · Neon PostgreSQL
 
 ## DOSI — the code standard
 
+> **Canonical origin: `~/.claude/CLAUDE.md`**, which applies DOSI and PHAST to every project
+> by default. The pillar-and-caveat text below is a deliberate *reconciled copy* so this
+> repo stays self-contained — a collaborator, a CI job, or a cloud agent reads the repo, not
+> Percy's home directory. Edit the standard there first, then sync here. Everything *below*
+> the pillars — the tables, the ledger, the landmines — is this project's own instantiation
+> and has no copy anywhere.
+
 Four pillars, and the caveats are the fifth thing — not decoration on the pillars but the part
 that decides cases. A pillar tells you what to want; its caveat tells you when wanting it harder
 makes the code worse. When DOSI and a shortcut disagree, DOSI wins. When two pillars disagree,
