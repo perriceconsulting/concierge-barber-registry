@@ -368,15 +368,20 @@ decides which methods are offered, and Link's enrollment upsell survives it unto
 Turning Link off does not affect card saving: `setup_future_usage` attaches the payment
 method through core Stripe, independently.
 
-**Turn it off in the Dashboard — Settings → Payment methods → Link.** The API route exists
-(`payment_method_configurations update <pmc_id> -d "link[display_preference][preference]=off"`)
-and it does work, but an API edit made this way was **silently overwritten** within the hour
-by ordinary dashboard activity on the same settings page. Treat the dashboard as the
-authoritative surface for payment method state and don't script it.
+Either surface works — Dashboard → Settings → Payment methods → Link, or:
 
-> ⚠ **Status: Link is ON in both sandbox and live.** It needs turning off in each — they are
-> separate accounts with separate configurations. Do not trust a past "I disabled it": this
-> setting has already reverted once.
+```
+stripe --api-key <key> payment_method_configurations update <pmc_id> \
+  -d "link[display_preference][preference]=off"
+```
+
+The API edit is reliable and persists; it is also the only route available for the sandbox
+from a dev session. Live is a different matter — a permission guard blocks live-key writes
+from here, so live is a Dashboard action.
+
+> ⚠ **Status: Link is ON in both sandbox and live**, and needs turning off in each — they are
+> separate accounts with separate configurations. Sandbox was briefly off and then
+> deliberately re-enabled from the Dashboard during testing.
 
 **Never assert this from config — assert it from checkout.** `npm run checkout:walk` prints
 `link opt-in present=… preChecked=…` on every run, read off the page a barber actually sees.
