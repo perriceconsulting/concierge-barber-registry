@@ -108,6 +108,10 @@ async function registerUser(opts: {
     throw new Error('register response missing user id');
   }
 
+  // Record before any escalation, so a failure partway through still leaves a
+  // record cleanup can reach.
+  createdUserIds.push(userId);
+
   // Optional role escalation — register only allows 'client' / 'barber', so
   // for 'admin' / 'hnwi' tests we register as a client then UPDATE the role
   // directly. The session cookie was already issued under 'client' role; the
@@ -203,19 +207,51 @@ async function createApprovedBarber(opts?: {
   return { ...ctx, barberProfileId: profile.id };
 }
 
+/** Users created by *this* worker process, so cleanup can scope to them. */
+const createdUserIds: string[] = [];
+
 /**
- * Delete every test record whose email matches the test prefix, plus their
- * cascaded barber_profiles, subscriptions, audit_log entries, etc. Safe to
- * call on a clean DB — it's a no-op if nothing matches.
+ * How stale an orphan must be before a sweep will delete it. Comfortably longer
+ * than any single suite, so a sweep can never reach a run still in progress.
+ */
+const ORPHAN_AGE_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Delete the test records **this worker created**, plus their cascaded
+ * barber_profiles, subscriptions, audit_log entries. Safe on a clean DB.
+ *
+ * Scoping to this worker is the whole point. Deleting by email *pattern* looks
+ * equivalent and isn't: Playwright runs `afterAll` once per worker, so with two
+ * workers the first to finish would delete the other's in-flight users — which
+ * surfaced as `No record was found for an update` in a test that had done
+ * nothing wrong. A cleanup that can reach another run's data is a shared mutable
+ * fixture, and it fails exactly as intermittently as that implies.
+ *
+ * Orphans from crashed runs are still swept, but only once they're older than
+ * {@link ORPHAN_AGE_MS} — old enough that no live worker can own them. Those
+ * matter beyond tidiness: an abandoned fixture holds `setupFeePaidAt`, which
+ * consumes a real founding seat. `npm run audit:seats` reports it.
  */
 async function cleanup() {
-  const result = await prisma().user.deleteMany({
-    where: { email: { startsWith: `${TEST_EMAIL_PREFIX}_`, endsWith: `@${TEST_EMAIL_DOMAIN}` } },
+  const mine = createdUserIds.splice(0);
+
+  const own = mine.length
+    ? await prisma().user.deleteMany({ where: { id: { in: mine } } })
+    : { count: 0 };
+
+  const orphans = await prisma().user.deleteMany({
+    where: {
+      email: { startsWith: `${TEST_EMAIL_PREFIX}_`, endsWith: `@${TEST_EMAIL_DOMAIN}` },
+      createdAt: { lt: new Date(Date.now() - ORPHAN_AGE_MS) },
+    },
   });
+
   if (process.env.PWDEBUG) {
     // Helpful when running individual tests interactively.
     // eslint-disable-next-line no-console
-    console.log(`[test-users] cleanup deleted ${result.count} user(s)`);
+    console.log(
+      `[test-users] cleanup deleted ${own.count} own user(s), ${orphans.count} stale orphan(s)`,
+    );
   }
 }
 

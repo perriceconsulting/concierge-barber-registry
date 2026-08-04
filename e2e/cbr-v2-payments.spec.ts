@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import Stripe from 'stripe';
 import { loadEnvConfig } from '@next/env';
 import { testUsers } from './helpers/test-users';
+import { VERIFIED_TRIAL_DAYS, FOUNDING_TRIAL_DAYS } from '../src/lib/copy/v2';
 
 /**
  * Payment flow assertion suite for CBR v2.0.
@@ -26,6 +27,7 @@ loadEnvConfig(process.cwd());
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const VERIFIED_MONTHLY_PRICE = process.env.STRIPE_PRICE_VERIFIED_MONTHLY;
+const VERIFIED_ANNUAL_PRICE = process.env.STRIPE_PRICE_VERIFIED_ANNUAL;
 const SETUP_INTRO = 4900;
 const SETUP_STANDARD = 9900;
 
@@ -230,80 +232,130 @@ test.describe('Payments — webhook handling', () => {
   });
 });
 
-test.describe('Payments — admin approval creates Verified Member trial subscription', () => {
+/**
+ * Approval is where the money actually starts, and it is the one step with two
+ * independent variables: which cadence the barber picked at checkout, and
+ * whether they paid the founding rate. Four outcomes, and the expensive one —
+ * a 365-day free year — is granted by the same code path as the 30-day trial.
+ *
+ * Asserting only the monthly/standard corner (which this suite did until the
+ * pricing change) leaves the free year untested. Every expectation below is
+ * derived from the canonical constants rather than restated, so a pricing change
+ * moves the test with the product instead of leaving it asserting last quarter's
+ * model.
+ */
+test.describe('Payments — admin approval provisions the right plan and trial', () => {
   test.skip(
-    !VERIFIED_MONTHLY_PRICE,
-    'STRIPE_PRICE_VERIFIED_MONTHLY not set — trial subscription creation needs it',
+    !VERIFIED_MONTHLY_PRICE || !VERIFIED_ANNUAL_PRICE,
+    'STRIPE_PRICE_VERIFIED_MONTHLY/_ANNUAL not set — trial subscription creation needs both',
   );
 
-  test('after setup fee paid, admin approve creates trial sub on Verified Member monthly price', async () => {
-    const admin = await testUsers.createAdmin('pay-admin');
-    const barber = await testUsers.createApprovedBarber({ emailLabel: 'pay-trial-sub' });
+  const COHORTS = [
+    {
+      label: 'standard member who accepted the default plan gets annual + a 30-day trial',
+      emailLabel: 'pay-trial-default',
+      foundingMember: false,
+      // Deliberately not set: proves annual is the default, not just the
+      // value the test wrote a moment earlier.
+      selectedPlan: null,
+      expectedPrice: () => VERIFIED_ANNUAL_PRICE,
+      expectedTrialDays: VERIFIED_TRIAL_DAYS,
+    },
+    {
+      label: 'standard member who opted into monthly gets monthly + a 30-day trial',
+      emailLabel: 'pay-trial-monthly',
+      foundingMember: false,
+      selectedPlan: 'monthly' as const,
+      expectedPrice: () => VERIFIED_MONTHLY_PRICE,
+      expectedTrialDays: VERIFIED_TRIAL_DAYS,
+    },
+    {
+      label: 'founding member gets a full free year, not the 30-day trial',
+      emailLabel: 'pay-trial-founding',
+      foundingMember: true,
+      selectedPlan: null,
+      expectedPrice: () => VERIFIED_ANNUAL_PRICE,
+      expectedTrialDays: FOUNDING_TRIAL_DAYS,
+    },
+  ];
 
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+  for (const cohort of COHORTS) {
+    test(cohort.label, async () => {
+      const admin = await testUsers.createAdmin(`${cohort.emailLabel}-admin`);
+      const barber = await testUsers.createApprovedBarber({
+        emailLabel: cohort.emailLabel,
+        foundingMember: cohort.foundingMember,
+      });
 
-    // Set up: paid setup fee + pending verification (so admin approve has
-    // something to flip)
-    const createdCustomer = await stripe.customers.create({
-      email: barber.email,
-      metadata: { barberProfileId: barber.barberProfileId!, test: 'pw' },
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+
+      const createdCustomer = await stripe.customers.create({
+        email: barber.email,
+        metadata: { barberProfileId: barber.barberProfileId!, test: 'pw' },
+      });
+
+      await prisma.barberProfile.update({
+        where: { id: barber.barberProfileId! },
+        data: {
+          verificationStatus: 'pending',
+          verifiedAt: null,
+          setupFeePaidAt: new Date(),
+          setupFeeAmountCents: cohort.foundingMember ? 4900 : 9900,
+          submittedForVerificationAt: new Date(),
+          // License document must exist for the admin verify endpoint to
+          // accept an approve action (MISSING_LICENSE_DOCUMENT guard).
+          licenseDocumentUrl: 'https://example.test/playwright-fake-license.pdf',
+          licenseNumber: 'NJ-TEST-PW',
+          licenseState: 'NJ',
+          ...(cohort.selectedPlan ? { selectedPlan: cohort.selectedPlan } : {}),
+        },
+      });
+
+      // Subscription row holds the customer id so ensureVerifiedTrialSubscription
+      // can reuse it.
+      await prisma.subscription.create({
+        data: {
+          barberProfileId: barber.barberProfileId!,
+          stripeCustomerId: createdCustomer.id,
+          tier: 'starter', // placeholder; overwritten by the trial path
+          status: 'active',
+        },
+      });
+
+      const res = await admin.request.patch(
+        `/api/admin/barbers/${barber.barberProfileId}/verify`,
+        {
+          headers: { 'x-csrf-token': admin.csrfToken },
+          data: { status: 'approved' },
+        },
+      );
+      expect(res.status(), await res.text()).toBe(200);
+
+      const subs = await stripe.subscriptions.list({ customer: createdCustomer.id, limit: 5 });
+      const trialSub = subs.data.find((s) => s.status === 'trialing');
+      expect(trialSub, 'expected a trialing subscription on a Verified Member price').toBeTruthy();
+
+      expect(
+        trialSub!.items.data[0]?.price.id,
+        `${cohort.foundingMember ? 'founding' : 'standard'} member should be on the expected cadence`,
+      ).toBe(cohort.expectedPrice());
+
+      expect(trialSub!.trial_end, 'subscription should carry a trial_end').toBeTruthy();
+      const daysFromNow = (trialSub!.trial_end! * 1000 - Date.now()) / 86400000;
+      // ±2 days absorbs clock skew and Stripe's own rounding without letting a
+      // 30-vs-365 mixup through.
+      expect(
+        Math.abs(daysFromNow - cohort.expectedTrialDays),
+        `expected a ~${cohort.expectedTrialDays}-day trial, got ~${Math.round(daysFromNow)} days`,
+      ).toBeLessThan(2);
+
+      // Cancel + delete so Stripe TEST mode doesn't accumulate garbage.
+      await stripe.subscriptions.cancel(trialSub!.id);
+      await stripe.customers.del(createdCustomer.id);
+      await prisma.$disconnect();
+      await admin.request.dispose();
+      await barber.request.dispose();
     });
-    await prisma.barberProfile.update({
-      where: { id: barber.barberProfileId! },
-      data: {
-        verificationStatus: 'pending',
-        verifiedAt: null,
-        setupFeePaidAt: new Date(),
-        setupFeeAmountCents: 9900,
-        submittedForVerificationAt: new Date(),
-        // License document must exist for the admin verify endpoint to
-        // accept an approve action (MISSING_LICENSE_DOCUMENT guard).
-        licenseDocumentUrl: 'https://example.test/playwright-fake-license.pdf',
-        licenseNumber: 'NJ-TEST-PW',
-        licenseState: 'NJ',
-      },
-    });
-    // Subscription row holds the customer id so ensureVerifiedTrialSubscription
-    // can reuse it.
-    await prisma.subscription.create({
-      data: {
-        barberProfileId: barber.barberProfileId!,
-        stripeCustomerId: createdCustomer.id,
-        tier: 'starter', // placeholder; will be overwritten by trial path
-        status: 'active',
-      },
-    });
-
-    const res = await admin.request.patch(
-      `/api/admin/barbers/${barber.barberProfileId}/verify`,
-      {
-        headers: { 'x-csrf-token': admin.csrfToken },
-        data: { status: 'approved' },
-      },
-    );
-    expect(res.status(), await res.text()).toBe(200);
-
-    // Verify the Stripe subscription was created
-    const subs = await stripe.subscriptions.list({
-      customer: createdCustomer.id,
-      limit: 5,
-    });
-    const trialSub = subs.data.find((s) => s.status === 'trialing');
-    expect(trialSub, 'expected a trialing subscription on the Verified Member price').toBeTruthy();
-    expect(trialSub!.items.data[0]?.price.id).toBe(VERIFIED_MONTHLY_PRICE);
-    expect(trialSub!.trial_end, 'should have a trial_end ~30 days from now').toBeTruthy();
-    const trialEndsMs = trialSub!.trial_end! * 1000;
-    const daysFromNow = (trialEndsMs - Date.now()) / 86400000;
-    expect(daysFromNow).toBeGreaterThan(28);
-    expect(daysFromNow).toBeLessThan(32);
-
-    // Cleanup: cancel the test sub + delete the customer so Stripe TEST mode
-    // doesn't accumulate garbage.
-    await stripe.subscriptions.cancel(trialSub!.id);
-    await stripe.customers.del(createdCustomer.id);
-    await prisma.$disconnect();
-    await admin.request.dispose();
-    await barber.request.dispose();
-  });
+  }
 });
