@@ -3,7 +3,7 @@ import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { getStripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
-import { resolveSetupFeeAmountCents, getBarberWithSubscription } from '@/lib/subscription';
+import { claimSetupFeeSeat, getBarberWithSubscription } from '@/lib/subscription';
 import { PAYMENT_POLICY } from '@/lib/copy/v2';
 import { createLogger } from '@/lib/logger';
 import { BillingPlan } from '@prisma/client';
@@ -82,7 +82,7 @@ async function createSetupFeeCheckoutHandler(request: AuthRequest) {
       );
     }
 
-    const { amountCents, tier, introSeatsRemaining } = await resolveSetupFeeAmountCents();
+    const { amountCents, tier, introSeatsRemaining } = await claimSetupFeeSeat(barberProfile.id);
 
     // Reuse existing Stripe customer if one exists from a prior subscription attempt.
     let customerId = barberProfile.subscription?.stripeCustomerId;

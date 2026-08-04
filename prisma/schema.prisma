@@ -133,6 +133,12 @@ model BarberProfile {
   setupFeePaidAt                DateTime? @map("setup_fee_paid_at")
   setupFeeAmountCents           Int?      @map("setup_fee_amount_cents")
   setupFeeStripePaymentIntentId String?   @unique @map("setup_fee_stripe_pi_id") @db.VarChar(255)
+  /// When this barber claimed a Founding seat by starting checkout at the intro
+  /// rate. Seats are counted as paid-or-reserved so two applicants cannot both
+  /// be told they took seat 10 while sitting on Stripe's payment page.
+  /// Reservations expire (see SEAT_RESERVATION_MINUTES) so an abandoned checkout
+  /// releases the seat.
+  setupFeeReservedAt            DateTime? @map("setup_fee_reserved_at")
   foundingMember                Boolean   @default(false) @map("founding_member")
   /// Billing plan chosen at application checkout. Annual is the default and the
   /// headline offer; monthly is the opt-out. Captured before payment so approval

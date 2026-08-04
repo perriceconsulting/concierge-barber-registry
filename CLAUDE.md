@@ -223,6 +223,69 @@ record why it's correct with a disable comment that names the reason.
 - **S:** no multi-tenant scoping module exists (the app is single-tenant today). If tenancy lands,
   it gets exactly one accessor module and all queries route through it.
 
+### PHAST — Playwright Headless Assertion Stress Testing
+
+**A platform tool.** Pronounced *"fast."* Write it PHAST or FAST — never "P-H-A-S-T."
+
+```
+npm run phast           # headless, 8 parallel contexts
+npm run phast:headed    # visible browser, 1 worker
+```
+
+The generic PHAST shape targets multi-tenant state isolation and realtime DOM reactivity
+under load. **Two of its five pillars don't apply here** and were deliberately not built:
+this is a single-tenant directory with no websockets, so tenant-leak and reactivity specs
+would assert against features the product doesn't have. That's the I caveat — don't invent
+domain vocabulary the product doesn't use.
+
+What [e2e/phast-isolation.spec.ts](e2e/phast-isolation.spec.ts) does assert, across
+`CONCURRENCY = 8` contexts, because one thread cannot surface a cache or isolation fault:
+
+1. Protected routes never render content to an anonymous context.
+2. Parallel anonymous API reads never return another account's data.
+3. `/search` doesn't refetch while idle in any context.
+
+Two things learned building it, both of which read as product failures and aren't:
+
+- **`browserContext.close: Test ended` is a timeout, not a leak.** Eight contexts loading
+  and then idling twice blows Playwright's 30s default. The suite sets
+  `test.describe.configure({ timeout: 180_000 })`.
+- **Measure stability only after the first fetch lands.** A fixed sleep reported `0 -> 1`
+  as "kept refetching" when it was really the first load arriving late under parallel
+  load. Gate on `expect.poll` before sampling.
+
+`phast:headed` pins `--workers=1` on purpose: headed mode still opens 8 contexts, and at
+the default worker count that's ~16 windows fighting for focus. Anything after `--` on
+`npm run phast` passes through to Playwright (`npm run phast -- --debug`).
+
+**The stress idea also lives outside the browser.** The founding-seat race is asserted in
+[src/\_\_tests\_\_/integration/billing/founding-seat-race.test.ts](src/__tests__/integration/billing/founding-seat-race.test.ts)
+— deterministic, milliseconds, tests the invariant rather than a rendering of it. Put a
+PHAST concern in jest when the risk is a data invariant; put it in Playwright when the risk
+only exists in a browser.
+
+### The founding-seat race (fixed 2026-08-04)
+
+`resolveSetupFeeAmountCents` counted seats at **checkout creation**, but `setupFeePaidAt`
+is only written by the **webhook**. The count therefore stayed stale for as long as an
+applicant spent on Stripe's payment page — fifteen concurrent applicants would all be told
+they were Founding Members. Under the current model each extra one is $50 under-charged
+*plus* a 365-day free year, so eleven concurrent claims could give away ~$1,745 with nobody
+doing anything wrong.
+
+`claimSetupFeeSeat` ([src/lib/subscription.ts](src/lib/subscription.ts)) replaces it:
+counts paid-**or**-reserved seats and writes the reservation inside the *same*
+`isolationLevel: 'Serializable'` transaction, so two claims on the last seat can't both
+win. Retries once — a serialization conflict here is the desired outcome, and the loser
+re-reads and quotes standard.
+
+- `setupFeeReservedAt` holds a seat for `SEAT_RESERVATION_MINUTES` (30), so an abandoned
+  checkout releases it. If that's ever raised to something large, ten abandoned
+  applications exhaust the founding tier permanently.
+- The count excludes self, or re-entering checkout bumps you to the standard rate.
+- `resolveSetupFeeAmountCents` survives as a **read-only preview for display**. Don't call
+  it to start a checkout.
+
 ---
 
 ### ⚠ Blog content lives in two places

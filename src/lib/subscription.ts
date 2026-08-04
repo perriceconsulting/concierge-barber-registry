@@ -120,8 +120,88 @@ export const SETUP_FEE_PRICING = VETTING_FEE_PRICING;
 export { VERIFIED_TRIAL_DAYS };
 
 /**
- * Decide which setup-fee amount applies to the next applicant.
- * Server-side check — clients should never compute this themselves.
+ * How long a Founding seat stays held after checkout starts, before the seat is
+ * released again. Long enough to finish paying on Stripe's page, short enough
+ * that abandoned checkouts do not sit on a seat.
+ */
+export const SEAT_RESERVATION_MINUTES = 30;
+
+/**
+ * Atomically claim a Founding seat and return the fee that applies.
+ *
+ * The naive version of this — count paid seats, then decide — is a
+ * check-then-act race with a very wide window. `setupFeePaidAt` is only written
+ * by the webhook once payment completes, so the count stays stale for as long
+ * as the applicant spends on Stripe's payment page. Fifteen people starting
+ * checkout while the count reads zero all get told they are Founding Members.
+ *
+ * That is not a rounding error under the current model: each extra Founding
+ * Member is $50 under-charged on the fee AND a 365-day free year, so eleven
+ * concurrent applicants can give away more than a thousand dollars without
+ * anyone doing anything wrong.
+ *
+ * Seats are therefore counted as paid-OR-reserved, and the reservation is
+ * written inside the same serializable transaction that counts. Two concurrent
+ * claims for the last seat cannot both succeed — Postgres fails one, and the
+ * retry sees the seat taken and quotes the standard rate.
+ */
+export async function claimSetupFeeSeat(barberProfileId: string): Promise<{
+  amountCents: number;
+  tier: 'intro' | 'standard';
+  introSeatsRemaining: number;
+}> {
+  const attempt = async () =>
+    prisma.$transaction(
+      async (tx) => {
+        const cutoff = new Date(Date.now() - SEAT_RESERVATION_MINUTES * 60_000);
+
+        // Exclude self: re-entering checkout must not count your own held seat
+        // against you and bump you to the standard rate.
+        const taken = await tx.barberProfile.count({
+          where: {
+            id: { not: barberProfileId },
+            OR: [
+              { setupFeePaidAt: { not: null } },
+              { setupFeeReservedAt: { gt: cutoff } },
+            ],
+          },
+        });
+
+        const introSeatsRemaining = Math.max(0, SETUP_FEE_PRICING.intro_limit - taken);
+
+        if (introSeatsRemaining > 0) {
+          await tx.barberProfile.update({
+            where: { id: barberProfileId },
+            data: { setupFeeReservedAt: new Date() },
+          });
+          return {
+            amountCents: SETUP_FEE_PRICING.intro * 100,
+            tier: 'intro' as const,
+            introSeatsRemaining,
+          };
+        }
+
+        return {
+          amountCents: SETUP_FEE_PRICING.standard * 100,
+          tier: 'standard' as const,
+          introSeatsRemaining: 0,
+        };
+      },
+      { isolationLevel: 'Serializable' },
+    );
+
+  // Serializable conflicts are expected under contention and are exactly the
+  // outcome we want — retry, and the loser sees the seat gone.
+  try {
+    return await attempt();
+  } catch {
+    return attempt();
+  }
+}
+
+/**
+ * Read-only preview of the current fee, for display. Does NOT hold a seat —
+ * use claimSetupFeeSeat when actually starting checkout.
  */
 export async function resolveSetupFeeAmountCents(): Promise<{
   amountCents: number;

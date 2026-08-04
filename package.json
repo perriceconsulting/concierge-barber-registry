@@ -19,6 +19,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "phast": "playwright test e2e/phast-isolation.spec.ts --project=chromium",
+    "phast:headed": "npm run phast -- --headed --workers=1",
     "verify:stripe": "tsx scripts/verify-stripe-env.ts",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
