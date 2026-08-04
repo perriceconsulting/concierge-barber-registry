@@ -329,6 +329,57 @@ simply never sends the event and nothing errors.
 | `invoice.paid` | a barber who fixes their card stays stuck in `past_due` |
 | `payment_method.attached` | **card funding is never recorded** — see below |
 
+### What the checkout walkthrough found (2026-08-04)
+
+[e2e/checkout-walkthrough.spec.ts](e2e/checkout-walkthrough.spec.ts) loads Stripe's own page
+and types a card — the one step the rest of the payments suite fakes. It found three
+things on its first green run, none of which types, lint, or jest could see.
+
+**1. Checkout offered Klarna, Cash App Pay and ACH.** `payment_method_types` was unset, so
+Stripe fell back to the dashboard's automatic methods. We were declining prepaid cards at
+the door while offering buy-now-pay-later beside it, and ACH — which can reverse days after
+the credential is issued — on a fee whose whole purpose is to cover vetting work done up
+front. Now pinned to `['card']` in the checkout route, which also means a dashboard toggle
+can't change what we accept without a code change. Apple/Google Pay still work; they're
+card-backed.
+
+**2. Session cookies were `sameSite: 'strict'`, which broke the return from Checkout.**
+A Strict cookie is withheld on *every* cross-site navigation, including a top-level GET the
+user initiated. So the barber paid, Stripe redirected to `/dashboard/profile?setup_fee=paid`,
+the browser withheld the session, middleware bounced them to `/login`, and the success toast
+died with the query string. The same flaw hit **every link we email** — verification, reset,
+magic-link claim — since those all arrive cross-site.
+
+Policy now lives once, in [src/lib/auth/cookies.ts](src/lib/auth/cookies.ts), at `lax`. It
+was hand-copied in 17 places across 7 files, which is exactly why one decision was wrong in
+five of them at once. Two cookies deliberately stay `strict` and are **not** oversights: the
+CSRF double-submit cookie (read by same-site script, never needs to survive an inbound link)
+and `adminRoleOverride` (a UI preference, `httpOnly: false`, not a session token).
+
+**3. Stripe pre-checks Link's "Save my information", which reveals a required phone field.**
+Leave it checked and the Pay button silently does nothing. Every real applicant hits this.
+Not changed — flagging it as a conversion question, not a bug.
+
+### `APP_CONFIG.url` is the only base URL
+
+Read [src/config/index.ts](src/config/index.ts). **Never** re-derive from
+`process.env.NEXT_PUBLIC_APP_URL` at a call site — it was re-derived in 13 files with *two*
+different fallbacks, half production domain and half `http://localhost:3000`. That value
+decides where a customer lands after paying and where a password-reset link points; eight
+sites in `lib/email.ts` would have started mailing localhost links if the var were ever
+renamed, with nothing failing, because a fallback is not an error. There is no localhost
+fallback in production any more — unset, it derives from `domain` and logs loudly.
+
+### The Stripe CLI is logged into the wrong account
+
+`stripe config --list` reports `acct_1RonNJL79RcfA3xj` — the **retired** account — holding a
+**live-mode** restricted key. A bare `stripe listen` or `stripe trigger` therefore talks to
+the wrong account in live mode and succeeds quietly.
+
+Never call the CLI bare. Use `npm run stripe:listen`, which takes the key from the same
+`.env` the app reads and refuses to run on anything that isn't `sk_test_`. Its printed
+`whsec_…` is per-session and differs from the dashboard endpoint's secret.
+
 ### Prepaid cards: stated, instrumented, not blocked
 
 `PAYMENT_POLICY` ([src/lib/copy/v2.ts](src/lib/copy/v2.ts)) is the single origin for

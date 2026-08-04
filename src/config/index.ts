@@ -1,8 +1,44 @@
+const DOMAIN = 'conciergebarberregistry.com';
+
+/**
+ * The canonical absolute base URL. Read it as `APP_CONFIG.url` — never
+ * re-derive it from `process.env.NEXT_PUBLIC_APP_URL` at a call site.
+ *
+ * It was re-derived in 13 files, with two different fallbacks: half defaulted
+ * to the production domain, half to `http://localhost:3000`. Same question, two
+ * answers, and the answer decides where a customer lands after paying and where
+ * a password-reset link points. If the variable were ever renamed or dropped,
+ * eight call sites in lib/email.ts would have started mailing customers
+ * localhost links — with nothing failing, because a fallback is not an error.
+ *
+ * So there is no localhost fallback in production any more. Unset in prod, this
+ * derives from {@link DOMAIN} (already canonical here) and says so loudly. A
+ * misconfigured deploy serving the right domain beats a running site quietly
+ * emitting dead links, and beats a hard crash of every page.
+ */
+function resolveAppUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  // Trailing slashes produce `//path` once callers append — normalize once here
+  // rather than at 24 call sites.
+  if (configured) return configured.replace(/\/+$/, '');
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      '[config] NEXT_PUBLIC_APP_URL is not set in a production build. ' +
+        `Falling back to https://${DOMAIN}. Payment redirects, email links and ` +
+        'canonical URLs depend on this — set it in the deployment environment.',
+    );
+    return `https://${DOMAIN}`;
+  }
+
+  return 'http://localhost:3000';
+}
+
 export const APP_CONFIG = {
   name: 'Concierge Barber Registry',
-  domain: 'conciergebarberregistry.com',
+  domain: DOMAIN,
   description: 'Discover and connect with verified, top-rated barbers in your area. Browse portfolios, read reviews, and find your perfect cut.',
-  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  url: resolveAppUrl(),
   /**
    * The brand mark shown in the UI (header, footer, anywhere BrandMark renders).
    * Single source — components read this rather than hardcoding a path.

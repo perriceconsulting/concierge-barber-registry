@@ -5,6 +5,7 @@ import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse, AuthErrors } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 export async function POST(request: NextRequest) {
   try {
@@ -102,22 +103,10 @@ export async function POST(request: NextRequest) {
     const response = successResponse({ message: 'Token refreshed successfully' });
 
     // Set new access token cookie
-    response.cookies.set('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
-    });
+    response.cookies.set('accessToken', accessToken, authCookieOptions(15 * 60));
 
     // Set new refresh token cookie
-    response.cookies.set('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    });
+    response.cookies.set('refreshToken', newRefreshToken, authCookieOptions(7 * 24 * 60 * 60));
 
     return response;
   } catch (error) {

@@ -5,6 +5,7 @@ import { hashToken } from '@/lib/auth/password';
 import { handleApiError, successResponse } from '@/lib/api/errors';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,22 +48,10 @@ export async function POST(request: NextRequest) {
     const response = successResponse({ message: 'Logged out successfully' });
 
     // Clear access token
-    response.cookies.set('accessToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-      path: '/',
-    });
+    response.cookies.set('accessToken', '', authCookieOptions(0));
 
     // Clear refresh token
-    response.cookies.set('refreshToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-      path: '/',
-    });
+    response.cookies.set('refreshToken', '', authCookieOptions(0));
 
     return response;
   } catch (error) {

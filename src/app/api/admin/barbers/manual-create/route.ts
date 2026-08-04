@@ -7,6 +7,7 @@ import { generateUniqueBarberSlug } from '@/lib/slug';
 import { createLogger } from '@/lib/logger';
 import { sendClaimInvitationEmail } from '@/lib/email';
 import crypto from 'crypto';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('ADMIN_BARBER_CREATE');
 
@@ -129,7 +130,7 @@ const manualCreateHandler = async (request: Request) => {
     });
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
+      APP_CONFIG.url;
     const claimUrl = `${baseUrl}/claim/${claimToken}`;
     const publicUrl = `${baseUrl}/barbers/${profile.slug}`;
 

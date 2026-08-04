@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
 import { createLogger } from '@/lib/logger';
 import { VERIFIED_TRIAL_DAYS } from '@/lib/copy/v2';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('EMAIL'); // [EMAIL] tag for log messages
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -55,7 +56,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
 }
 
 export function getWelcomeEmailHtml(firstName: string, role: 'client' | 'barber') {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
 
   if (role === 'barber') {
     return `
@@ -201,7 +202,7 @@ export function getVerificationEmailHtml(firstName: string, verificationUrl: str
 }
 
 export async function sendVerificationEmail(email: string, firstName: string, token: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
   const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
   const subject = 'Verify Your Email Address - Concierge Barber Registry';
@@ -212,7 +213,7 @@ export async function sendVerificationEmail(email: string, firstName: string, to
 
 // License verification email templates
 export function getLicenseApprovedEmailHtml(firstName: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
 
   return `
     <!DOCTYPE html>
@@ -271,7 +272,7 @@ export function getLicenseApprovedEmailHtml(firstName: string) {
 }
 
 export function getLicenseRejectedEmailHtml(firstName: string, reason: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
 
   return `
     <!DOCTYPE html>
@@ -385,7 +386,7 @@ export async function sendLicenseRejectedEmail(email: string, firstName: string,
 }
 
 export function getLicenseSuspendedEmailHtml(firstName: string, reasonLabel: string, reasonDescription: string, appealable: boolean) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
 
   const appealSection = appealable
     ? `
@@ -467,7 +468,7 @@ export async function sendLicenseSuspendedEmail(email: string, firstName: string
 }
 
 export function getReinstatedEmailHtml(firstName: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
 
   return `
     <!DOCTYPE html>
@@ -519,7 +520,7 @@ export async function sendReinstatedEmail(email: string, firstName: string) {
 }
 
 export async function sendLicenseSubmittedAdminEmail(adminEmail: string, barberName: string, barberEmail: string, licenseNumber: string, licenseState: string, _barberProfileId: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
   const verificationUrl = `${appUrl}/admin/barbers`;
 
   const subject = `🔔 New License Verification Required: ${barberName}`;
@@ -601,7 +602,7 @@ export function getPasswordResetEmailHtml(firstName: string, resetUrl: string) {
 }
 
 export async function sendPasswordResetEmail(email: string, firstName: string, token: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
   const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
   const subject = 'Reset Your Password - Concierge Barber Registry';
@@ -803,7 +804,7 @@ export async function sendTrialExpiringEmail(
   trialEndsAt: Date,
   monthlyRateLabel: string
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
   const dashboardUrl = `${appUrl}/dashboard/subscription`;
   const dateLabel = trialEndsAt.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -843,7 +844,7 @@ export async function sendLicenseExpiredEmail(
   firstName: string,
   expirationDate: Date | null
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
   const profileUrl = `${appUrl}/dashboard/profile`;
   const expiredOn = expirationDate
     ? expirationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -879,7 +880,7 @@ export async function sendReverificationDueEmail(
   firstName: string,
   verifiedAt: Date
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = APP_CONFIG.url;
   const profileUrl = `${appUrl}/dashboard/profile`;
   const verifiedOn = verifiedAt.toLocaleDateString('en-US', {
     month: 'long',

@@ -8,6 +8,7 @@ import { handleApiError, successResponse } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { createLogger } from '@/lib/logger';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 const logger = createLogger('CLAIM');
 
@@ -119,21 +120,8 @@ export async function POST(request: NextRequest) {
       redirectTo: '/dashboard',
     });
 
-    const isProd = process.env.NODE_ENV === 'production';
-    response.cookies.set('accessToken', accessToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'strict',
-      maxAge: 15 * 60,
-      path: '/',
-    });
-    response.cookies.set('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'strict',
-      maxAge: sessionDays * 24 * 60 * 60,
-      path: '/',
-    });
+    response.cookies.set('accessToken', accessToken, authCookieOptions(15 * 60));
+    response.cookies.set('refreshToken', refreshToken, authCookieOptions(sessionDays * 24 * 60 * 60));
 
     return response;
   } catch (error) {

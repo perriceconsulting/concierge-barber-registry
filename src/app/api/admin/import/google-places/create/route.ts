@@ -7,6 +7,7 @@ import { generateUniqueBarberSlug } from '@/lib/slug';
 import { createLogger } from '@/lib/logger';
 import { sendClaimInvitationEmail } from '@/lib/email';
 import crypto from 'crypto';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('GOOGLE_PLACES_IMPORT');
 
@@ -57,7 +58,7 @@ const createHandler = async (request: Request) => {
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
+      APP_CONFIG.url;
 
     const results: CreatedSummary[] = [];
 

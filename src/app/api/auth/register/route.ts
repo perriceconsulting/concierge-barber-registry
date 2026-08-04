@@ -10,6 +10,7 @@ import { verifyCsrfToken } from '@/lib/api/csrf';
 import { auditAuthEvent } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
 import crypto from 'crypto';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 const logger = createLogger('AUTH'); // [AUTH] tag for log messages
 
@@ -133,22 +134,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Set access token cookie (httpOnly, short-lived)
-    response.cookies.set('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
-    });
+    response.cookies.set('accessToken', accessToken, authCookieOptions(15 * 60));
 
     // Set refresh token cookie (httpOnly, long-lived)
-    response.cookies.set('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    });
+    response.cookies.set('refreshToken', refreshToken, authCookieOptions(7 * 24 * 60 * 60));
 
     // Audit log for successful registration (fire and forget)
     auditAuthEvent('user.register', user.id, request, {

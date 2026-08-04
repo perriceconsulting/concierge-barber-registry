@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAccessToken, verifyRefreshToken, generateAccessToken, TokenExpiredError, TokenInvalidError } from '@/lib/auth/jwt';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -101,13 +102,7 @@ async function handleProtectedRoutes(request: NextRequest): Promise<NextResponse
 
             // Allow request and set new access token cookie
             const response = NextResponse.next();
-            response.cookies.set('accessToken', newAccessToken, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'strict',
-              maxAge: 15 * 60,
-              path: '/',
-            });
+            response.cookies.set('accessToken', newAccessToken, authCookieOptions(15 * 60));
             return response;
           } catch {
             // Refresh token also invalid — fall through to login redirect

@@ -1,12 +1,13 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/db';
 import { createLogger } from '@/lib/logger';
+import { APP_CONFIG } from '@/config';
 // Blog posts now loaded from database below
 
 const logger = createLogger('SITEMAP');
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
+  const baseUrl = APP_CONFIG.url;
 
   try {
     // Fetch all approved barbers (claimed AND unclaimed) — exclude removal requests

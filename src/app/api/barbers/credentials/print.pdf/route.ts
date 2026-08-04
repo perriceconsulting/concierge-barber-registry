@@ -5,6 +5,7 @@ import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { CredentialCard } from '@/lib/pdf/credential-card';
 import { pdfToBuffer } from '@/lib/pdf/render';
+import { APP_CONFIG } from '@/config';
 
 export const runtime = 'nodejs';
 
@@ -44,7 +45,7 @@ async function getPrintPdfHandler(request: AuthRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = APP_CONFIG.url;
     const publicUrl = `${appUrl}/barbers/${barber.slug}`;
 
     const qrPngDataUrl = await QRCode.toDataURL(publicUrl, {

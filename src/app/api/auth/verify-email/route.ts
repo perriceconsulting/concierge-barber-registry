@@ -4,6 +4,7 @@ import { hashToken } from '@/lib/auth/password';
 import { generateTokenPair } from '@/lib/auth/jwt';
 import { handleApiError, successResponse, ApiError } from '@/lib/api/errors';
 import { rateLimiters } from '@/lib/api/rate-limit';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 // GET /api/auth/verify-email?token=xxx - Verify email with token
 export async function GET(request: NextRequest) {
@@ -105,21 +106,9 @@ async function createSessionResponse(
     role: user.role,
   });
 
-  response.cookies.set('accessToken', accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 15 * 60,
-    path: '/',
-  });
+  response.cookies.set('accessToken', accessToken, authCookieOptions(15 * 60));
 
-  response.cookies.set('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60,
-    path: '/',
-  });
+  response.cookies.set('refreshToken', refreshToken, authCookieOptions(7 * 24 * 60 * 60));
 
   return response;
 }

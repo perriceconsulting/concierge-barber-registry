@@ -6,6 +6,7 @@ import { handleApiError } from '@/lib/api/errors';
 import { generateUniqueBarberSlug } from '@/lib/slug';
 import { createLogger } from '@/lib/logger';
 import crypto from 'crypto';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('IG_QUICK_IMPORT');
 
@@ -99,7 +100,7 @@ const handler = async (request: Request) => {
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
+      APP_CONFIG.url;
 
     const results: CreatedSummary[] = [];
 

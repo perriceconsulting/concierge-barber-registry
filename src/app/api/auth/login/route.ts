@@ -8,6 +8,7 @@ import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { auditAuthEvent } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
+import { authCookieOptions } from '@/lib/auth/cookies';
 
 export async function POST(request: NextRequest) {
   try {
@@ -129,23 +130,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Set access token cookie (httpOnly, short-lived)
-    response.cookies.set('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
-    });
+    response.cookies.set('accessToken', accessToken, authCookieOptions(15 * 60));
 
     // Set refresh token cookie (httpOnly, long-lived)
     const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;
-    response.cookies.set('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: refreshMaxAge,
-      path: '/',
-    });
+    response.cookies.set('refreshToken', refreshToken, authCookieOptions(refreshMaxAge));
 
     // Audit log for successful login (fire and forget)
     auditAuthEvent('user.login', user.id, request, {

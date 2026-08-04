@@ -3,6 +3,7 @@ import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { handleApiError } from '@/lib/api/errors';
 import { getStripe } from '@/lib/stripe';
 import { getBarberWithSubscription } from '@/lib/subscription';
+import { APP_CONFIG } from '@/config';
 
 async function createPortalHandler(request: AuthRequest) {
   try {
@@ -16,7 +17,7 @@ async function createPortalHandler(request: AuthRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = APP_CONFIG.url;
 
     const session = await getStripe().billingPortal.sessions.create({
       customer: barberProfile.subscription.stripeCustomerId,

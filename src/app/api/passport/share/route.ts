@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { withAuth, AuthRequest } from '@/lib/api/middleware';
 import { ApiError, handleApiError } from '@/lib/api/errors';
 import { createLogger } from '@/lib/logger';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('PASSPORT_SHARE');
 
@@ -52,7 +53,7 @@ async function shareHandler(request: AuthRequest) {
       data: { passportId: passport.id, tokenHash, expiresAt },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = APP_CONFIG.url;
     const redemptionUrl = `${appUrl}/passport/scan?token=${encodeURIComponent(token)}`;
 
     const qrPngDataUrl = await QRCode.toDataURL(redemptionUrl, {

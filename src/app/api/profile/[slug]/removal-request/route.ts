@@ -6,6 +6,7 @@ import { rateLimiters } from '@/lib/api/rate-limit';
 import { verifyCsrfToken } from '@/lib/api/csrf';
 import { sendEmail } from '@/lib/email';
 import { createLogger } from '@/lib/logger';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('REMOVAL_REQUEST');
 
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest, context: RouteParams) {
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM;
     if (adminEmail) {
       const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL || 'https://conciergebarberregistry.com';
+        APP_CONFIG.url;
       try {
         await sendEmail({
           to: adminEmail,

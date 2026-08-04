@@ -8,6 +8,7 @@ import { PAYMENT_POLICY } from '@/lib/copy/v2';
 import { createLogger } from '@/lib/logger';
 import { BillingPlan } from '@prisma/client';
 import { z } from 'zod';
+import { APP_CONFIG } from '@/config';
 
 const logger = createLogger('SETUP_FEE_CHECKOUT');
 
@@ -107,10 +108,27 @@ async function createSetupFeeCheckoutHandler(request: AuthRequest) {
       data: { selectedPlan },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = APP_CONFIG.url;
     const session = await getStripe().checkout.sessions.create({
       mode: 'payment',
       customer: customerId,
+      // Card rails only — this is the setup fee, and it has to be settled money
+      // before we spend staff time on manual license verification and a
+      // background check.
+      //
+      // Left unset, Stripe falls back to the dashboard's automatic payment
+      // methods, which on this account offered Klarna, Cash App Pay and ACH
+      // alongside card. Each undercuts the fee's purpose in a different way:
+      // Klarna is buy-now-pay-later, so the vetting work starts before the
+      // barber has actually paid; ACH can reverse days later, well after the
+      // credential is issued. It also made the prepaid-card policy incoherent —
+      // we decline a prepaid card at the door while offering three rails with
+      // the same or worse settlement risk beside it.
+      //
+      // 'card' still covers Apple Pay and Google Pay, which are card-backed.
+      // Setting this explicitly also means a dashboard toggle can no longer
+      // change what we accept without a code change.
+      payment_method_types: ['card'],
       line_items: [
         {
           quantity: 1,
