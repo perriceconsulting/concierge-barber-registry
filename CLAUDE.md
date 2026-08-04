@@ -362,25 +362,29 @@ only paywall in the product. The trade was strictly bad: Link exists to speed up
 checkouts, and the setup fee is paid exactly once. The subscription that follows is created
 server-side against the saved card, so Link never appears again. All cost, no benefit.
 
-Disabled via the default payment method configuration, not the dashboard:
+Link is controlled by the account's default **payment method configuration**, not by the
+Checkout session. This is a *separate lever* from `payment_method_types: ['card']` — that one
+decides which methods are offered, and Link's enrollment upsell survives it untouched.
+Turning Link off does not affect card saving: `setup_future_usage` attaches the payment
+method through core Stripe, independently.
 
-```
-stripe --api-key <key> payment_method_configurations update <pmc_id> \
-  -d "link[display_preference][preference]=off"
-```
+**Turn it off in the Dashboard — Settings → Payment methods → Link.** The API route exists
+(`payment_method_configurations update <pmc_id> -d "link[display_preference][preference]=off"`)
+and it does work, but an API edit made this way was **silently overwritten** within the hour
+by ordinary dashboard activity on the same settings page. Treat the dashboard as the
+authoritative surface for payment method state and don't script it.
 
-Note this is a *separate lever* from `payment_method_types: ['card']` on the session — that
-one controls which methods are offered, and Link's enrollment upsell survived it. Verified
-by the walkthrough, which now prints `link opt-in present=…` every run. Disabling Link does
-not affect card saving: `setup_future_usage` attaches the payment method through core
-Stripe, independently.
+> ⚠ **Status: Link is ON in both sandbox and live.** It needs turning off in each — they are
+> separate accounts with separate configurations. Do not trust a past "I disabled it": this
+> setting has already reverted once.
 
-> ⚠ **Sandbox and live currently disagree.** Sandbox (`pmc_1U0S8CGvFqeZpzQR…`) is off and
-> verified. Live (`pmc_1U0S7t2dW3lY8so17L74ntDj`) is **not yet changed** — the write was
-> blocked by a permission guard on live-key access. Until someone runs the command above
-> against the live key or flips it in the dashboard, real barbers still hit the phone field
-> that local testing no longer reproduces. That asymmetry is worse than the original bug,
-> because it makes the walkthrough green while production is not.
+**Never assert this from config — assert it from checkout.** `npm run checkout:walk` prints
+`link opt-in present=… preChecked=…` on every run, read off the page a barber actually sees.
+That line is the only trustworthy check, and it is what caught the revert.
+
+Also enabled account-wide but *not* reaching our checkout, because the session pins
+card-only: Cash App Pay, Amazon Pay, Klarna, Cartes Bancaires, Kakao Pay. No action needed;
+turning them off is belt-and-braces, not a fix.
 
 ### `APP_CONFIG.url` is the only base URL
 
