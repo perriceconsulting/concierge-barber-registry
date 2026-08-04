@@ -13,9 +13,28 @@
  * So the key is never taken from CLI config. It comes from the same .env the
  * app reads, and this refuses to run if that key isn't a test key.
  *
- * The forwarding secret it prints (whsec_…) is per-session and differs from the
+ * The forwarding secret it prints (whsec_…) is per-account and differs from the
  * dashboard endpoint's secret. Put it in STRIPE_WEBHOOK_SECRET while you're
  * using it, or signature verification rejects everything with a 400.
+ *
+ * ── Known fidelity gap: payload version ─────────────────────────────────────
+ *
+ * The CLI renders forwarded events at the ACCOUNT's default API version and
+ * offers no way to pin an arbitrary one (`stripe listen` has only `--latest`).
+ * The sandbox account currently defaults to 2026-07-29.dahlia, while the
+ * production endpoint is registered at 2026-02-25.clover — the version this
+ * code pins in lib/stripe.ts. So events forwarded here are shaped slightly
+ * differently from the ones production actually receives.
+ *
+ * That is not currently a defect, and it is worth knowing why: the fabricated
+ * events in cbr-v2-payments.spec.ts are built at clover, and the live-forwarded
+ * ones in checkout-walkthrough.spec.ts arrive as dahlia, so between them both
+ * payload generations are exercised. `getSubscriptionIdFromInvoice` already
+ * tolerates both shapes for exactly this reason.
+ *
+ * The trap to avoid: treating a green local webhook run as proof that
+ * production will parse the same event. If a handler ever reads a field that
+ * moved between those versions, this is where the two will disagree.
  */
 import { spawn } from 'node:child_process';
 import { loadEnvConfig } from '@next/env';
