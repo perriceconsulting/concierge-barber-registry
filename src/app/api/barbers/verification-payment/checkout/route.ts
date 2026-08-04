@@ -4,6 +4,7 @@ import { ApiError, handleApiError } from '@/lib/api/errors';
 import { getStripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
 import { resolveSetupFeeAmountCents, getBarberWithSubscription } from '@/lib/subscription';
+import { PAYMENT_POLICY } from '@/lib/copy/v2';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('SETUP_FEE_CHECKOUT');
@@ -98,7 +99,19 @@ async function createSetupFeeCheckoutHandler(request: AuthRequest) {
           },
         },
       ],
+      // Shown on Stripe's own payment page, beside the card field — the only
+      // place we control at the moment the number is actually typed.
+      custom_text: {
+        submit: { message: PAYMENT_POLICY.prepaidNotAcceptedLong },
+      },
       payment_intent_data: {
+        // Save the card. Without this the barber pays the setup fee and leaves
+        // no payment method on the customer, so the Verified Member trial that
+        // starts at approval has nothing to bill when it ends — the renewal
+        // invoice fails and the subscription lands in past_due having never
+        // collected a cent. This is also the point where card.funding first
+        // becomes visible to the webhook.
+        setup_future_usage: 'off_session',
         metadata: {
           barberProfileId: barberProfile.id,
           purpose: 'verification_setup_fee',

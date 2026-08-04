@@ -50,7 +50,11 @@ const RETIRED = [
 function loadEnvFile(path: string) {
   for (const line of readFileSync(path, 'utf8').split('\n')) {
     const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (match) process.env[match[1]] = match[2].trim();
+    if (!match) continue;
+    // `vercel env pull` writes values wrapped in double quotes. Passing those
+    // through verbatim sends a quoted key to Stripe and gets a 401 that looks
+    // like a bad credential rather than a parsing bug.
+    process.env[match[1]] = match[2].trim().replace(/^"(.*)"$/, '$1');
   }
 }
 

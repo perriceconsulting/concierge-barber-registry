@@ -10,6 +10,7 @@ import {
   HOW_IT_WORKS_PRO,
   VETTING_FEE_NOTICE,
   VETTING_FEE_PRICING,
+  PAYMENT_POLICY,
 } from '@/lib/copy/v2';
 import { FAQS } from '@/lib/copy/faqs';
 import { FaqSection } from '@/components/seo/faq-section';
@@ -178,6 +179,10 @@ export default function ProPage() {
               </CardContent>
             </Card>
           </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            {PAYMENT_POLICY.prepaidNotAcceptedLong}
+          </p>
         </Container>
       </section>
 

@@ -103,6 +103,10 @@ export async function POST(request: NextRequest) {
         await handlePaymentSucceeded(event.data.object as Stripe.Invoice);
         break;
 
+      case 'payment_method.attached':
+        await recordCardFunding(event.data.object as Stripe.PaymentMethod);
+        break;
+
       default:
         logger.info('Unhandled event type:', event.type);
     }
@@ -121,6 +125,69 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+/**
+ * Record what kind of card was attached, and flag prepaid ones.
+ *
+ * The platform states that prepaid cards are not accepted
+ * (PAYMENT_POLICY in lib/copy/v2.ts). Nothing here can *prevent* one: the card
+ * is entered on Stripe-hosted Checkout or the Billing Portal, so the first
+ * moment this code sees `card.funding` is after the fact. What it can do is
+ * make the stated policy real rather than decorative — every prepaid card lands
+ * in the audit log for an admin to act on.
+ *
+ * Deliberately does not auto-detach or auto-refund. Per the Optimize caveat,
+ * measure before enforcing: nobody knows yet how often this actually happens,
+ * and silently voiding a barber's payment method is a worse first move than
+ * flagging it. Escalate once the audit log says it is a real problem.
+ *
+ * `funding` is 'credit' | 'debit' | 'prepaid' | 'unknown'. 'unknown' is common
+ * for some non-US issuers and is recorded, not flagged.
+ */
+async function recordCardFunding(paymentMethod: Stripe.PaymentMethod) {
+  const funding = paymentMethod.card?.funding;
+  if (!funding) return;
+
+  const customerId =
+    typeof paymentMethod.customer === 'string'
+      ? paymentMethod.customer
+      : paymentMethod.customer?.id ?? null;
+
+  const subscription = customerId
+    ? await prisma.subscription.findFirst({
+        where: { stripeCustomerId: customerId },
+        select: { barberProfileId: true },
+      })
+    : null;
+
+  const isPrepaid = funding === 'prepaid';
+
+  await prisma.auditLog.create({
+    data: {
+      action: isPrepaid ? 'payment_method.prepaid_flagged' : 'payment_method.attached',
+      entityType: 'subscription',
+      entityId: subscription?.barberProfileId ?? null,
+      details: {
+        funding,
+        brand: paymentMethod.card?.brand ?? null,
+        last4: paymentMethod.card?.last4 ?? null,
+        country: paymentMethod.card?.country ?? null,
+        stripeCustomerId: customerId,
+        paymentMethodId: paymentMethod.id,
+      },
+    },
+  });
+
+  if (isPrepaid) {
+    logger.error('Prepaid card attached — platform policy says these are not accepted', {
+      paymentMethodId: paymentMethod.id,
+      stripeCustomerId: customerId,
+      barberProfileId: subscription?.barberProfileId,
+    });
+  } else {
+    logger.info('Payment method attached', { funding, paymentMethodId: paymentMethod.id });
+  }
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {

@@ -4,6 +4,7 @@ import { handleApiError } from '@/lib/api/errors';
 import { getStripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
 import { SUBSCRIPTION_PRICES, TRIAL_DAYS, getBarberWithSubscription } from '@/lib/subscription';
+import { PAYMENT_POLICY } from '@/lib/copy/v2';
 
 async function createCheckoutHandler(request: AuthRequest) {
   try {
@@ -76,6 +77,10 @@ async function createCheckoutHandler(request: AuthRequest) {
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
+      // Beside the card field on Stripe's page — see PAYMENT_POLICY.
+      custom_text: {
+        submit: { message: PAYMENT_POLICY.prepaidNotAcceptedLong },
+      },
       subscription_data: {
         trial_period_days: TRIAL_DAYS,
         metadata: { barberProfileId: barberProfile.id },

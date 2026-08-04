@@ -42,6 +42,29 @@ export const VETTING_FEE_PRICING = {
   intro_limit: 10,
 } as const;
 
+/**
+ * Accepted payment methods. Single source — every surface that states this rule
+ * derives from here: Stripe Checkout's `custom_text` (shown on Stripe's own
+ * payment page, beside the card field), the pricing copy on /pro, and Terms.
+ *
+ * Prepaid cards are excluded because a subscription cannot be collected from a
+ * card that runs out of balance: the renewal simply fails and the account sits
+ * in past_due. Setup fees are one-time and would survive a prepaid card, but the
+ * rule is stated once for the whole platform rather than per-flow.
+ *
+ * NOTE: stating this is a commitment. Stripe-hosted Checkout and the Billing
+ * Portal collect the card, so nothing in this codebase can refuse a prepaid card
+ * before it is charged. The webhook records `card.funding` on every payment and
+ * flags prepaid ones for review — that is what currently backs this sentence up.
+ * If enforcement is ever removed, remove this copy too, or the platform is
+ * claiming something it does not do.
+ */
+export const PAYMENT_POLICY = {
+  prepaidNotAccepted: 'Prepaid cards are not accepted.',
+  prepaidNotAcceptedLong:
+    'Prepaid cards are not accepted. Please use a credit or debit card — a prepaid card cannot support recurring membership billing.',
+} as const;
+
 export const WHY_PRO_BLOCKS = [
   {
     title: 'Manual License Verification',
