@@ -387,9 +387,15 @@ from here, so live is a Dashboard action.
 `link opt-in present=… preChecked=…` on every run, read off the page a barber actually sees.
 That line is the only trustworthy check, and it is what caught the revert.
 
-Also enabled account-wide but *not* reaching our checkout, because the session pins
-card-only: Cash App Pay, Amazon Pay, Klarna, Cartes Bancaires, Kakao Pay. No action needed;
-turning them off is belt-and-braces, not a fix.
+**BNPL is blocked at two layers on live**, deliberately. Affirm and Klarna are disabled on
+the live account *and* the session pins `payment_method_types: ['card']`. Either alone is
+sufficient; both means neither a dashboard toggle nor a code edit can silently reintroduce
+buy-now-pay-later on a fee that exists to cover vetting work done up front.
+
+Other wallets (Cash App Pay, Amazon Pay, Cartes Bancaires, Kakao Pay) may show as enabled
+account-wide without reaching our checkout, for the same card-only reason. Don't read the
+dashboard's payment-method list as what a barber sees — read
+`npm run checkout:walk`.
 
 ### `APP_CONFIG.url` is the only base URL
 
