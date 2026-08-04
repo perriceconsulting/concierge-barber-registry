@@ -19,6 +19,7 @@
  * migrated — you have to update each subscription in Stripe Dashboard.
  */
 import Stripe from 'stripe';
+import { STRIPE_API_VERSION } from '../src/lib/stripe';
 import { loadEnvConfig } from '@next/env';
 
 loadEnvConfig(process.cwd());
@@ -29,7 +30,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2026-02-25.clover',
+  apiVersion: STRIPE_API_VERSION,
 });
 
 const MODE = process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')

@@ -24,6 +24,7 @@
 import { readFileSync } from 'fs';
 import { loadEnvConfig } from '@next/env';
 import Stripe from 'stripe';
+import { STRIPE_API_VERSION, STRIPE_WEBHOOK_EVENTS } from '../src/lib/stripe';
 
 /** Price vars the application actually reads. */
 const REQUIRED = ['STRIPE_PRICE_VERIFIED_MONTHLY', 'STRIPE_PRICE_VERIFIED_ANNUAL'] as const;
@@ -58,6 +59,63 @@ function loadEnvFile(path: string) {
   }
 }
 
+/**
+ * Check the registered webhook endpoint against what the code expects.
+ *
+ * Two things drift here, both silently:
+ *
+ *   events — an unregistered event is simply never sent. No error, no retry,
+ *            no clue. Dropping checkout.session.completed means barbers pay
+ *            and nothing records it.
+ *
+ *   api_version — Stripe treats this as create-only on an endpoint, so any
+ *            dashboard edit that rebuilds it resets to the account default.
+ *            That already happened once: adding one event moved a clover
+ *            endpoint to dahlia, changing payload shapes under the code.
+ */
+async function checkWebhookEndpoint(stripe: Stripe): Promise<number> {
+  console.log('');
+  const endpoints = await stripe.webhookEndpoints.list({ limit: 20 });
+  const live = endpoints.data.filter((e) => e.status === 'enabled');
+
+  if (live.length === 0) {
+    console.log('WARN  webhook endpoint                  none registered on this account');
+    return 0;
+  }
+
+  let failures = 0;
+  for (const endpoint of live) {
+    console.log(`endpoint: ${endpoint.url}`);
+
+    if (endpoint.api_version !== STRIPE_API_VERSION) {
+      console.log(
+        `FAIL    api_version ${endpoint.api_version} != ${STRIPE_API_VERSION} — recreate the endpoint; it cannot be updated`,
+      );
+      failures++;
+    } else {
+      console.log(`OK      api_version ${endpoint.api_version}`);
+    }
+
+    const registered = new Set(endpoint.enabled_events);
+    const missing = STRIPE_WEBHOOK_EVENTS.filter((e) => !registered.has(e) && !registered.has('*'));
+    const extra = endpoint.enabled_events.filter(
+      (e) => e !== '*' && !(STRIPE_WEBHOOK_EVENTS as readonly string[]).includes(e),
+    );
+
+    if (missing.length) {
+      console.log(`FAIL    missing events: ${missing.join(', ')} — handled in code, never sent`);
+      failures++;
+    }
+    if (extra.length) {
+      console.log(`note    extra events: ${extra.join(', ')} — sent but not handled`);
+    }
+    if (!missing.length) {
+      console.log(`OK      all ${STRIPE_WEBHOOK_EVENTS.length} handled events registered`);
+    }
+  }
+  return failures;
+}
+
 async function main() {
   const explicitFile = process.argv[2];
   if (explicitFile) {
@@ -74,7 +132,7 @@ async function main() {
     process.exit(1);
   }
 
-  const stripe = new Stripe(secret, { apiVersion: '2026-02-25.clover' });
+  const stripe = new Stripe(secret, { apiVersion: STRIPE_API_VERSION });
   const account = await stripe.accounts.retrieve();
   const mode = secret.startsWith('sk_live_') ? 'LIVE' : 'TEST';
 
@@ -121,7 +179,9 @@ async function main() {
     failures++;
   }
 
-  console.log(failures === 0 ? '\nAll required Stripe env vars reconcile with Stripe.' : `\n${failures} problem(s).`);
+  failures += await checkWebhookEndpoint(stripe);
+
+  console.log(failures === 0 ? '\nAll required Stripe config reconciles with Stripe.' : `\n${failures} problem(s).`);
   process.exit(failures === 0 ? 0 : 1);
 }
 
