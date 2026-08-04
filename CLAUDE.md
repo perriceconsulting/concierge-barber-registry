@@ -356,9 +356,31 @@ five of them at once. Two cookies deliberately stay `strict` and are **not** ove
 CSRF double-submit cookie (read by same-site script, never needs to survive an inbound link)
 and `adminRoleOverride` (a UI preference, `httpOnly: false`, not a session token).
 
-**3. Stripe pre-checks Link's "Save my information", which reveals a required phone field.**
-Leave it checked and the Pay button silently does nothing. Every real applicant hits this.
-Not changed — flagging it as a conversion question, not a bug.
+**3. Link's "Save my information" was pre-checked, revealing a required phone field.**
+Leave it checked and the Pay button silently does nothing — every applicant hit this, at the
+only paywall in the product. The trade was strictly bad: Link exists to speed up *repeat*
+checkouts, and the setup fee is paid exactly once. The subscription that follows is created
+server-side against the saved card, so Link never appears again. All cost, no benefit.
+
+Disabled via the default payment method configuration, not the dashboard:
+
+```
+stripe --api-key <key> payment_method_configurations update <pmc_id> \
+  -d "link[display_preference][preference]=off"
+```
+
+Note this is a *separate lever* from `payment_method_types: ['card']` on the session — that
+one controls which methods are offered, and Link's enrollment upsell survived it. Verified
+by the walkthrough, which now prints `link opt-in present=…` every run. Disabling Link does
+not affect card saving: `setup_future_usage` attaches the payment method through core
+Stripe, independently.
+
+> ⚠ **Sandbox and live currently disagree.** Sandbox (`pmc_1U0S8CGvFqeZpzQR…`) is off and
+> verified. Live (`pmc_1U0S7t2dW3lY8so17L74ntDj`) is **not yet changed** — the write was
+> blocked by a permission guard on live-key access. Until someone runs the command above
+> against the live key or flips it in the dashboard, real barbers still hit the phone field
+> that local testing no longer reproduces. That asymmetry is worse than the original bug,
+> because it makes the walkthrough green while production is not.
 
 ### `APP_CONFIG.url` is the only base URL
 
