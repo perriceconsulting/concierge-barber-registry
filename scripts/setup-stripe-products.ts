@@ -95,21 +95,24 @@ const PRODUCTS: ProductSpec[] = [
       'Recurring subscription for license-verified barbers on the Concierge Barber Registry. Includes the Grooming Passport, the Travel Referral Network, the encrypted client vault, the digital wallet pass, and the Concierge Privacy Agreement template.',
     cbrKey: 'cbr_v2_verified_member',
     prices: [
+      // Annual is the headline plan; monthly exists as the opt-out. $299/yr
+      // against $39/mo is a ~36% saving, which is what makes annual the default
+      // choice at application checkout.
       {
         lookupKey: 'cbr_v2_verified_monthly',
-        unitAmount: 2900,
+        unitAmount: 3900,
         currency: 'usd',
         recurring: { interval: 'month' },
         envVar: 'STRIPE_PRICE_VERIFIED_MONTHLY',
-        nickname: 'Monthly ($29/mo)',
+        nickname: 'Monthly ($39/mo)',
       },
       {
         lookupKey: 'cbr_v2_verified_annual',
-        unitAmount: 29000,
+        unitAmount: 29900,
         currency: 'usd',
         recurring: { interval: 'year' },
         envVar: 'STRIPE_PRICE_VERIFIED_ANNUAL',
-        nickname: 'Annual ($290/yr — 2 months free)',
+        nickname: 'Annual ($299/yr — best value)',
       },
     ],
   },
@@ -148,15 +151,38 @@ async function ensurePrice(
   });
   if (list.data[0]) {
     const existing = list.data[0];
-    // Sanity check: amount + recurring must match what we expect, otherwise
-    // someone edited it manually or there's a key collision.
-    if (existing.unit_amount !== spec.unitAmount) {
-      console.warn(
-        `  ⚠ price ${spec.lookupKey} exists with DIFFERENT amount: expected ${spec.unitAmount}c, got ${existing.unit_amount}c — leaving as-is`,
-      );
+
+    if (existing.unit_amount === spec.unitAmount) {
+      console.log(`  price exists: ${spec.nickname} (${existing.id})`);
+      return existing;
     }
-    console.log(`  price exists: ${spec.nickname} (${existing.id})`);
-    return existing;
+
+    // Amount changed. Stripe prices are immutable, so the only way to reprice
+    // is to mint a new one and retire the old. `transfer_lookup_key` moves the
+    // stable key across in the same call, so callers keep resolving by key.
+    //
+    // This used to just warn and return the stale price, which meant editing an
+    // amount here silently did nothing — the script reported success while the
+    // old number stayed live.
+    //
+    // Existing subscribers are NOT moved. Stripe keeps billing them at the old
+    // price; migrating them is a separate, deliberate act.
+    console.log(
+      `  repricing ${spec.lookupKey}: ${existing.unit_amount}c -> ${spec.unitAmount}c`,
+    );
+    const replacement = await stripe.prices.create({
+      product: product.id,
+      unit_amount: spec.unitAmount,
+      currency: spec.currency,
+      lookup_key: spec.lookupKey,
+      transfer_lookup_key: true,
+      nickname: spec.nickname,
+      ...(spec.recurring && { recurring: spec.recurring }),
+      metadata: { cbr_version: '2.0', replaces: existing.id },
+    });
+    await stripe.prices.update(existing.id, { active: false });
+    console.log(`  price replaced: ${spec.nickname} (${replacement.id}), archived ${existing.id}`);
+    return replacement;
   }
   const created = await stripe.prices.create({
     product: product.id,
