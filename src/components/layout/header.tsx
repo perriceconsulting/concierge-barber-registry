@@ -131,8 +131,14 @@ export function Header() {
           <BrandMark size="md" />
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
+        {/*
+          Desktop Navigation — engages at lg, not md.
+          At md (768px) the full bar wanted 861px: the wordmark, five nav links,
+          Sign In and a CTA button do not fit, so the row overflowed the viewport
+          and the whole page scrolled sideways. It reached production that way.
+          e2e/layout-overflow.spec.ts measures this at the breakpoint boundary.
+        */}
+        <nav className="hidden lg:flex items-center space-x-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -145,7 +151,7 @@ export function Header() {
         </nav>
 
         {/* Desktop Auth */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden lg:flex items-center space-x-4">
           {isLoggedIn === null ? (
             // Auth check still in flight — render a neutral placeholder so we
             // don't flash "Sign In / Get Started" to a logged-in user.
@@ -217,7 +223,7 @@ export function Header() {
         </div>
 
         {/* Mobile: user avatar + hamburger */}
-        <div className="flex md:hidden items-center gap-3">
+        <div className="flex lg:hidden items-center gap-3">
           {isLoggedIn && (
             <div className="flex items-center gap-2">
               {avatarUrl ? (
@@ -255,7 +261,7 @@ export function Header() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div ref={menuRef} className="md:hidden border-t bg-background">
+        <div ref={menuRef} className="lg:hidden border-t bg-background">
           <div className="container mx-auto px-4 py-4 space-y-4">
             {/* User info */}
             {isLoggedIn && userName && (

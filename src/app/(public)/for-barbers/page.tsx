@@ -96,6 +96,7 @@ const VERIFIED_LIMITS = TIER_LIMITS.verified.limits;
 const PRICING_TIERS = [
   {
     name: 'Application',
+    cta: 'Start Application',
     price: `$${VETTING_FEE_PRICING.standard}`,
     cadence: 'one time',
     features: [
@@ -109,6 +110,7 @@ const PRICING_TIERS = [
   },
   {
     name: 'Verified Member — Annual',
+    cta: 'Choose Annual',
     price: `$${MEMBERSHIP_PRICING.annual}`,
     cadence: 'per year',
     features: [
@@ -124,6 +126,7 @@ const PRICING_TIERS = [
   },
   {
     name: 'Verified Member — Monthly',
+    cta: 'Choose Monthly',
     price: `$${MEMBERSHIP_PRICING.monthly}`,
     cadence: 'per month',
     features: [
@@ -400,9 +403,17 @@ export default function ForBarbersPage() {
                   <Link href={REGISTER_HREF} className="block mt-6">
                     <Button
                       variant={tier.highlight ? 'default' : 'outline'}
-                      className="w-full"
+                      // Button's base style is `whitespace-nowrap`, so a label
+                      // wider than the card does not wrap — it overflows and
+                      // spills across the neighbouring card, which is exactly
+                      // what "Start with Verified Member — Annual" did in
+                      // production. Short labels below are the real fix; these
+                      // classes make a future long one wrap instead of break
+                      // the layout. h-auto + min-h matches the default h-11 on
+                      // one line and grows on two.
+                      className="w-full whitespace-normal h-auto min-h-11 py-2.5 leading-snug"
                     >
-                      Start with {tier.name}
+                      {tier.cta}
                     </Button>
                   </Link>
                 </CardContent>
