@@ -179,7 +179,9 @@ export const SPECIALTIES = [
 ] as const;
 
 export const SUBSCRIPTION = {
-  TRIAL_DAYS: 14,
+  // TRIAL_DAYS removed — it duplicated lib/subscription.ts and was imported by
+  // nothing. Trial lengths live in lib/copy/v2.ts (VERIFIED_TRIAL_DAYS) so the
+  // billing code and the customer copy read one number.
   TIERS: {
     STARTER: 'starter',
     PROFESSIONAL: 'professional',

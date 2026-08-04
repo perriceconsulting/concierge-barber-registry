@@ -11,6 +11,7 @@ import {
   VETTING_FEE_NOTICE,
   VETTING_FEE_PRICING,
   PAYMENT_POLICY,
+  VERIFIED_TRIAL_DAYS,
 } from '@/lib/copy/v2';
 import { FAQS } from '@/lib/copy/faqs';
 import { FaqSection } from '@/components/seo/faq-section';
@@ -171,7 +172,7 @@ export default function ProPage() {
                   ${VETTING_FEE_PRICING.standard}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  One-time application fee. 30-day Verified Member trial included on approval.
+                  One-time application fee. {VERIFIED_TRIAL_DAYS}-day Verified Member trial included on approval.
                 </p>
                 <p className="mt-3 text-xs text-muted-foreground">
                   +${VETTING_FEE_PRICING.expedited_addon} for 24-hour expedited vetting
@@ -190,7 +191,7 @@ export default function ProPage() {
       <FaqSection
         items={FAQS.pro}
         background="transparent"
-        lede="What master barbers ask about Verified Member status, the 30-day trial, and the verification process."
+        lede={`What master barbers ask about Verified Member status, the ${VERIFIED_TRIAL_DAYS}-day trial, and the verification process.`}
       />
 
       {/* FINAL CTA */}

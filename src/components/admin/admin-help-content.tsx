@@ -6,6 +6,8 @@
  * Each section has an `id="help-section-<name>"` so inline `?` icons next
  * to ambiguous controls can deep-link via `<HelpDrawer initialSection="...">`.
  */
+import { VERIFIED_TRIAL_DAYS } from '@/lib/copy/v2';
+
 export function AdminHelpContent() {
   return (
     <>
@@ -24,7 +26,7 @@ export function AdminHelpContent() {
           </li>
           <li>
             <strong className="text-foreground">approved</strong> — the barber is
-            live in the directory with a verified badge. A 30-day trial of the
+            live in the directory with a verified badge. A {VERIFIED_TRIAL_DAYS}-day trial of the
             Verified Member subscription is auto-created on Stripe (skipped for
             Founding Members).
           </li>
@@ -136,7 +138,7 @@ export function AdminHelpContent() {
         </h3>
         <p className="text-muted-foreground leading-relaxed">
           v2 ships with a <strong className="text-foreground">single flat
-          &quot;Verified Member&quot; subscription</strong> that activates after the 30-day
+          &quot;Verified Member&quot; subscription</strong> that activates after the {VERIFIED_TRIAL_DAYS}-day
           post-approval trial. The legacy <code className="text-xs bg-muted px-1 rounded">starter</code>,
           {' '}<code className="text-xs bg-muted px-1 rounded">professional</code>, and{' '}
           <code className="text-xs bg-muted px-1 rounded">elite</code> tiers

@@ -7,6 +7,8 @@
  * Each section has an `id="help-section-<name>"` so inline `?` icons next
  * to ambiguous controls can deep-link via `<HelpDrawer initialSection="...">`.
  */
+import { VERIFIED_TRIAL_DAYS } from '@/lib/copy/v2';
+
 export function BarberHelpContent() {
   return (
     <>
@@ -61,11 +63,11 @@ export function BarberHelpContent() {
 
       <section id="help-section-trial">
         <h3 className="font-serif text-lg font-semibold text-heading mb-2">
-          The 30-day trial
+          The {VERIFIED_TRIAL_DAYS}-day trial
         </h3>
         <p className="text-muted-foreground leading-relaxed">
           When an admin approves your verification, you automatically get a
-          30-day free trial of the <strong className="text-foreground">Verified
+          {VERIFIED_TRIAL_DAYS}-day free trial of the <strong className="text-foreground">Verified
           Member</strong> subscription — full access to Passport, referral
           network, and your verified badge. Your card on file is{' '}
           <em>not</em> charged during the trial.

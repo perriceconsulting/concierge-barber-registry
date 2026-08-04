@@ -13,6 +13,8 @@
  * also appear visibly on the page.
  */
 
+import { VETTING_FEE_PRICING, VERIFIED_TRIAL_DAYS } from '@/lib/copy/v2';
+
 export interface FaqEntry {
   question: string;
   /**
@@ -83,7 +85,7 @@ const FOR_BARBERS_FAQS: readonly FaqEntry[] = [
   {
     question: 'How much does it cost to join CBR as a verified barber?',
     answer:
-      'There is a one-time application fee — $49 for the first ten Founding Members and $99 standard afterwards — that funds the manual three-point license verification. Once approved, you receive a 30-day free trial of the full Verified Member toolkit. After the trial, membership is a single flat subscription. There is no chair rent, no booking fee, and no per-cut percentage.',
+      `There is a one-time application fee — $${VETTING_FEE_PRICING.intro} for the first ${VETTING_FEE_PRICING.intro_limit} Founding Members and $${VETTING_FEE_PRICING.standard} standard afterwards — that funds the manual three-point license verification. Once approved, you receive a ${VERIFIED_TRIAL_DAYS}-day free trial of the full Verified Member toolkit. After the trial, membership is a single flat subscription. There is no chair rent, no booking fee, and no per-cut percentage.`,
   },
   {
     question: 'How long does verification take?',
@@ -109,14 +111,14 @@ const PRO_FAQS: readonly FaqEntry[] = [
       'A Verified Master Barber is a licensed professional whose state license has been manually reviewed and approved by the CBR verification team. The Verified badge on a profile is a real credentialing promise, not a self-attested label. Verified Members get access to the full toolkit: the Grooming Passport, 10% travel referral royalties, digital wallet pass, certificate of selection, and NDA template.',
   },
   {
-    question: 'What does the 30-day Verified Member trial include?',
+    question: `What does the ${VERIFIED_TRIAL_DAYS}-day Verified Member trial include?`,
     answer:
-      'On approval, every Verified Member receives a 30-day trial of the complete toolkit at no cost: the Global Grooming Passport (scan client specs anywhere), the Travel Royalty Network (10% on cross-city referrals), the encrypted client vault, the digital wallet pass and printable credentials, the Concierge Privacy Agreement template, and full profile visibility to high-net-worth clients searching the registry.',
+      `On approval, every Verified Member receives a ${VERIFIED_TRIAL_DAYS}-day trial of the complete toolkit at no cost: the Global Grooming Passport (scan client specs anywhere), the Travel Royalty Network (10% on cross-city referrals), the encrypted client vault, the digital wallet pass and printable credentials, the Concierge Privacy Agreement template, and full profile visibility to high-net-worth clients searching the registry.`,
   },
   {
-    question: 'What is the difference between the $49 intro and $99 standard application fee?',
+    question: `What is the difference between the $${VETTING_FEE_PRICING.intro} intro and $${VETTING_FEE_PRICING.standard} standard application fee?`,
     answer:
-      'The intro $49 rate is reserved for the first ten approved barbers — Founding Members — and includes perpetual Founding status. After the first ten approvals fill, the standard $99 application fee applies. Both fees fund the same manual three-point license verification; the difference is the Founding Member badge, certificate, and permanent recognition that the intro tier carries.',
+      `The intro $${VETTING_FEE_PRICING.intro} rate is reserved for the first ${VETTING_FEE_PRICING.intro_limit} approved barbers — Founding Members — and includes perpetual Founding status. After the first ${VETTING_FEE_PRICING.intro_limit} approvals fill, the standard $${VETTING_FEE_PRICING.standard} application fee applies. Both fees fund the same manual three-point license verification; the difference is the Founding Member badge, certificate, and permanent recognition that the intro tier carries.`,
   },
   {
     question: 'What is the expedited vetting add-on?',

@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
 import { createLogger } from '@/lib/logger';
+import { VERIFIED_TRIAL_DAYS } from '@/lib/copy/v2';
 
 const logger = createLogger('EMAIL'); // [EMAIL] tag for log messages
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -814,7 +815,7 @@ export async function sendTrialExpiringEmail(
   const body = `
     <p style="font-size: 17px;">Hi ${firstName},</p>
     <p>Since your license was verified, you've been part of a select group of professionals on the Concierge Barber Registry.</p>
-    <p>Your <strong style="color:#D4AF37;">30-day Verified Member trial</strong> transitions to your standard subscription on <strong>${dateLabel}</strong>.</p>
+    <p>Your <strong style="color:#D4AF37;">${VERIFIED_TRIAL_DAYS}-day Verified Member trial</strong> transitions to your standard subscription on <strong>${dateLabel}</strong>.</p>
     <div style="background-color: #1a1a1a; border-left: 3px solid #D4AF37; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0; font-weight: bold; color: #D4AF37;">What stays active with your membership:</p>
       <ul style="margin: 0; padding-left: 20px; color: #E5E5E5;">

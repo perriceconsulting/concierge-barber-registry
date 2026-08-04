@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { VETTING_FEE_PRICING } from '@/lib/copy/v2';
+import { VETTING_FEE_PRICING, VERIFIED_TRIAL_DAYS } from '@/lib/copy/v2';
 
 export type TierName = 'starter' | 'professional' | 'elite' | 'verified';
 
@@ -114,7 +114,9 @@ export const TRIAL_DAYS = 14;
  * Founding Members (first {@link VETTING_FEE_PRICING.intro_limit}) pay the intro rate.
  */
 export const SETUP_FEE_PRICING = VETTING_FEE_PRICING;
-export const VERIFIED_TRIAL_DAYS = 30;
+// Re-exported from lib/copy/v2 so both the billing code and the customer copy
+// read one number. Defined there because copy cannot import from this module.
+export { VERIFIED_TRIAL_DAYS };
 
 /**
  * Decide which setup-fee amount applies to the next applicant.

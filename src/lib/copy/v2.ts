@@ -43,6 +43,21 @@ export const VETTING_FEE_PRICING = {
 } as const;
 
 /**
+ * Length of the Verified Member trial started at admin approval.
+ *
+ * Lives here, beside the fee pricing, rather than in lib/subscription.ts —
+ * subscription.ts imports from this file (and pulls in Prisma), so copy cannot
+ * import from it without a cycle. subscription.ts re-exports this so existing
+ * call sites keep working.
+ *
+ * Every customer-facing mention of the trial length interpolates this. It used
+ * to be written out as "30-day" in thirteen places, which meant changing the
+ * constant would leave the platform promising a trial length it no longer
+ * honoured — with nothing to catch it.
+ */
+export const VERIFIED_TRIAL_DAYS = 30;
+
+/**
  * Accepted payment methods. Single source — every surface that states this rule
  * derives from here: Stripe Checkout's `custom_text` (shown on Stripe's own
  * payment page, beside the card field), the pricing copy on /pro, and Terms.
@@ -135,8 +150,8 @@ export const HOW_IT_WORKS_PRO = [
   },
   {
     step: '3',
-    title: 'Verified Status + 30-Day Trial',
-    body: 'On approval you receive your digital wallet pass, certificate, and a 30-day free trial of the full Verified Member toolkit — Passport access, referral network, NDA templates.',
+    title: `Verified Status + ${VERIFIED_TRIAL_DAYS}-Day Trial`,
+    body: `On approval you receive your digital wallet pass, certificate, and a ${VERIFIED_TRIAL_DAYS}-day free trial of the full Verified Member toolkit — Passport access, referral network, NDA templates.`,
   },
 ] as const;
 
@@ -163,14 +178,13 @@ export const FOUNDING_MEMBER_TAGLINE =
 
 export const TRIAL_EXPIRING_EMAIL = {
   subject: 'Your Verified Status: 5 Days Remaining in Your Elite Access',
-  preheader:
-    'Your 30-day Concierge Elite trial transitions to standard subscription on {date}.',
+  preheader: `Your ${VERIFIED_TRIAL_DAYS}-day Verified Member trial transitions to standard subscription on {date}.`,
   body: (params: { barberName: string; date: string; rate: string; dashboardUrl: string }) => `
 Hi ${params.barberName},
 
 Since your license was verified 25 days ago, you've been part of a select group of professionals on the Concierge Barber Registry.
 
-Your 30-day trial of our Concierge Elite tools — including the Global Grooming Passport and the Referral Royalty Network — is set to transition to your standard subscription on ${params.date}.
+Your ${VERIFIED_TRIAL_DAYS}-day trial of the Verified Member toolkit — including the Global Grooming Passport and the Referral Royalty Network — is set to transition to your standard subscription on ${params.date}.
 
 What stays active with your membership:
 
