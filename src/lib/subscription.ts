@@ -279,5 +279,17 @@ export function getTierFromPriceId(priceId: string): TierName {
   if (priceId === eliteMonthly || priceId === eliteAnnual) return 'elite';
   if (priceId === verifiedMonthly || priceId === verifiedAnnual) return 'verified';
 
+  // Falling through means Stripe handed us a price this deployment does not
+  // recognise — almost always an env drift: a rotated key, a price minted in a
+  // different account, or a var that was never set. Callers write this straight
+  // into Subscription.tier, so an unrecognised price silently DOWNGRADES a
+  // paying barber to the free tier. Say so loudly; the return value cannot
+  // change without breaking those callers, but the silence can.
+  console.error(
+    `[subscription] Unrecognised Stripe price ${priceId} — defaulting to 'starter'. ` +
+      `A paying subscriber may have just been downgraded. Check STRIPE_PRICE_* env vars ` +
+      `against the account the current key belongs to: npx tsx scripts/verify-stripe-env.ts`,
+  );
+
   return 'starter';
 }

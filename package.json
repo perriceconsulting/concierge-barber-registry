@@ -19,6 +19,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "verify:stripe": "tsx scripts/verify-stripe-env.ts",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:status": "prisma migrate status",

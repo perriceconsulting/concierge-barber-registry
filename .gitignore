@@ -40,6 +40,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the example, which holds no secrets and is the single source for
+# WHICH vars exist and which are required. Ignoring it meant a fresh clone had
+# no record of that at all.
+!.env.example
 
 # vercel
 .vercel

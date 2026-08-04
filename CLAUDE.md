@@ -245,6 +245,36 @@ It overwrites only that post's content fields, and deliberately leaves `status` 
 alone so a sync can never publish a draft or move a publication date. Check for drift before
 running it if the post may have been edited in the admin UI — the sync is last-write-wins.
 
+### Stripe env vars are a copy — reconcile them
+
+**Stripe owns price and product identity.** The `STRIPE_PRICE_*` env vars are a
+*cache* of it, which is exactly the case the Single Source caveat covers: a copy is
+fine, but it has to reconcile back to the origin. Nothing reconciled these, so they
+drifted three ways at once and none of it surfaced as an error — Development held
+live-mode ids a test key can't resolve, Production held ids from a retired account,
+and neither had the `VERIFIED_*` ids the approval flow needs.
+
+```
+npm run verify:stripe                       # checks .env.local
+npx tsx scripts/verify-stripe-env.ts <file> # checks a pulled env file
+```
+
+It resolves the account from the key, then asks Stripe whether every configured
+price id actually exists there. Run it after touching any Stripe env var. Exits
+non-zero, so it can gate a release.
+
+Two structural facts worth keeping in mind:
+
+- **Test and live are separate accounts**, not two modes of one (sandbox
+  `acct_1U0S7fGvFqeZpzQR`, live `acct_1U0S7M2dW3lY8so1`). An id minted in one never
+  resolves in the other. Stripe embeds the account in every id, so
+  `price_…GvFqeZpzQR…` is visibly sandbox.
+- **Amounts do not all live in Stripe.** The subscription price does; the setup fee
+  does not — it is built inline from `VETTING_FEE_PRICING`
+  ([src/lib/copy/v2.ts](src/lib/copy/v2.ts)), and the $49-vs-$99 cutover is decided
+  by counting paid rows in the database. `STRIPE_PRICE_SETUP_*` exist but no code
+  reads them.
+
 ### Blog images: masters in, stamped copies out
 
 Blog photos are watermarked with the brand mark for IP. The pipeline is
