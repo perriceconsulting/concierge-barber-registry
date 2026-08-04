@@ -104,7 +104,14 @@ test('a barber can actually pay the setup fee on Stripe-hosted Checkout', async 
   // Worth knowing beyond this test: that default is friction on a one-time fee,
   // and every real applicant hits it.
   const linkOptIn = page.locator('#enableStripePass').first();
-  if ((await linkOptIn.count()) && (await linkOptIn.isChecked())) {
+  const linkPresent = (await linkOptIn.count()) > 0;
+  const linkPreChecked = linkPresent && (await linkOptIn.isChecked());
+  // Reported every run: this is a live conversion tax that Stripe can re-enable
+  // from their side, so it should be visible whenever the walkthrough runs
+  // rather than rediscovered.
+  // eslint-disable-next-line no-console
+  console.log(`  link opt-in present=${linkPresent} preChecked=${linkPreChecked}`);
+  if (linkPreChecked) {
     await linkOptIn.uncheck();
   }
 
