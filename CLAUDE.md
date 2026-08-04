@@ -245,6 +245,44 @@ It overwrites only that post's content fields, and deliberately leaves `status` 
 alone so a sync can never publish a draft or move a publication date. Check for drift before
 running it if the post may have been edited in the admin UI — the sync is last-write-wins.
 
+### Stripe webhook events — six, not five
+
+The endpoint must listen to all of these. Registering fewer fails silently: Stripe
+simply never sends the event and nothing errors.
+
+| Event | Without it |
+|---|---|
+| `checkout.session.completed` | payment recorded nowhere; barber charged with no access |
+| `customer.subscription.updated` | local status drifts from Stripe permanently |
+| `customer.subscription.deleted` | cancelled barbers keep their benefits |
+| `invoice.payment_failed` | failed payments look healthy; dunning never starts |
+| `invoice.paid` | a barber who fixes their card stays stuck in `past_due` |
+| `payment_method.attached` | **card funding is never recorded** — see below |
+
+### Prepaid cards: stated, instrumented, not blocked
+
+`PAYMENT_POLICY` ([src/lib/copy/v2.ts](src/lib/copy/v2.ts)) is the single origin for
+"prepaid cards are not accepted", consumed by Checkout's `custom_text` on both
+sessions and the pricing block on `/pro`.
+
+**Nothing in this codebase can refuse a prepaid card.** The card is entered on
+Stripe-hosted Checkout or the Billing Portal, so `card.funding` is only visible
+after the fact. What backs the policy up is instrumentation: `payment_method.attached`
+writes funding, brand, last4 and country to the audit log and flags prepaid ones as
+`payment_method.prepaid_flagged`.
+
+No auto-detach, no auto-refund — measure before enforcing, per the Optimize caveat.
+Escalate to a Radar rule (`:card_funding: = 'prepaid'`, needs Radar for Fraud Teams)
+once the audit log shows it is a real problem.
+
+**If that flagging is ever removed, remove the copy too.** Stating a rule the
+platform does not act on is the product claiming something it does not do.
+
+Also note the setup-fee checkout sets `setup_future_usage: 'off_session'`. Without
+it the barber pays the fee and leaves **no payment method on the customer**, so the
+30-day trial created at approval has nothing to bill when it ends — the renewal
+invoice fails and the subscription sits in `past_due` having never collected a cent.
+
 ### Stripe env vars are a copy — reconcile them
 
 **Stripe owns price and product identity.** The `STRIPE_PRICE_*` env vars are a
