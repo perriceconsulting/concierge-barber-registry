@@ -12,6 +12,7 @@ import {
   VETTING_FEE_PRICING,
   PAYMENT_POLICY,
   VERIFIED_TRIAL_DAYS,
+  MEMBERSHIP_PRICING,
 } from '@/lib/copy/v2';
 import { FAQS } from '@/lib/copy/faqs';
 import { FaqSection } from '@/components/seo/faq-section';
@@ -161,7 +162,11 @@ export default function ProPage() {
                   ${VETTING_FEE_PRICING.intro}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  First {VETTING_FEE_PRICING.intro_limit} approved barbers. Perpetual Founding Member status. One-time fee.
+                  First {VETTING_FEE_PRICING.intro_limit} approved barbers. Perpetual Founding
+                  Member status. One-time fee.
+                </p>
+                <p className="mt-3 text-sm font-medium text-primary">
+                  Includes your first full year of membership — a ${MEMBERSHIP_PRICING.annual} value.
                 </p>
               </CardContent>
             </Card>
@@ -172,7 +177,12 @@ export default function ProPage() {
                   ${VETTING_FEE_PRICING.standard}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  One-time application fee. {VERIFIED_TRIAL_DAYS}-day Verified Member trial included on approval.
+                  One-time application fee. {VERIFIED_TRIAL_DAYS}-day Verified Member trial
+                  included on approval.
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Membership afterwards: ${MEMBERSHIP_PRICING.annual}/year, or $
+                  {MEMBERSHIP_PRICING.monthly}/month.
                 </p>
                 <p className="mt-3 text-xs text-muted-foreground">
                   +${VETTING_FEE_PRICING.expedited_addon} for 24-hour expedited vetting

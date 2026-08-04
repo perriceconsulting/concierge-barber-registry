@@ -110,7 +110,6 @@ export const ROUTES = {
   API_REVIEWS: '/api/reviews',
   API_SPECIALTIES: '/api/specialties',
   API_FAVORITES: '/api/favorites',
-  API_STRIPE_CHECKOUT: '/api/stripe/checkout',
   API_STRIPE_PORTAL: '/api/stripe/portal',
   API_STRIPE_WEBHOOKS: '/api/stripe/webhooks',
   API_BARBERS_SUBSCRIPTION: '/api/barbers/subscription',
@@ -178,22 +177,14 @@ export const SPECIALTIES = [
   'Facial Treatment',
 ] as const;
 
-export const SUBSCRIPTION = {
-  // TRIAL_DAYS removed — it duplicated lib/subscription.ts and was imported by
-  // nothing. Trial lengths live in lib/copy/v2.ts (VERIFIED_TRIAL_DAYS) so the
-  // billing code and the customer copy read one number.
-  TIERS: {
-    STARTER: 'starter',
-    PROFESSIONAL: 'professional',
-    ELITE: 'elite',
-  },
-  PRICES: {
-    PROFESSIONAL_MONTHLY_CENTS: 2900,
-    PROFESSIONAL_ANNUAL_CENTS: 29000,
-    ELITE_MONTHLY_CENTS: 5900,
-    ELITE_ANNUAL_CENTS: 59000,
-  },
-} as const;
+// SUBSCRIPTION removed with the v1 tier ladder. It held TRIAL_DAYS (a dead
+// duplicate of lib/subscription.ts), the Starter/Professional/Elite tier names,
+// and hardcoded $29/$59 amounts that were the only thing still advertising
+// those plans on /for-barbers — plans whose Stripe prices no longer exist.
+//
+// v2 sells one membership. Its amounts live in lib/copy/v2.ts
+// (MEMBERSHIP_PRICING, VETTING_FEE_PRICING) and the authoritative price ids
+// live in Stripe, reached through STRIPE_PRICE_* env vars.
 
 export const US_STATES = [
   { code: 'AL', name: 'Alabama' },

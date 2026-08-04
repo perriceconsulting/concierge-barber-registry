@@ -4,8 +4,13 @@ import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
-import { SUBSCRIPTION } from '@/config';
 import { TIER_LIMITS } from '@/lib/subscription';
+import {
+  VETTING_FEE_PRICING,
+  MEMBERSHIP_PRICING,
+  ANNUAL_SAVING_PERCENT,
+  VERIFIED_TRIAL_DAYS,
+} from '@/lib/copy/v2';
 import { FAQS } from '@/lib/copy/faqs';
 import { FaqSection } from '@/components/seo/faq-section';
 
@@ -80,55 +85,52 @@ const HOW_IT_WORKS = [
 ];
 
 
-const PROFESSIONAL_PRICE = SUBSCRIPTION.PRICES.PROFESSIONAL_MONTHLY_CENTS / 100;
-const ELITE_PRICE = SUBSCRIPTION.PRICES.ELITE_MONTHLY_CENTS / 100;
+const VERIFIED_LIMITS = TIER_LIMITS.verified.limits;
 
-const STARTER_LIMITS = TIER_LIMITS.starter.limits;
-const PRO_LIMITS = TIER_LIMITS.professional.limits;
-const ELITE_LIMITS = TIER_LIMITS.elite.limits;
-
+/**
+ * v2 sells one membership, not a tier ladder. This page previously advertised
+ * Starter / Professional ($29) / Elite ($59) — none of which can be bought:
+ * those Stripe prices no longer exist and the checkout route that served them
+ * has been deleted. A barber could read it, pick Elite, and hit a dead end.
+ */
 const PRICING_TIERS = [
   {
-    name: 'Starter',
-    price: 'Free',
-    cadence: 'forever',
+    name: 'Application',
+    price: `$${VETTING_FEE_PRICING.standard}`,
+    cadence: 'one time',
     features: [
-      'Verified professional profile',
-      `Up to ${STARTER_LIMITS.portfolioImages} portfolio images`,
-      `Up to ${STARTER_LIMITS.services} services`,
-      `Up to ${STARTER_LIMITS.contactRequestsPerMonth} client contact requests per month`,
-      'Appear in search results',
+      'Manual three-point license verification',
+      'Background check',
+      'Digital credential and wallet pass',
+      `$${VETTING_FEE_PRICING.intro} for the first ${VETTING_FEE_PRICING.intro_limit} Founding Members`,
+      `+$${VETTING_FEE_PRICING.expedited_addon} for 24-hour expedited vetting`,
     ],
     highlight: false,
   },
   {
-    name: 'Professional',
-    price: `$${PROFESSIONAL_PRICE}`,
-    cadence: 'per month',
+    name: 'Verified Member — Annual',
+    price: `$${MEMBERSHIP_PRICING.annual}`,
+    cadence: 'per year',
     features: [
-      'Everything in Starter, plus:',
-      `Up to ${PRO_LIMITS.portfolioImages} portfolio images`,
-      `Up to ${PRO_LIMITS.services} services`,
+      `Starts after your ${VERIFIED_TRIAL_DAYS}-day trial`,
+      `Save ~${ANNUAL_SAVING_PERCENT}% against monthly`,
+      `Up to ${VERIFIED_LIMITS.portfolioImages} portfolio images`,
+      `Up to ${VERIFIED_LIMITS.services} services`,
       'Unlimited client contact requests',
-      'Respond to client reviews',
-      '"Pro" profile badge',
-      '14-day free trial',
+      'Global Grooming Passport and Travel Royalty Network',
+      'Featured placement in search results',
     ],
     highlight: true,
   },
   {
-    name: 'Elite',
-    price: `$${ELITE_PRICE}`,
+    name: 'Verified Member — Monthly',
+    price: `$${MEMBERSHIP_PRICING.monthly}`,
     cadence: 'per month',
     features: [
-      'Everything in Professional, plus:',
-      `Up to ${ELITE_LIMITS.portfolioImages} portfolio images`,
-      `Up to ${ELITE_LIMITS.services} services`,
-      'Featured placement in search results',
-      `Up to ${ELITE_LIMITS.serviceAreas} service areas for mobile barbers`,
-      'Unlimited social posts',
-      '"Elite" profile badge',
-      '14-day free trial',
+      'Same toolkit, billed monthly',
+      `Starts after your ${VERIFIED_TRIAL_DAYS}-day trial`,
+      'Switch cadence anytime from your billing portal',
+      'No chair rent, no booking fees, no per-cut percentage',
     ],
     highlight: false,
   },
@@ -185,9 +187,11 @@ export default function ForBarbersPage() {
               </p>
             </div>
             <div>
-              <div className="text-3xl font-bold text-primary">Free to Start</div>
+              <div className="text-3xl font-bold text-primary">
+                {VERIFIED_TRIAL_DAYS}-Day Trial
+              </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Starter tier is free forever, no credit card required
+                Full membership included after approval, before any dues are charged
               </p>
             </div>
           </div>

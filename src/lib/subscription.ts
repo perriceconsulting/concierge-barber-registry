@@ -106,7 +106,8 @@ export const SUBSCRIPTION_PRICES = {
   },
 } as const;
 
-export const TRIAL_DAYS = 14;
+// TRIAL_DAYS (14) removed with the v1 checkout route that was its only consumer.
+// Trial lengths are VERIFIED_TRIAL_DAYS and FOUNDING_TRIAL_DAYS in lib/copy/v2.
 
 /**
  * CBR v2.0 — One-time setup-fee pricing (FEAT-001).

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TIER_LIMITS, type TierName } from '@/lib/subscription';
+import { MEMBERSHIP_PRICING, ANNUAL_SAVING_PERCENT } from '@/lib/copy/v2';
 import { secureFetch } from '@/lib/csrf-client';
 
 interface SubscriptionData {
@@ -25,8 +26,6 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasProfile, setHasProfile] = useState(true);
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(null);
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,27 +60,6 @@ export default function SubscriptionPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleCheckout = async (priceKey: 'professional' | 'elite', interval: 'monthly' | 'annual') => {
-    if (!hasProfile) {
-      window.location.href = '/dashboard/profile';
-      return;
-    }
-    setIsCheckoutLoading(`${priceKey}-${interval}`);
-    try {
-      const response = await secureFetch('/api/stripe/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ priceKey, interval }),
-      });
-      const data = await response.json();
-      if (data.success && data.data.url) {
-        window.location.href = data.data.url;
-      }
-    } catch {
-      // Error handling
-    } finally {
-      setIsCheckoutLoading(null);
-    }
-  };
 
   const handleManageBilling = async () => {
     try {
@@ -226,100 +204,43 @@ export default function SubscriptionPage() {
         </Card>
       )}
 
-      {/* Plans */}
+      {/* Membership. There is one plan — Verified Member — provisioned at
+          approval on the cadence chosen during application. Barbers do not pick
+          a tier here any more; cadence changes go through the Stripe billing
+          portal above. */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">
-          {currentTier === 'starter' ? 'Upgrade Your Plan' : 'Available Plans'}
-        </h2>
-
-        <div className="flex justify-center mb-6">
-          {/* Billing toggle */}
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
-            <button
-              onClick={() => setBillingInterval('monthly')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                billingInterval === 'monthly'
-                  ? 'bg-background text-primary shadow-sm'
-                  : 'text-muted-foreground hover:text-primary'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingInterval('annual')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                billingInterval === 'annual'
-                  ? 'bg-background text-primary shadow-sm'
-                  : 'text-muted-foreground hover:text-primary'
-              }`}
-            >
-              Annual
-              <span className="ml-1 text-xs text-green-600 font-semibold">Save ~17%</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2 items-stretch">
-          {/* Starter */}
-          <PlanCard
-            name="Starter"
-            price="Free"
-            priceSubtext="forever"
-            description="Get started with the basics"
-            features={[
-              '5 portfolio images',
-              '3 services listed',
-              '10 contact requests/month',
-            ]}
-            isCurrent={currentTier === 'starter'}
-          />
-
-          {/* Professional */}
-          <PlanCard
-            name="Professional"
-            price={billingInterval === 'monthly' ? '$29' : '$290'}
-            priceSubtext={billingInterval === 'monthly' ? '/month' : '/year'}
-            description="Everything you need to grow"
-            features={[
-              '20 portfolio images',
-              '10 services listed',
-              'Unlimited contact requests',
-              'Review responses',
-              'SEO structured data',
-              '"Pro" profile badge',
-            ]}
-            isCurrent={currentTier === 'professional'}
-            highlighted
-            onSelect={() => handleCheckout('professional', billingInterval)}
-            isLoading={isCheckoutLoading?.startsWith('professional') || false}
-            canUpgrade={currentTier === 'starter' && verificationStatus === 'approved'}
-          />
-
-          {/* Elite */}
-          <PlanCard
-            name="Elite"
-            price={billingInterval === 'monthly' ? '$59' : '$590'}
-            priceSubtext={billingInterval === 'monthly' ? '/month' : '/year'}
-            description="Maximum visibility and features"
-            features={[
-              '100 portfolio images',
-              '50 services listed',
-              'Unlimited contact requests',
-              'Review responses',
-              'SEO structured data',
-              'Featured in search results',
-              '"Elite" profile badge',
-            ]}
-            isCurrent={currentTier === 'elite'}
-            onSelect={() => handleCheckout('elite', billingInterval)}
-            isLoading={isCheckoutLoading?.startsWith('elite') || false}
-            canUpgrade={currentTier !== 'elite' && verificationStatus === 'approved'}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-4 text-center">
-          All paid plans include a 14-day free trial. Cancel anytime.
-        </p>
+        <h2 className="text-xl font-semibold mb-4">Membership</h2>
+        <Card>
+          <CardContent className="py-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border border-border p-4">
+                <p className="text-sm text-muted-foreground">Annual</p>
+                <p className="mt-1 text-2xl font-bold text-heading">
+                  ${MEMBERSHIP_PRICING.annual}
+                  <span className="text-sm font-normal text-muted-foreground">/year</span>
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Save ~{ANNUAL_SAVING_PERCENT}% against monthly
+                </p>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <p className="text-sm text-muted-foreground">Monthly</p>
+                <p className="mt-1 text-2xl font-bold text-heading">
+                  ${MEMBERSHIP_PRICING.monthly}
+                  <span className="text-sm font-normal text-muted-foreground">/month</span>
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Billed every month</p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Your membership starts automatically when your trial ends — no action needed.
+              Use <strong className="text-foreground">Manage Billing</strong> above to switch
+              cadence, update your card, or cancel.
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
     </div>
   );
 }
@@ -350,66 +271,3 @@ function UsageRow({ label, current, limit }: { label: string; current: number; l
   );
 }
 
-function PlanCard({
-  name,
-  price,
-  priceSubtext,
-  description,
-  features,
-  isCurrent,
-  highlighted,
-  onSelect,
-  isLoading,
-  canUpgrade,
-}: {
-  name: string;
-  price: string;
-  priceSubtext: string;
-  description: string;
-  features: string[];
-  isCurrent: boolean;
-  highlighted?: boolean;
-  onSelect?: () => void;
-  isLoading?: boolean;
-  canUpgrade?: boolean;
-}) {
-  return (
-    <Card className={`flex flex-col ${highlighted ? 'border-primary shadow-md' : ''}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          {name}
-          {isCurrent && <Badge>Current</Badge>}
-        </CardTitle>
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold">{price}</span>
-          <span className="text-sm text-muted-foreground">{priceSubtext}</span>
-        </div>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col flex-1">
-        <ul className="space-y-2 flex-1">
-          {features.map((feature) => (
-            <li key={feature} className="text-sm flex items-start gap-2">
-              <span className="text-primary mt-0.5">&#10003;</span>
-              {feature}
-            </li>
-          ))}
-        </ul>
-        <div className="mt-6">
-          {!isCurrent && canUpgrade && onSelect && (
-            <Button
-              className="w-full"
-              onClick={onSelect}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Redirecting...' : 'Start Free Trial'}
-            </Button>
-          )}
-          {isCurrent && name !== 'Starter' && (
-            <p className="text-sm text-muted-foreground text-center">Your current plan</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
